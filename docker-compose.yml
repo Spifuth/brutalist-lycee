@@ -1,0 +1,56 @@
+# LYCEE.SIN — one-command self-hosted stack.
+#
+#   cp .env.example .env      # then edit secrets
+#   docker compose up --build
+#
+# Services:
+#   db      Postgres 16 with a persistent volume
+#   init    runs the schema migration + seed once, then exits
+#   app     the Next.js server (waits for init to finish)
+#
+# Open http://localhost:3000 once "app" is up.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lycee}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lycee}
+      POSTGRES_DB: ${POSTGRES_DB:-lycee_sin}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lycee} -d ${POSTGRES_DB:-lycee_sin}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Runs migrate + seed against the DB, then exits. Idempotent — safe on every
+  # `up` (schema uses IF NOT EXISTS, seed upserts). Seeds/ensures the admin.
+  init:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-lycee}:${POSTGRES_PASSWORD:-lycee}@db:5432/${POSTGRES_DB:-lycee_sin}
+      SEED_ADMIN_PSEUDO: ${SEED_ADMIN_PSEUDO:-prof}
+      SEED_ADMIN_PASSPHRASE: ${SEED_ADMIN_PASSPHRASE:-}
+    command: sh -c "node db/migrate.mjs && tsx db/seed.ts"
+    restart: "no"
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      init:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-lycee}:${POSTGRES_PASSWORD:-lycee}@db:5432/${POSTGRES_DB:-lycee_sin}
+      NODE_ENV: production
+    ports:
+      - "${APP_PORT:-3000}:3000"
+
+volumes:
+  db_data:

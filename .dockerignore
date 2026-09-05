@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.env
+.env.local
+.env.*.local
+npm-debug.log*
+Dockerfile
+docker-compose.yml
+README*.md
+docs
+.vercel
+user_read_only_context
+v0_memories
