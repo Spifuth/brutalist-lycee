@@ -33,12 +33,64 @@ import jwt from "jsonwebtoken"
 
 const PORT = Number(process.env.PORT || 8080)
 const IMAGE = process.env.CONTAINER_IMAGE || "alpine:3.20"
-const JWT_SECRET = process.env.JWT_SECRET || "" // if set, students must present a valid token
+const JWT_SECRET = process.env.JWT_SECRET || ""
 const IDLE_TIMEOUT_MS = Number(process.env.IDLE_TIMEOUT_MS || 2 * 60 * 1000)
 const MAX_SESSION_MS = Number(process.env.MAX_SESSION_MS || 10 * 60 * 1000)
-const MAX_CONCURRENT = Number(process.env.MAX_CONCURRENT || 50)
+// Sized for one classroom, not an arbitrary cap: at 256MB per session, 15
+// concurrent sessions is ~3.84GB of worst-case RAM. Do not raise this number
+// without re-checking it against the host's actual promised headroom.
+const MAX_CONCURRENT = Number(process.env.MAX_CONCURRENT || 15)
 
-const docker = new Docker() // uses /var/run/docker.sock by default
+// --------------------------------------------------------------------------
+// Fail-closed startup checks. Both of these exist because the shipped
+// reference implementation had a silent fallback for each: an empty
+// JWT_SECRET quietly disabled auth, and a missing DOCKER_HOST quietly
+// reached for the local /var/run/docker.sock. Neither is acceptable on a
+// host that runs a live school site — refuse to start instead.
+// --------------------------------------------------------------------------
+
+if (!JWT_SECRET) {
+  console.error(
+    "[gateway] FATAL: JWT_SECRET is not set. There is no unauthenticated mode for this " +
+      "service — every student connection must present a valid signed JWT. Set JWT_SECRET " +
+      "(the same value the main app signs tokens with) before starting the gateway.",
+  )
+  process.exit(1)
+}
+
+/**
+ * Parse DOCKER_HOST as `tcp://host:port` and fail loudly if it is missing or
+ * malformed. This service must talk to socket-proxy-lycee — never the local
+ * Docker socket — so there is deliberately no default here.
+ */
+function requireDockerHost() {
+  const raw = process.env.DOCKER_HOST
+  if (!raw) {
+    console.error(
+      "[gateway] FATAL: DOCKER_HOST is not set. This service must reach Docker through " +
+        "socket-proxy-lycee over DOCKER_HOST (e.g. tcp://10.0.0.2:2375) and must never " +
+        "fall back to the local /var/run/docker.sock — that would silently defeat the proxy " +
+        "and work only by accident on a developer machine.",
+    )
+    process.exit(1)
+  }
+  let parsed
+  try {
+    parsed = new URL(raw)
+  } catch {
+    parsed = null
+  }
+  if (!parsed || parsed.protocol !== "tcp:" || !parsed.hostname || !parsed.port) {
+    console.error(
+      `[gateway] FATAL: DOCKER_HOST must be of the form tcp://host:port, got "${raw}".`,
+    )
+    process.exit(1)
+  }
+  return { host: parsed.hostname, port: Number(parsed.port) }
+}
+
+const dockerHost = requireDockerHost()
+const docker = new Docker({ host: dockerHost.host, port: dockerHost.port })
 
 /** @type {Map<string, { id: string, startedAt: number, container: any }>} */
 const sessions = new Map()
@@ -73,18 +125,18 @@ const server = http.createServer((req, res) => {
 const wss = new WebSocketServer({ server, path: "/terminal" })
 
 wss.on("connection", (ws, req) => {
-  // Optional student JWT auth via ?token= or Authorization header.
-  if (JWT_SECRET) {
-    try {
-      const url = new URL(req.url, "http://localhost")
-      const token =
-        url.searchParams.get("token") || (req.headers.authorization || "").replace(/^Bearer\s+/i, "")
-      jwt.verify(token, JWT_SECRET)
-    } catch {
-      send(ws, { type: "error", message: "authentification requise" })
-      ws.close()
-      return
-    }
+  // Mandatory student JWT auth via ?token= or Authorization header. This is
+  // the load-bearing control (see gateway/README.md "Security model") — the
+  // Docker socket proxy is defence in depth, not a substitute for this check.
+  try {
+    const url = new URL(req.url, "http://localhost")
+    const token =
+      url.searchParams.get("token") || (req.headers.authorization || "").replace(/^Bearer\s+/i, "")
+    jwt.verify(token, JWT_SECRET)
+  } catch {
+    send(ws, { type: "error", message: "authentification requise" })
+    ws.close()
+    return
   }
 
   if (sessions.size >= MAX_CONCURRENT) {
@@ -205,5 +257,7 @@ function send(ws, obj) {
 
 server.listen(PORT, () => {
   console.log(`[gateway] en ecoute sur :${PORT} (ws path /terminal)`)
-  console.log(`[gateway] image=${IMAGE} auth=${JWT_SECRET ? "jwt" : "off"}`)
+  console.log(
+    `[gateway] image=${IMAGE} docker-host=${dockerHost.host}:${dockerHost.port} max-concurrent=${MAX_CONCURRENT}`,
+  )
 })
