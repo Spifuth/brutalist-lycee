@@ -6,10 +6,9 @@ import "@xterm/xterm/css/xterm.css"
 import { SimShell } from "@/lib/sim-shell"
 import { cn } from "@/lib/utils"
 import { PAPER_DARK, INK_DARK, ACCENT_DARK } from "@/lib/theme-tokens"
+import { issueTerminalToken } from "@/app/actions/terminal"
 
 type Mode = "connecting" | "gateway" | "sim"
-
-const WS_URL = process.env.NEXT_PUBLIC_TERMINAL_WS_URL
 
 export function TerminalPlayground() {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -21,6 +20,19 @@ export function TerminalPlayground() {
     let cleanup = () => {}
 
     ;(async () => {
+      // Read at request time, not build time — see app/api/terminal/config/route.ts.
+      // A NEXT_PUBLIC_* variable would be inlined at `next build`, so the
+      // decision to run a real gateway or the local sandbox would be frozen
+      // into the image; fetching it here makes it a plain runtime knob.
+      let wsUrl: string | null = null
+      try {
+        const res = await fetch("/api/terminal/config", { cache: "no-store" })
+        const data = (await res.json()) as { wsUrl: string | null }
+        wsUrl = data.wsUrl
+      } catch {
+        wsUrl = null
+      }
+
       const { Terminal } = await import("@xterm/xterm")
       const { FitAddon } = await import("@xterm/addon-fit")
       if (disposed || !containerRef.current) return
@@ -64,11 +76,30 @@ export function TerminalPlayground() {
         term.writeln("")
       }
 
-      if (WS_URL) {
+      if (wsUrl) {
         // --- Gateway mode over WebSocket ---
         setMode("gateway")
         banner("mode: passerelle conteneur (WebSocket)")
-        const ws = new WebSocket(WS_URL)
+
+        let token: string
+        try {
+          ;({ token } = await issueTerminalToken())
+        } catch {
+          // Anonymous visitor, or TERMINAL_JWT_SECRET unset server-side —
+          // either way there is no token to connect with. Report it the
+          // same way a failed WebSocket connection is reported below,
+          // rather than silently falling back to the sandbox: the operator
+          // configured a gateway, so a broken connection should say so.
+          term.writeln("\r\n\x1b[31m[authentification requise pour la passerelle]\x1b[0m")
+          cleanup = () => {
+            window.removeEventListener("resize", onResize)
+            term.dispose()
+          }
+          return
+        }
+        if (disposed) return
+
+        const ws = new WebSocket(`${wsUrl}?token=${encodeURIComponent(token)}`)
 
         ws.onopen = () => {
           ws.send(JSON.stringify({ type: "hello", cols: term.cols, rows: term.rows }))
@@ -208,7 +239,7 @@ export function TerminalPlayground() {
         {showProtocol && (
           <div className="border-t-2 border-foreground p-4 text-xs font-mono leading-relaxed">
             <p className="text-muted-foreground mb-3">
-              Définis <span className="text-foreground">NEXT_PUBLIC_TERMINAL_WS_URL</span> pour
+              Définis <span className="text-foreground">TERMINAL_WS_URL</span> côté serveur pour
               connecter le terminal à une passerelle qui donne à chaque élève un conteneur jetable.
               Messages échangés (JSON) :
             </p>

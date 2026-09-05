@@ -1,6 +1,7 @@
 // In-browser simulated shell with an in-memory filesystem.
-// SWAP POINT: this is the safe fallback used when NEXT_PUBLIC_TERMINAL_WS_URL
-// is not set. The real terminal connects to a container gateway over WebSocket.
+// SWAP POINT: this is the safe fallback used when TERMINAL_WS_URL (read at
+// runtime via app/api/terminal/config/route.ts) is not set. The real
+// terminal connects to a container gateway over WebSocket.
 
 type FileNode = { type: "file"; content: string }
 type DirNode = { type: "dir"; children: Record<string, Node> }

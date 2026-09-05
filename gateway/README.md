@@ -14,8 +14,12 @@ The web app ships a safe in-browser sandbox by default. When you want students
 to use a *real* shell, run this gateway and point the frontend at it with:
 
 ```
-NEXT_PUBLIC_TERMINAL_WS_URL=ws://your-host:8080/terminal
+TERMINAL_WS_URL=ws://your-host:8080/terminal
 ```
+
+This is read by `app/api/terminal/config/route.ts` at request time, not
+`NEXT_PUBLIC_*` — it must stay a plain server-side env var so flipping the
+gateway on or off is a compose change plus a restart, never an image rebuild.
 
 ## Run
 
