@@ -200,3 +200,49 @@ CREATE TABLE IF NOT EXISTS settings (
   value      JSONB NOT NULL DEFAULT '{}'::jsonb,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- ---------------------------------------------------------------------
+-- LIVE QUIZ  (teacher-driven, server-authoritative clock)
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS live_sessions (
+  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  quiz_slug           TEXT NOT NULL,
+  state               TEXT NOT NULL DEFAULT 'lobby',  -- lobby|question|reveal|finished|aborted
+  current_q_idx       INTEGER NOT NULL DEFAULT 0,
+  -- Shuffled once at creation and stored, so every client sees the same order
+  -- and a page reload cannot reshuffle it.
+  question_order      JSONB NOT NULL DEFAULT '[]'::jsonb,
+  -- The clock is server-authoritative: clients render a countdown from these
+  -- two columns but never decide when a question ends.
+  question_started_at TIMESTAMPTZ,
+  question_duration_s INTEGER NOT NULL DEFAULT 15,
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS live_sessions_state_idx ON live_sessions(state);
+
+CREATE TABLE IF NOT EXISTS live_participants (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id UUID NOT NULL REFERENCES live_sessions(id) ON DELETE CASCADE,
+  user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  score      INTEGER NOT NULL DEFAULT 0,
+  joined_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (session_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS live_answers (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id   UUID NOT NULL REFERENCES live_sessions(id) ON DELETE CASCADE,
+  user_id      UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  question_key TEXT NOT NULL,
+  choice       INTEGER NOT NULL,
+  is_correct   BOOLEAN NOT NULL,
+  score        INTEGER NOT NULL DEFAULT 0,
+  elapsed_ms   INTEGER NOT NULL DEFAULT 0,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  -- Idempotency, not decoration: a double-tap or a network retry must not
+  -- score twice. This constraint exists in the old implementation because
+  -- double submission was a real problem.
+  UNIQUE (session_id, user_id, question_key)
+);
+CREATE INDEX IF NOT EXISTS live_answers_session_idx ON live_answers(session_id);

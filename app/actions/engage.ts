@@ -3,6 +3,8 @@
 import { query, queryOne } from "@/lib/db"
 import { requireUser, getSessionUser } from "@/lib/auth"
 import { awardBadge } from "@/lib/awards"
+import { isVoteOpen } from "@/lib/settings"
+import { publishNow } from "@/lib/live-broadcast"
 import { revalidatePath } from "next/cache"
 
 // ---------------- Votes ----------------
@@ -34,6 +36,17 @@ export async function toggleVote(
   maxPicks = 3,
 ): Promise<{ ok: boolean; error?: string; picks: string[] }> {
   const user = await requireUser()
+
+  // Server-side gate: /vote hides the board and renders a closed state when
+  // `vote_open` is false, but that is a UI convenience, not the gate — a
+  // crafted call straight into this action (bypassing the UI entirely, the
+  // way /admin is only a 200 shell gated in the browser) must be refused
+  // here too. isVoteOpen() defaults to false when the settings row is
+  // absent, so a fresh database starts closed, not open.
+  if (!(await isVoteOpen())) {
+    return { ok: false, error: "Le vote est actuellement fermé.", picks: await getMyVotes() }
+  }
+
   const existing = await queryOne("SELECT 1 FROM votes WHERE user_id = $1 AND topic_key = $2", [
     user.id,
     topicKey,
@@ -53,6 +66,9 @@ export async function toggleVote(
     await awardBadge(user.id, "voter")
   }
   revalidatePath("/interventions")
+  // Forces the next /api/live/stream frame instead of waiting up to 1s, so
+  // every connected vote board's totals move the moment this commits.
+  await publishNow()
   return { ok: true, picks: await getMyVotes() }
 }
 
@@ -93,6 +109,10 @@ export async function upvoteQuestion(id: string): Promise<{ ok: boolean }> {
   await requireUser()
   await query("UPDATE questions SET upvotes = upvotes + 1 WHERE id = $1 AND status = 'approved'", [id])
   revalidatePath("/interventions")
+  // Forces the next /api/live/stream frame so the reaction count on
+  // /questions-live moves immediately for every connected viewer, not just
+  // whoever clicked.
+  await publishNow()
   return { ok: true }
 }
 

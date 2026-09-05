@@ -3,24 +3,42 @@
 import { useEffect, useMemo, useState } from "react"
 import { Check, Lock } from "lucide-react"
 import { VOTE_TOPICS, MAX_PICKS, type VoteTopic } from "@/lib/vote"
-import { getVoteTallies, getMyVotes, toggleVote } from "@/app/actions/engage"
+import { getMyVotes, toggleVote } from "@/app/actions/engage"
 import { useAuth } from "@/components/auth/auth-provider"
+import type { LiveSnapshot } from "@/lib/live-broadcast"
 import { cn } from "@/lib/utils"
+
+// Server-authoritative totals, like components/quiz/live-quiz.tsx: the vote
+// tallies and the open/closed flag are a render of the snapshot
+// app/api/live/stream/route.ts pushes — never predicted client-side. Only
+// the caller's own picks (`getMyVotes`) are fetched directly, since they are
+// personal, not part of the shared broadcast.
 
 export function VoteBoard() {
   const { user } = useAuth()
-  const [tallies, setTallies] = useState<Record<string, number>>({})
+  const [snapshot, setSnapshot] = useState<LiveSnapshot | null>(null)
   const [picks, setPicks] = useState<string[]>([])
-  const [ready, setReady] = useState(false)
   const [warn, setWarn] = useState<string | null>(null)
 
   useEffect(() => {
-    Promise.all([getVoteTallies(), getMyVotes()]).then(([t, p]) => {
-      setTallies(t)
-      setPicks(p)
-      setReady(true)
-    })
+    const source = new EventSource("/api/live/stream")
+    source.onmessage = (event) => {
+      try {
+        setSnapshot(JSON.parse(event.data) as LiveSnapshot)
+      } catch {
+        // Malformed frame — skip it, the next tick will correct itself.
+      }
+    }
+    return () => source.close()
+  }, [])
+
+  useEffect(() => {
+    getMyVotes().then(setPicks)
   }, [user])
+
+  const ready = snapshot !== null
+  const tallies = snapshot?.voteTallies ?? {}
+  const voteOpen = snapshot?.voteOpen ?? false
 
   const totalFor = (topic: VoteTopic) => topic.base + (tallies[topic.id] ?? 0)
 
@@ -43,21 +61,26 @@ export function VoteBoard() {
       flash("Connecte-toi pour voter.")
       return
     }
-    // optimistic
+    if (!voteOpen) {
+      flash("Le vote est actuellement fermé.")
+      return
+    }
+    // optimistic — picks are personal, so predicting them locally is safe;
+    // the shared totals below are never predicted, only the server's own
+    // next broadcast frame moves them (see app/actions/engage.ts's
+    // toggleVote(), which calls publishNow() after every write).
     const had = picks.includes(id)
     if (!had && picks.length >= MAX_PICKS) {
       flash(`Maximum ${MAX_PICKS} choix. Retire-en un d'abord.`)
       return
     }
     setPicks((p) => (had ? p.filter((x) => x !== id) : [...p, id]))
-    setTallies((t) => ({ ...t, [id]: (t[id] ?? 0) + (had ? -1 : 1) }))
 
     const res = await toggleVote(id, MAX_PICKS)
     if (!res.ok) {
-      // revert by re-reading truth
-      const [t, p] = await Promise.all([getVoteTallies(), getMyVotes()])
-      setTallies(t)
-      setPicks(p)
+      // Refused server-side (closed in the moment between our check above
+      // and the call landing, or the max-picks race) — resync from truth.
+      setPicks(await getMyVotes())
       if (res.error) flash(res.error)
     } else {
       setPicks(res.picks)
@@ -65,6 +88,26 @@ export function VoteBoard() {
   }
 
   const remaining = MAX_PICKS - picks.length
+
+  // Closed state: only rendered once the stream has confirmed it, in the
+  // existing brutalist idiom — an inverted header bar and a micro-label, not
+  // a modal or a greyed-out disabled board.
+  if (snapshot && !voteOpen) {
+    return (
+      <div className="border-2 border-foreground max-w-3xl">
+        <div className="border-b-2 border-foreground bg-foreground text-background px-4 py-2.5 flex items-center gap-3">
+          <Lock size={15} className="text-accent" />
+          <span className="text-[10px] font-mono uppercase tracking-widest">vote fermé</span>
+        </div>
+        <div className="p-6">
+          <p className="text-sm text-muted-foreground max-w-md">
+            Le vote n&apos;est pas ouvert pour le moment. Ton professeur l&apos;ouvrira pendant
+            l&apos;intervention — reviens à ce moment-là.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>

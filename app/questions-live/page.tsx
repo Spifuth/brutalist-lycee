@@ -4,7 +4,8 @@ import { LiveQuestions } from "@/components/questions/live-questions"
 
 export const metadata: Metadata = {
   title: "Questions en direct",
-  description: "Le flux en direct des questions avec réactions, façon mur live pendant l'intervention.",
+  description:
+    "Le mur des questions validées, mis à jour en temps réel, avec leur nombre de réactions.",
 }
 
 export default function QuestionsLivePage() {
@@ -14,7 +15,7 @@ export default function QuestionsLivePage() {
         index="LIVE / 081"
         command="tail -f questions.log"
         title="Questions en direct"
-        description="Les questions arrivent en temps réel (simulé). Réagis et suis ce qui a déjà été traité."
+        description="Les questions validées par l'intervenant·e apparaissent ici en temps réel. Réagis et regarde les totaux évoluer en direct."
       />
       <section className="w-full px-6 pb-8 lg:px-12">
         <LiveQuestions />

@@ -2,16 +2,19 @@
   "name": "brutalist-lycee",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "packageManager": "pnpm@11.22.0",
   "scripts": {
     "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "db:migrate": "node db/migrate.mjs",
     "db:seed": "tsx db/seed.ts",
     "db:setup": "node db/migrate.mjs && tsx db/seed.ts",
-    "check:origins": "node scripts/check-no-external-origins.mjs .next/static"
+    "check:origins": "node scripts/check-no-external-origins.mjs .next/static",
+    "test": "node --test --experimental-strip-types tests/*.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

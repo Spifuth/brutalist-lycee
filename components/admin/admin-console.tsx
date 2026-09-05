@@ -10,6 +10,7 @@ import {
   ListChecks,
   BookText,
   MessageSquare,
+  Radio,
   Lock,
   ArrowLeft,
 } from "lucide-react"
@@ -21,9 +22,10 @@ import { SecretsTab } from "@/components/admin/tabs/secrets-tab"
 import { QuizzesTab } from "@/components/admin/tabs/quizzes-tab"
 import { DocsTab } from "@/components/admin/tabs/docs-tab"
 import { QuestionsModTab } from "@/components/admin/tabs/questions-tab"
+import { LiveTab } from "@/components/admin/tabs/live-tab"
 import { cn } from "@/lib/utils"
 
-type Tab = "overview" | "users" | "badges" | "secrets" | "quizzes" | "docs" | "questions"
+type Tab = "overview" | "users" | "badges" | "secrets" | "quizzes" | "live" | "docs" | "questions"
 
 const TABS: { id: Tab; label: string; icon: typeof Users }[] = [
   { id: "overview", label: "Vue d'ensemble", icon: LayoutDashboard },
@@ -31,6 +33,7 @@ const TABS: { id: Tab; label: string; icon: typeof Users }[] = [
   { id: "badges", label: "Badges", icon: Award },
   { id: "secrets", label: "Secrets", icon: KeyRound },
   { id: "quizzes", label: "Quiz", icon: ListChecks },
+  { id: "live", label: "Direct", icon: Radio },
   { id: "docs", label: "Docs", icon: BookText },
   { id: "questions", label: "Questions", icon: MessageSquare },
 ]
@@ -95,6 +98,7 @@ export function AdminConsole() {
       {tab === "badges" && <BadgesTab />}
       {tab === "secrets" && <SecretsTab />}
       {tab === "quizzes" && <QuizzesTab />}
+      {tab === "live" && <LiveTab />}
       {tab === "docs" && <DocsTab />}
       {tab === "questions" && <QuestionsModTab />}
     </div>

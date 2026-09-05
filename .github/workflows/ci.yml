@@ -23,6 +23,10 @@ jobs:
       - run: pnpm build
       - name: No external origins in build output
         run: pnpm check:origins
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Test
+        run: pnpm test
 
   style-gate:
     runs-on: ubuntu-latest
