@@ -43,7 +43,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # (tsx is needed to run the TypeScript seed; installed globally, small.)
 COPY --from=builder --chown=nextjs:nodejs /app/db ./db
 COPY --from=builder --chown=nextjs:nodejs /app/lib ./lib
-RUN npm install -g tsx
+# tsx runs the TypeScript seed; pg is installed explicitly rather than relied
+# on from Next's standalone output. The seed is invoked directly by tsx and is
+# outside the traced dependency graph, so its resolution today is incidental —
+# a refactor that drops the last app-side `pg` import would break the init
+# container at seed time, far from the cause.
+RUN npm install -g tsx pg
 
 USER nextjs
 EXPOSE 3000
