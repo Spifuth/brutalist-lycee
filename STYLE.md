@@ -113,6 +113,15 @@ projected screen from the back of a classroom:
 The `text-[10px] font-mono uppercase text-accent` micro-labels are the house idiom and stay —
 but they are **decoration**. Never put information there that appears nowhere else.
 
+### The one escape hatch
+
+A couple of third-party APIs cannot take a CSS variable and must be given a literal colour —
+xterm.js's `theme` option and Next's `viewport.themeColor` are the two in this app. For those,
+and only those, import from `lib/theme-tokens.ts`. It is the single place in the codebase a raw
+hex is permitted, it mirrors `globals.css` value-for-value, and the two files must be changed
+together. Do not reach for a literal anywhere else — if you think you need one, you almost
+certainly need a semantic token instead.
+
 ## 5. Buttons — do NOT use `components/ui/button.tsx`
 
 The shadcn `Button` ships `rounded-md` and is **off-style**. The app uses raw `<button>`:

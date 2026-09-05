@@ -1,0 +1,18 @@
+# pnpm 11 blocks dependency build scripts unless they are allow-listed here.
+# Both are needed by the Next build itself:
+#   esbuild — bundling
+#   sharp   — image optimisation
+# Without this, `pnpm build` fails with ERR_PNPM_IGNORED_BUILDS, and because
+# the Dockerfile runs `pnpm build`, the image build fails identically.
+allowBuilds:
+  esbuild: true
+  sharp: true
+
+# pnpm 11 no longer reads the "pnpm.overrides" field in package.json (it is
+# silently ignored, with only a install-time warning to notice it by). The
+# override pins below moved here, which is the pnpm 11 home for them.
+# They force @types/react and @types/react-dom to match the pinned react
+# and react-dom versions, since some transitive deps request "*".
+overrides:
+  '@types/react': 19.2.7
+  '@types/react-dom': 19.2.3

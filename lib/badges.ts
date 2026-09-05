@@ -36,23 +36,27 @@ export const BADGES: Badge[] = [
   { id: "legend", label: "Légende", desc: "A tout débloqué.", category: "special" },
 ]
 
-export function dicebearUrl(seed: string): string {
-  // DiceBear HTTP API — deterministic avatar from a seed (mock).
-  const s = encodeURIComponent(seed || "anonyme")
-  return `https://api.dicebear.com/9.x/pixel-art/svg?seed=${s}&backgroundType=solid`
-}
+// Avatars come from the self-hosted DiceBear instance, never from
+// api.dicebear.com — this site serves minors and must not leak their
+// browsing to a third party. scripts/check-no-external-origins.mjs
+// enforces that, and this is currently the only finding it reports.
+//
+// The self-hosted instance is DiceBear v10 (verified from
+// /app/package.json in the container: @dicebear/converter ^10.5.0).
+// The bundle shipped "9.x", which 404s. Note the image tag
+// `dicebear/api:4.11` is the API app version, NOT the DiceBear version.
+//
+// IMPORTANT: NEXT_PUBLIC_* variables are inlined by Next.js at BUILD time,
+// not read at runtime. This expression is correct for local development
+// via .env.local, but the compiled fallback is what ships in the Docker
+// image (the Dockerfile passes no build ARG for NEXT_PUBLIC_DICEBEAR_URL).
+// Setting NEXT_PUBLIC_DICEBEAR_URL in a compose file or container env has
+// no effect. To change the DiceBear host: either edit this constant and
+// rebuild the image, or add a Dockerfile ARG and pass it during build.
+const DICEBEAR_BASE =
+  process.env.NEXT_PUBLIC_DICEBEAR_URL || "https://lycee.nebulahost.tech/dicebear"
 
-// Deterministic mock: unlock a subset based on the seed + completed surveys.
-export function mockUnlocked(seed: string, completedCount: number): Set<string> {
-  const unlocked = new Set<string>(["first-login"])
-  if (completedCount >= 1) unlocked.add("survey-court")
-  if (completedCount >= 2) unlocked.add("survey-moyen")
-  if (completedCount >= 3) unlocked.add("survey-complet")
-  // pseudo-random spread from the seed
-  let h = 0
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) % 997
-  BADGES.forEach((b, i) => {
-    if ((h + i * 7) % 3 === 0) unlocked.add(b.id)
-  })
-  return unlocked
+export function dicebearUrl(seed: string): string {
+  const s = encodeURIComponent(seed || "anonyme")
+  return `${DICEBEAR_BASE}/10.x/pixel-art/svg?seed=${s}&backgroundType=solid`
 }

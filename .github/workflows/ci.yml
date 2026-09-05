@@ -1,0 +1,68 @@
+name: CI
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # No `version:` input here on purpose. package.json pins
+      # "packageManager": "pnpm@11.22.0", and pnpm/action-setup v4 errors with
+      # "Multiple versions of pnpm specified" if both are given. The pin is the
+      # single source of truth; see Task A2.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: No external origins in build output
+        run: pnpm check:origins
+
+  style-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: STYLE.md — shape (radius 0rem, no shadows)
+        run: |
+          if grep -rn --include='*.tsx' --include='*.css' \
+               -E 'rounded-(sm|md|lg|xl|full)|shadow-(sm|md|lg|xl)' \
+               components/ app/ | grep -v 'components/ui/'; then
+            echo "::error::STYLE.md §1/§2 — radius is 0rem and there are no shadows."
+            exit 1
+          fi
+          echo "shape gate clean"
+
+      - name: STYLE.md — colour (semantic tokens only)
+        run: |
+          fail=0
+          # Raw hex in a component. Colour lives in globals.css, nowhere else.
+          # lib/theme-tokens.ts is the one documented exception: xterm's theme
+          # API and Next's viewport.themeColor cannot consume a CSS variable,
+          # so that file mirrors globals.css in literal hex (see STYLE.md §4
+          # and the header comment in lib/theme-tokens.ts). It is scanned like
+          # everything else and excluded by exact path — do not widen this
+          # exclusion beyond that single file.
+          if grep -rn --include='*.tsx' --include='*.ts' -E '#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?\b' \
+               components/ app/ lib/ | grep -v 'components/ui/' | grep -v 'lib/theme-tokens.ts'; then
+            echo "::error::STYLE.md §4 — raw hex. Use a semantic token."
+            fail=1
+          fi
+          # Tailwind palette colours do not match the tokens and do not flip for dark mode.
+          if grep -rnE '(bg|text|border)-(red|orange|amber|yellow|zinc|slate|gray|grey|neutral|stone|blue|green|purple|pink)-[0-9]{2,3}' \
+               --include='*.tsx' components/ app/ | grep -v 'components/ui/'; then
+            echo "::error::STYLE.md §4 — Tailwind palette colour. Use accent/muted/destructive."
+            fail=1
+          fi
+          # The paper is warm (#f1efe9) and the ink is 4%, never pure white or black.
+          if grep -rnE '(bg|text)-(white|black)\b' \
+               --include='*.tsx' components/ app/ | grep -v 'components/ui/'; then
+            echo "::error::STYLE.md §4 — bg/text-white|black. Use background/foreground."
+            fail=1
+          fi
+          exit $fail

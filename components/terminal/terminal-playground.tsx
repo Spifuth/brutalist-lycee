@@ -5,6 +5,7 @@ import { ChevronRight, Wifi, WifiOff, Info } from "lucide-react"
 import "@xterm/xterm/css/xterm.css"
 import { SimShell } from "@/lib/sim-shell"
 import { cn } from "@/lib/utils"
+import { PAPER_DARK, INK_DARK, ACCENT_DARK } from "@/lib/theme-tokens"
 
 type Mode = "connecting" | "gateway" | "sim"
 
@@ -28,11 +29,15 @@ export function TerminalPlayground() {
         fontFamily: "var(--font-mono), monospace",
         fontSize: 13,
         cursorBlink: true,
+        // The terminal is always a dark surface by design, regardless of the
+        // site's light/dark mode — so these deliberately use the dark-mode
+        // tokens unconditionally, from the single documented home in
+        // lib/theme-tokens.ts (xterm's theme API can't take a CSS variable).
         theme: {
-          background: "#111111",
-          foreground: "#f2f1ea",
-          cursor: "#ea580c",
-          selectionBackground: "#ea580c66",
+          background: PAPER_DARK,
+          foreground: INK_DARK,
+          cursor: ACCENT_DARK,
+          selectionBackground: `${ACCENT_DARK}66`,
         },
         convertEol: true,
       })
@@ -182,7 +187,7 @@ export function TerminalPlayground() {
         </div>
         {/* Padding lives on this wrapper so the element FitAddon measures has none —
             prevents the canvas from overflowing past the bottom border. */}
-        <div className="bg-[#111111] p-2 overflow-hidden">
+        <div className="p-2 overflow-hidden" style={{ backgroundColor: PAPER_DARK }}>
           <div ref={containerRef} className="h-[416px]" />
         </div>
       </div>

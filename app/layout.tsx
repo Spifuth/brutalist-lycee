@@ -3,6 +3,7 @@ import { JetBrains_Mono } from 'next/font/google'
 import { GeistPixelGrid } from 'geist/font/pixel'
 import { ThemeProvider } from '@/components/theme-provider'
 import { AuthProvider } from '@/components/auth/auth-provider'
+import { PAPER_LIGHT, PAPER_DARK } from '@/lib/theme-tokens'
 
 import './globals.css'
 
@@ -42,7 +43,10 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#111111",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: PAPER_LIGHT },
+    { media: "(prefers-color-scheme: dark)", color: PAPER_DARK },
+  ],
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
