@@ -13,6 +13,7 @@
     "db:migrate": "node db/migrate.mjs",
     "db:seed": "tsx db/seed.ts",
     "db:setup": "node db/migrate.mjs && tsx db/seed.ts",
+    "db:migrate-legacy": "node --experimental-sqlite --experimental-strip-types db/migrate-from-sqlite.ts",
     "check:origins": "node scripts/check-no-external-origins.mjs .next/static",
     "test": "node --test --experimental-strip-types tests/*.test.ts"
   },
