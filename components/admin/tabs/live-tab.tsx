@@ -20,6 +20,7 @@ import {
 import { nextState, type LiveOp, type LiveState } from "@/lib/live-session"
 import type { LiveSnapshot } from "@/lib/live-broadcast"
 import { AdminCard, Field, TextInput, Btn, StatGrid, Flash } from "@/components/admin/ui"
+import { isStaleActionError, STALE_ACTION_MESSAGE, reloadForStaleAction } from "@/lib/stale-action"
 
 const POLL_MS = 2000
 
@@ -94,7 +95,12 @@ export function LiveTab() {
       setFlash({ ok: true, msg: `${deleted} vote${deleted === 1 ? "" : "s"} effacé${deleted === 1 ? "" : "s"}.` })
       await refreshVoteCount()
     } catch (e) {
-      setFlash({ ok: false, msg: e instanceof Error ? e.message : "Échec de l'effacement." })
+      if (isStaleActionError(e)) {
+        setFlash({ ok: false, msg: STALE_ACTION_MESSAGE })
+        reloadForStaleAction()
+      } else {
+        setFlash({ ok: false, msg: e instanceof Error ? e.message : "Échec de l'effacement." })
+      }
     } finally {
       setPending(false)
     }

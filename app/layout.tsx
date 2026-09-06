@@ -4,6 +4,7 @@ import { GeistPixelGrid } from 'geist/font/pixel'
 import { ThemeProvider } from '@/components/theme-provider'
 import { AuthProvider } from '@/components/auth/auth-provider'
 import { PAPER_LIGHT, PAPER_DARK } from '@/lib/theme-tokens'
+import { StaleActionGuard } from "@/components/site/stale-action-guard"
 
 import './globals.css'
 
@@ -63,6 +64,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
           <AuthProvider>{children}</AuthProvider>
         </ThemeProvider>
+              <StaleActionGuard />
       </body>
     </html>
   )
