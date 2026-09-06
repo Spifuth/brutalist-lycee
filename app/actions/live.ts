@@ -216,6 +216,32 @@ export async function setLiveSettings(settings: LiveSettings): Promise<void> {
 // ---------------- Player actions ----------------
 
 /** Joins the current session's scoreboard. Idempotent — rejoining is a no-op. */
+/**
+ * Wipe every vote. Admin-only, irreversible, and deliberately blunt: the
+ * vote board is a warm-up exercise that a teacher may want to run twice —
+ * once as a demo and once for real — and there is no per-topic reset that
+ * would be less confusing than "clear it all".
+ *
+ * Returns how many rows were removed so the caller can say so rather than
+ * claiming success over a no-op. Ends with publishNow() so every connected
+ * student's board empties immediately instead of on the next tick.
+ */
+export async function clearVotes(): Promise<{ deleted: number }> {
+  await requireAdmin()
+  // RETURNING because lib/db's query() yields rows, not a pg result — there
+  // is no rowCount to read.
+  const rows = await query<{ id: string }>("DELETE FROM votes RETURNING id")
+  await publishNow()
+  return { deleted: rows.length }
+}
+
+/** Current vote count, so the admin UI can show what it is about to delete. */
+export async function countVotes(): Promise<number> {
+  await requireAdmin()
+  const row = await queryOne<{ n: string }>("SELECT COUNT(*)::text AS n FROM votes")
+  return Number(row?.n ?? 0)
+}
+
 export async function joinSession(): Promise<void> {
   const user = await requireUser()
   const session = await getCurrentSession()

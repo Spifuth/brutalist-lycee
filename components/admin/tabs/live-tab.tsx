@@ -13,6 +13,8 @@ import {
   getLiveStateOnce,
   getLiveSettings,
   setLiveSettings,
+  clearVotes,
+  countVotes,
   type LiveSettings,
 } from "@/app/actions/live"
 import { nextState, type LiveOp, type LiveState } from "@/lib/live-session"
@@ -58,6 +60,10 @@ export function LiveTab() {
   // (the teacher's half). Read from /api/terminal/config, the one place
   // that knows, rather than guessed from anything client-side.
   const [gatewayConfigured, setGatewayConfigured] = useState(false)
+  const [voteCount, setVoteCount] = useState<number | null>(null)
+  // Two-step confirm for a bulk irreversible delete. Resets on a timer so a
+  // half-pressed button never sits armed while the teacher looks away.
+  const [confirmClear, setConfirmClear] = useState(false)
 
   async function refreshSnapshot() {
     setSnapshot(await getLiveStateOnce())
@@ -65,6 +71,33 @@ export function LiveTab() {
 
   async function refreshSettings() {
     setSettingsDraft(await getLiveSettings())
+  }
+
+  async function refreshVoteCount() {
+    try {
+      setVoteCount(await countVotes())
+    } catch {
+      setVoteCount(null)
+    }
+  }
+
+  async function onClearVotes() {
+    if (!confirmClear) {
+      setConfirmClear(true)
+      window.setTimeout(() => setConfirmClear(false), 6000)
+      return
+    }
+    setConfirmClear(false)
+    setPending(true)
+    try {
+      const { deleted } = await clearVotes()
+      setFlash({ ok: true, msg: `${deleted} vote${deleted === 1 ? "" : "s"} effacé${deleted === 1 ? "" : "s"}.` })
+      await refreshVoteCount()
+    } catch (e) {
+      setFlash({ ok: false, msg: e instanceof Error ? e.message : "Échec de l'effacement." })
+    } finally {
+      setPending(false)
+    }
   }
 
   async function refreshGatewayConfigured() {
@@ -84,6 +117,7 @@ export function LiveTab() {
     })
     refreshSnapshot()
     refreshSettings()
+    refreshVoteCount()
     refreshGatewayConfigured()
     // Session state (participant count, reveal, index) moves from outside
     // this tab too — students joining, timers running out — so a single
@@ -252,6 +286,29 @@ export function LiveTab() {
                 />
                 Assistant IA ouvert
               </label>
+
+              {/* Clearing the vote board is bulk and irreversible, so it asks
+                  twice. Not a modal — a modal would be off-style and is easier
+                  to click through on reflex than a button that changes under
+                  the cursor. The count is shown because "Effacer" over 0 votes
+                  and over 40 are very different actions. */}
+              <div className="border-t-2 border-border pt-3 mt-1 flex items-center gap-3 flex-wrap">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                  {voteCount === null ? "…" : `${voteCount} vote${voteCount === 1 ? "" : "s"} enregistré${voteCount === 1 ? "" : "s"}`}
+                </span>
+                <Btn
+                  variant="danger"
+                  disabled={pending || voteCount === 0}
+                  onClick={onClearVotes}
+                >
+                  {confirmClear ? "Confirmer l'effacement ?" : "Effacer les votes"}
+                </Btn>
+                {confirmClear && (
+                  <Btn variant="ghost" disabled={pending} onClick={() => setConfirmClear(false)}>
+                    Annuler
+                  </Btn>
+                )}
+              </div>
               <div>
                 <label className="flex items-center gap-2 font-mono text-xs">
                   <input
