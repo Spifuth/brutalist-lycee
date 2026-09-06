@@ -11,7 +11,19 @@ export async function awardBadge(userId: string, badgeSlug: string): Promise<boo
     "SELECT id, points FROM badges WHERE slug = $1",
     [badgeSlug],
   )
-  if (!badge) return false
+  if (!badge) {
+    // An unknown slug used to return false indistinguishably from "the user
+    // already had it", which is how three secrets sat pointing at a badge
+    // called "jeu"/"Jeu" that did not exist: students redeemed them, got
+    // `hunter`, silently got nothing else, and nothing anywhere said so.
+    // The admin console accepts a free-text badge slug, so this is reachable
+    // by typo at any time — it must be noisy.
+    console.error(
+      `[awards] badge slug "${badgeSlug}" does not exist — nothing was awarded. ` +
+        `Check the slug on whatever referenced it (quiz.badge_slug, secret.badge_slug, or a call site).`,
+    )
+    return false
+  }
 
   const inserted = await query<{ id: string }>(
     `INSERT INTO user_badges (user_id, badge_id) VALUES ($1, $2)

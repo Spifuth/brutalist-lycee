@@ -7,6 +7,7 @@ import { SimShell } from "@/lib/sim-shell"
 import { cn } from "@/lib/utils"
 import { PAPER_DARK, INK_DARK, ACCENT_DARK } from "@/lib/theme-tokens"
 import { issueTerminalToken } from "@/app/actions/terminal"
+import { markTerminalUsed } from "@/app/actions/terminal-usage"
 
 type Mode = "connecting" | "gateway" | "sim"
 
@@ -14,6 +15,20 @@ export function TerminalPlayground() {
   const containerRef = useRef<HTMLDivElement>(null)
   const [mode, setMode] = useState<Mode>("connecting")
   const [showProtocol, setShowProtocol] = useState(false)
+  // `terminal-init` is awarded on the first command actually submitted, in
+  // either mode — the in-browser sandbox counts, because from the student's
+  // side it is the same exercise. Fired once per mount; awardBadge is
+  // idempotent server-side anyway.
+  const terminalUsed = useRef(false)
+
+  function reportTerminalUsed() {
+    if (terminalUsed.current) return
+    terminalUsed.current = true
+    markTerminalUsed().catch(() => {
+      // Anonymous visitor, or the badge already held — neither is worth
+      // interrupting a terminal session for.
+    })
+  }
 
   useEffect(() => {
     let disposed = false
@@ -119,6 +134,7 @@ export function TerminalPlayground() {
         ws.onclose = () => term.writeln("\r\n[deconnecte]")
 
         const dataDisp = term.onData((d) => {
+          if (d === "\r") reportTerminalUsed()
           if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: "input", data: d }))
         })
         const resizeDisp = term.onResize(({ cols, rows }) => {
@@ -146,6 +162,7 @@ export function TerminalPlayground() {
           const code = d.charCodeAt(0)
           if (d === "\r") {
             term.write("\r\n")
+            if (buffer.trim()) reportTerminalUsed()
             const out = shell.run(buffer)
             buffer = ""
             if (out[0] === "\u0000CLEAR") {

@@ -31,5 +31,10 @@ export const BADGE_SEEDS: BadgeSeed[] = [
   { slug: "hunter", name: "Chasseur·se", description: "A trouvé un premier secret.", icon: "search", points: 15, kind: "auto:secret:any" },
   { slug: "secret", name: "Easter egg", description: "A débusqué un secret bien caché.", icon: "egg", points: 20, kind: "manual" },
   { slug: "night-owl", name: "Noctambule", description: "Actif·ve tard le soir.", icon: "moon", points: 10, kind: "manual" },
+  // Gaming-themed secrets (DESTINY2 / ACHERON / FORTNITE) were created live in
+  // the admin console pointing at a badge slug that did not exist — "Jeu" and
+  // "jeu". awardBadge() returns false silently for an unknown slug, so students
+  // redeeming those three got `hunter` and nothing else, with no error anywhere.
+  { slug: "jeu", name: "Gamer", description: "Tu as trouvé un secret caché dans un jeu.", icon: "gamepad-2", points: 15, kind: "manual" },
   { slug: "legend", name: "Légende", description: "A trouvé tous les secrets.", icon: "crown", points: 50, kind: "auto:secret:all" },
 ]

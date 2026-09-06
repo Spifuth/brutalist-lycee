@@ -7,6 +7,7 @@ import { query, queryOne } from "@/lib/db"
 import { deleteAvatarFile, writeAvatarFile } from "@/lib/avatar-storage"
 import { MAX_AVATAR_UPLOAD_BYTES, detectImageFormat } from "@/lib/avatar-format"
 import { reencodeAvatar } from "@/lib/avatar-reencode"
+import { awardBadge } from "@/lib/awards"
 
 export interface UploadAvatarResult {
   ok: boolean
@@ -82,6 +83,17 @@ export async function processAvatarUpload(userId: string, file: unknown): Promis
   // Delete the old file only after the new one is live, so a failure above
   // never leaves the user with no avatar file at all. A failure here is
   // non-fatal — worst case is one orphaned file, not a broken account.
+  // Badges. `coquet` is the first upload, `pinceau-fou` is changing it again —
+  // which is exactly what `previous` distinguishes, so no extra query.
+  // Both were created during the SQLite migration to preserve 20 historical
+  // unlocks from the old site, and both sat unearnable until now: their kind
+  // says `auto:avatar` but nothing awarded them.
+  if (previous?.avatar_file) {
+    await awardBadge(userId, "pinceau-fou")
+  } else {
+    await awardBadge(userId, "coquet")
+  }
+
   if (previous?.avatar_file) {
     await deleteAvatarFile(previous.avatar_file).catch(() => {})
   }
