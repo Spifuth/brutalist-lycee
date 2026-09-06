@@ -13,10 +13,12 @@ import {
   Radio,
   Lock,
   ArrowLeft,
+  Image as ImageIcon,
 } from "lucide-react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { OverviewTab } from "@/components/admin/tabs/overview-tab"
 import { UsersTab } from "@/components/admin/tabs/users-tab"
+import { AvatarsTab } from "@/components/admin/tabs/avatars-tab"
 import { BadgesTab } from "@/components/admin/tabs/badges-tab"
 import { SecretsTab } from "@/components/admin/tabs/secrets-tab"
 import { QuizzesTab } from "@/components/admin/tabs/quizzes-tab"
@@ -25,11 +27,12 @@ import { QuestionsModTab } from "@/components/admin/tabs/questions-tab"
 import { LiveTab } from "@/components/admin/tabs/live-tab"
 import { cn } from "@/lib/utils"
 
-type Tab = "overview" | "users" | "badges" | "secrets" | "quizzes" | "live" | "docs" | "questions"
+type Tab = "overview" | "users" | "avatars" | "badges" | "secrets" | "quizzes" | "live" | "docs" | "questions"
 
 const TABS: { id: Tab; label: string; icon: typeof Users }[] = [
   { id: "overview", label: "Vue d'ensemble", icon: LayoutDashboard },
   { id: "users", label: "Utilisateurs", icon: Users },
+  { id: "avatars", label: "Avatars", icon: ImageIcon },
   { id: "badges", label: "Badges", icon: Award },
   { id: "secrets", label: "Secrets", icon: KeyRound },
   { id: "quizzes", label: "Quiz", icon: ListChecks },
@@ -95,6 +98,7 @@ export function AdminConsole() {
 
       {tab === "overview" && <OverviewTab />}
       {tab === "users" && <UsersTab currentUserId={user.id} />}
+      {tab === "avatars" && <AvatarsTab />}
       {tab === "badges" && <BadgesTab />}
       {tab === "secrets" && <SecretsTab />}
       {tab === "quizzes" && <QuizzesTab />}

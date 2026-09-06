@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import { Trophy, Award, KeyRound } from "lucide-react"
-import { dicebearUrl } from "@/lib/badges"
+import { avatarUrl } from "@/lib/badges"
 import { type LeaderRow } from "@/app/actions/engage"
 import { useAuth } from "@/components/auth/auth-provider"
 import { cn } from "@/lib/utils"
@@ -41,7 +41,15 @@ export function Leaderboard({ rows }: { rows: LeaderRow[] }) {
               {rank}
             </span>
             <Image
-              src={dicebearUrl(r.avatarSeed || r.pseudo) || "/placeholder.svg"}
+              src={
+                avatarUrl({
+                  id: r.userId,
+                  avatarFile: r.avatarFile,
+                  avatarSeed: r.avatarSeed,
+                  pseudo: r.pseudo,
+                  avatarUploadedAt: r.avatarUploadedAt,
+                }) || "/placeholder.svg"
+              }
               alt=""
               width={36}
               height={36}

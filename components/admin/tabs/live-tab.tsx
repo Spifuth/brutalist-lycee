@@ -53,6 +53,11 @@ export function LiveTab() {
   const [settings, setSettingsDraft] = useState<LiveSettings | null>(null)
   const [pending, setPending] = useState(false)
   const [flash, setFlash] = useState<{ ok: boolean; msg: string } | null>(null)
+  // Whether TERMINAL_WS_URL is set on the server at all — the operator's
+  // half of the terminal decision, distinct from `settings.terminalOpen`
+  // (the teacher's half). Read from /api/terminal/config, the one place
+  // that knows, rather than guessed from anything client-side.
+  const [gatewayConfigured, setGatewayConfigured] = useState(false)
 
   async function refreshSnapshot() {
     setSnapshot(await getLiveStateOnce())
@@ -62,6 +67,16 @@ export function LiveTab() {
     setSettingsDraft(await getLiveSettings())
   }
 
+  async function refreshGatewayConfigured() {
+    try {
+      const res = await fetch("/api/terminal/config", { cache: "no-store" })
+      const data = (await res.json()) as { gatewayConfigured: boolean }
+      setGatewayConfigured(data.gatewayConfigured)
+    } catch {
+      setGatewayConfigured(false)
+    }
+  }
+
   useEffect(() => {
     listQuizzes().then((rows) => {
       setQuizzes(rows)
@@ -69,6 +84,7 @@ export function LiveTab() {
     })
     refreshSnapshot()
     refreshSettings()
+    refreshGatewayConfigured()
     // Session state (participant count, reveal, index) moves from outside
     // this tab too — students joining, timers running out — so a single
     // on-mount fetch isn't enough. Settings are deliberately not polled here:
@@ -236,6 +252,23 @@ export function LiveTab() {
                 />
                 Assistant IA ouvert
               </label>
+              <div>
+                <label className="flex items-center gap-2 font-mono text-xs">
+                  <input
+                    type="checkbox"
+                    checked={settings.terminalOpen}
+                    disabled={pending || !gatewayConfigured}
+                    onChange={(e) => setSettingsDraft({ ...settings, terminalOpen: e.target.checked })}
+                    className="h-4 w-4 accent-[var(--accent)]"
+                  />
+                  Terminal ouvert (/terminal)
+                </label>
+                {!gatewayConfigured && (
+                  <p className="mt-1 text-[10px] font-mono uppercase text-muted-foreground">
+                    {"// aucune passerelle déployée — /terminal reste en bac à sable"}
+                  </p>
+                )}
+              </div>
             </div>
             <div className="mt-4 flex gap-2">
               <Btn variant="accent" disabled={pending} onClick={saveSettings}>

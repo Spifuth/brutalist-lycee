@@ -30,6 +30,14 @@ CREATE TABLE IF NOT EXISTS users (
   last_seen_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Uploaded profile picture (sub-project G, task 3). NULL means "use the
+-- DiceBear fallback" — the existing behaviour, and the state a removal
+-- restores. `avatar_file` is a generated UUID filename, never anything
+-- derived from user input; the file itself lives outside the DB, on the
+-- bind-mounted avatars directory (see lib/avatar-storage.ts).
+ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_file        TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_uploaded_at TIMESTAMPTZ;
+
 -- ---------------------------------------------------------------------
 -- SESSIONS  (opaque token stored in an httpOnly cookie)
 -- ---------------------------------------------------------------------

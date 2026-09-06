@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { query, queryOne } from "@/lib/db"
 import { requireAdmin } from "@/lib/auth"
 import { hashPassphrase, generatePassphrase } from "@/lib/crypto"
+import { deleteAvatarFile } from "@/lib/avatar-storage"
 
 // ---------------- Overview ----------------
 
@@ -118,6 +119,54 @@ export async function deleteUser(userId: string) {
   if (userId === admin.id) throw new Error("Impossible de supprimer ton propre compte.")
   await query("DELETE FROM users WHERE id = $1", [userId]) // cascades to all child rows
   revalidatePath("/admin")
+}
+
+// ---------------- Avatars moderation ----------------
+// The compensating control for having no upload approval queue: photos go
+// live immediately, and removal here is the only lever. Newest first, one
+// click, no confirmation chain — see components/admin/tabs/avatars-tab.tsx.
+
+export interface AdminAvatar {
+  userId: string
+  pseudo: string
+  avatarFile: string
+  uploadedAt: string
+}
+
+export async function listAvatars(): Promise<AdminAvatar[]> {
+  await requireAdmin()
+  return query<AdminAvatar>(
+    `SELECT id AS "userId", pseudo, avatar_file AS "avatarFile", avatar_uploaded_at AS "uploadedAt"
+       FROM users
+      WHERE avatar_file IS NOT NULL
+      ORDER BY avatar_uploaded_at DESC`,
+  )
+}
+
+export async function removeAvatar(userId: string): Promise<void> {
+  await requireAdmin()
+  await processRemoveAvatar(userId)
+  revalidatePath("/admin")
+  revalidatePath("/profil")
+  revalidatePath("/classement")
+}
+
+/**
+ * The DB + filesystem effect of a removal, factored out from `removeAvatar`
+ * for the same reason `processAvatarUpload` is factored out of
+ * `uploadAvatar`: `requireAdmin()` needs a real request context and can't be
+ * driven from a plain script, but this can — it's what the manual
+ * verification pass calls directly against a real (throwaway) database.
+ */
+export async function processRemoveAvatar(userId: string): Promise<void> {
+  const row = await queryOne<{ avatar_file: string | null }>(
+    "SELECT avatar_file FROM users WHERE id = $1",
+    [userId],
+  )
+  await query("UPDATE users SET avatar_file = NULL, avatar_uploaded_at = NULL WHERE id = $1", [userId])
+  if (row?.avatar_file) {
+    await deleteAvatarFile(row.avatar_file).catch(() => {})
+  }
 }
 
 // ---------------- Badges CRUD ----------------

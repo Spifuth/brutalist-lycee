@@ -12,6 +12,8 @@ export interface SessionUser {
   pseudoLower: string
   avatarSeed: string
   avatarVariant: string
+  avatarFile: string | null
+  avatarUploadedAt: string | null
   accent: string
   level: string
   status: string
@@ -27,6 +29,8 @@ interface UserRow {
   pseudo_lower: string
   avatar_seed: string
   avatar_variant: string
+  avatar_file: string | null
+  avatar_uploaded_at: string | null
   accent: string
   level: string
   status: string
@@ -43,6 +47,8 @@ function toSessionUser(r: UserRow): SessionUser {
     pseudoLower: r.pseudo_lower,
     avatarSeed: r.avatar_seed,
     avatarVariant: r.avatar_variant,
+    avatarFile: r.avatar_file,
+    avatarUploadedAt: r.avatar_uploaded_at,
     accent: r.accent,
     level: r.level,
     status: r.status,

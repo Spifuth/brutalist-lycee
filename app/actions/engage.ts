@@ -295,19 +295,23 @@ export async function getHuntBoard(): Promise<{ entries: HuntEntry[]; found: num
 // ---------------- Leaderboard ----------------
 
 export interface LeaderRow {
+  userId: string
   pseudo: string
   points: number
   secrets: number
   badges: number
   avatarSeed: string
   avatarVariant: string
+  avatarFile: string | null
+  avatarUploadedAt: string | null
   accent: string
 }
 
 export async function getLeaderboard(limit = 50): Promise<LeaderRow[]> {
   return query<LeaderRow>(
-    `SELECT u.pseudo, u.points,
-            u.avatar_seed AS "avatarSeed", u.avatar_variant AS "avatarVariant", u.accent,
+    `SELECT u.id AS "userId", u.pseudo, u.points,
+            u.avatar_seed AS "avatarSeed", u.avatar_variant AS "avatarVariant",
+            u.avatar_file AS "avatarFile", u.avatar_uploaded_at AS "avatarUploadedAt", u.accent,
             (SELECT COUNT(*)::int FROM secret_redemptions sr WHERE sr.user_id = u.id) AS secrets,
             (SELECT COUNT(*)::int FROM user_badges ub WHERE ub.user_id = u.id) AS badges
        FROM users u

@@ -11,7 +11,7 @@ import type {
 } from "@/lib/live-broadcast"
 import { buildQuestionOrder, calcScore, nextState, type QuestionRef, type LiveState } from "@/lib/live-session"
 import { getQuiz } from "@/lib/quizzes"
-import { isVoteOpen, isAiOpen, setSetting } from "@/lib/settings"
+import { isVoteOpen, isAiOpen, isTerminalOpen, setSetting } from "@/lib/settings"
 
 // SWAP POINT: the only place teacher/player intent turns into a DB write for
 // the live quiz. app/api/live/stream/route.ts (Task 4) is read-only — it
@@ -181,26 +181,34 @@ export async function abortSession(): Promise<void> {
 export interface LiveSettings {
   voteOpen: boolean
   aiOpen: boolean
+  /**
+   * The teacher's half of the terminal gateway decision only — whether the
+   * gateway infrastructure exists at all is `TERMINAL_WS_URL`, a plain env
+   * var this action never reads or writes. See
+   * app/api/terminal/config/route.ts for where the two are combined.
+   */
+  terminalOpen: boolean
 }
 
-/** Current values of the two teacher-facing toggles the admin Live tab shows. */
+/** Current values of the three teacher-facing toggles the admin Live tab shows. */
 export async function getLiveSettings(): Promise<LiveSettings> {
   await requireAdmin()
-  const [voteOpen, aiOpen] = await Promise.all([isVoteOpen(), isAiOpen()])
-  return { voteOpen, aiOpen }
+  const [voteOpen, aiOpen, terminalOpen] = await Promise.all([isVoteOpen(), isAiOpen(), isTerminalOpen()])
+  return { voteOpen, aiOpen, terminalOpen }
 }
 
 /**
- * Writes both settings in one round trip. `publishNow()` forces the change
- * onto the next /api/live/stream frame immediately — the same reason every
- * session-control action above ends with it — so /vote's open/closed banner
- * flips live instead of waiting up to 1s.
+ * Writes all three settings in one round trip. `publishNow()` forces the
+ * change onto the next /api/live/stream frame immediately — the same reason
+ * every session-control action above ends with it — so /vote's open/closed
+ * banner flips live instead of waiting up to 1s.
  */
 export async function setLiveSettings(settings: LiveSettings): Promise<void> {
   await requireAdmin()
   await Promise.all([
     setSetting("vote_open", settings.voteOpen),
     setSetting("ai_open", settings.aiOpen),
+    setSetting("terminal_open", settings.terminalOpen),
   ])
   await publishNow()
 }

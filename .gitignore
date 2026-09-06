@@ -10,6 +10,10 @@ node_modules/
 .DS_Store
 .vercel
 
+# Local-dev avatar uploads (default AVATAR_DIR target; production uses a
+# bind mount outside the repo — see lib/avatar-storage.ts)
+/data/avatars/
+
 # sdd scratch
 .superpowers/
 

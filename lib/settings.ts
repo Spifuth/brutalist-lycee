@@ -2,15 +2,15 @@ import { query, queryOne } from "@/lib/db"
 
 // Typed read/write over the `settings` key/value table (db/schema.sql):
 // `key TEXT PRIMARY KEY`, `value JSONB`. db/seed.ts already writes one row
-// under the key `site`; `vote_open` and `ai_open` are new keys this module
-// owns, one row each, not nested inside `site`'s blob.
+// under the key `site`; `vote_open`, `ai_open` and `terminal_open` are new
+// keys this module owns, one row each, not nested inside `site`'s blob.
 //
 // Missing-row semantics matter and are the whole point of this file: a
 // fresh database (or one where a teacher has never touched the toggle) has
 // no `vote_open` row at all. If a missing row meant "open", every fresh
 // deploy would start with voting live before a teacher ever said so. Every
 // helper below defaults to `false`, never to `true`, when the row is
-// absent — see isVoteOpen()/isAiOpen().
+// absent — see isVoteOpen()/isAiOpen()/isTerminalOpen().
 
 interface SettingRow {
   value: unknown
@@ -50,4 +50,16 @@ export async function isVoteOpen(): Promise<boolean> {
  */
 export async function isAiOpen(): Promise<boolean> {
   return (await getSetting<boolean>("ai_open")) === true
+}
+
+/**
+ * Whether the teacher has switched the terminal gateway on for the class
+ * right now. Same missing-row-reads-as-closed contract as isVoteOpen() /
+ * isAiOpen(). This is only the teacher's half of the decision — whether the
+ * gateway infrastructure exists at all is `TERMINAL_WS_URL`, a plain env
+ * var, not a settings row; app/api/terminal/config/route.ts is the one
+ * place the two are combined, and the env var wins when they disagree.
+ */
+export async function isTerminalOpen(): Promise<boolean> {
+  return (await getSetting<boolean>("terminal_open")) === true
 }

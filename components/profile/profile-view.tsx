@@ -1,11 +1,12 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
-import { LogOut, Award, Lock, ArrowRight, Search } from "lucide-react"
+import { LogOut, Award, Lock, ArrowRight, Search, Upload } from "lucide-react"
 import { useProfile, SurveyLevel } from "@/lib/profile"
 import { useAuth } from "@/components/auth/auth-provider"
-import { dicebearUrl } from "@/lib/badges"
+import { avatarUrl } from "@/lib/badges"
+import { uploadAvatar } from "@/app/actions/avatar"
 import { getBadgeCollection, type BadgeView } from "@/app/actions/badges"
 import { getMySecrets } from "@/app/actions/engage"
 import { SurveyPicker } from "@/components/survey/survey-picker"
@@ -19,10 +20,13 @@ const LEVEL_LABELS: Record<SurveyLevel, string> = {
 
 export function ProfileView() {
   const { profile, ready, setProfile } = useProfile()
-  const { user, logout } = useAuth()
+  const { user, logout, refresh } = useAuth()
   const [showSurvey, setShowSurvey] = useState(false)
   const [badges, setBadges] = useState<BadgeView[]>([])
   const [secrets, setSecrets] = useState({ found: 0, total: 0 })
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const [avatarError, setAvatarError] = useState<string | null>(null)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!user) return
@@ -31,6 +35,28 @@ export function ProfileView() {
   }, [user, showSurvey])
 
   const earnedCount = useMemo(() => badges.filter((b) => b.earned).length, [badges])
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = "" // allow choosing the same file again afterwards
+    if (!file) return
+    setAvatarError(null)
+    setAvatarUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append("avatar", file)
+      const res = await uploadAvatar(formData)
+      if (!res.ok) {
+        setAvatarError(res.error || "Envoi refusé.")
+      } else {
+        await refresh()
+      }
+    } catch {
+      setAvatarError("Erreur réseau pendant l'envoi.")
+    } finally {
+      setAvatarUploading(false)
+    }
+  }
 
   if (!ready) {
     return <div className="h-40 border-2 border-foreground animate-pulse bg-muted/40" />
@@ -69,11 +95,11 @@ export function ProfileView() {
           <div className="flex items-center gap-4 mb-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={dicebearUrl(user.avatarSeed || user.pseudo) || "/placeholder.svg"}
+              src={avatarUrl(user) || "/placeholder.svg"}
               alt={`Avatar de ${user.pseudo}`}
               width={56}
               height={56}
-              className="h-14 w-14 border-2 border-foreground bg-muted"
+              className="h-14 w-14 border-2 border-foreground bg-muted object-cover"
               crossOrigin="anonymous"
             />
             <div>
@@ -83,6 +109,34 @@ export function ProfileView() {
               </p>
             </div>
           </div>
+
+          <div className="mb-4">
+            <input
+              ref={avatarInputRef}
+              id="avatar-upload"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleAvatarChange}
+              disabled={avatarUploading}
+              className="hidden"
+            />
+            <label
+              htmlFor="avatar-upload"
+              className={cn(
+                "flex w-full items-center justify-center gap-2 border-2 border-foreground px-3 py-2 text-[10px] font-mono uppercase tracking-widest transition-colors",
+                avatarUploading ? "opacity-50" : "cursor-pointer hover:bg-muted",
+              )}
+            >
+              <Upload size={12} /> {avatarUploading ? "Envoi..." : "Changer la photo"}
+            </label>
+            <p className="mt-1.5 text-[10px] font-mono text-muted-foreground">
+              {"// JPEG, PNG ou WebP · 4 Mo maximum · recadrée en 512×512, sans les données EXIF"}
+            </p>
+            {avatarError && (
+              <p className="mt-1.5 text-[10px] font-mono text-destructive">{avatarError}</p>
+            )}
+          </div>
+
           <dl className="font-mono text-xs">
             <Row label="pseudo" value={user.pseudo} />
             <Row label="passphrase" value={profile.passphrase || "masquée (notée à la création)"} />

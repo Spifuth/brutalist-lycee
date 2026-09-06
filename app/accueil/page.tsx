@@ -14,11 +14,14 @@ import {
 } from "lucide-react"
 import { PageShell, PageHeader } from "@/components/site/page-shell"
 import { AnimatedCounter } from "@/components/animated-counter"
+import { getHomeStats } from "@/lib/stats"
 
 export const metadata: Metadata = {
   title: "Accueil",
   description: "Le hub de l'intervention : cyber, IA, métiers, parcours, vote, quiz, questions et terminal.",
 }
+
+export const dynamic = "force-dynamic"
 
 const DOORS = [
   { icon: Shield, cmd: "nmap", label: "Cyber", href: "/cyber", desc: "Attaques, défense, mots de passe et phishing." },
@@ -32,14 +35,15 @@ const DOORS = [
   { icon: TerminalSquare, cmd: "ssh", label: "Terminal", href: "/terminal", desc: "Un vrai terminal, en bac à sable." },
 ]
 
-const STATS = [
-  { label: "Élèves connectés", value: 312, suffix: "" },
-  { label: "Votes enregistrés", value: 1487, suffix: "" },
-  { label: "Quiz terminés", value: 968, suffix: "" },
-  { label: "Questions posées", value: 214, suffix: "" },
-]
+export default async function AccueilPage() {
+  const stats = await getHomeStats()
+  const STATS = [
+    { label: "Élèves inscrits", value: stats.users, suffix: "" },
+    { label: "Votes enregistrés", value: stats.votes, suffix: "" },
+    { label: "Quiz terminés", value: stats.quizAttempts, suffix: "" },
+    { label: "Questions posées", value: stats.questions, suffix: "" },
+  ]
 
-export default function AccueilPage() {
   return (
     <PageShell>
       <PageHeader
@@ -72,9 +76,6 @@ export default function AccueilPage() {
             </div>
           ))}
         </div>
-        <p className="text-[10px] font-mono text-muted-foreground mt-2">
-          {"// chiffres simulés — remplacés par des données réelles plus tard"}
-        </p>
       </section>
 
       {/* Doors */}

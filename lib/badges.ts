@@ -60,3 +60,29 @@ export function dicebearUrl(seed: string): string {
   const s = encodeURIComponent(seed || "anonyme")
   return `${DICEBEAR_BASE}/10.x/pixel-art/svg?seed=${s}&backgroundType=solid`
 }
+
+// Sub-project G, task 3: students can upload a real photo, which is served
+// from our own DB-backed route rather than DiceBear. `avatarFile` is null
+// for everyone who hasn't uploaded one (or who had theirs removed) — that
+// is the ONLY thing that decides which source renders, so this is the one
+// place that decision is made. Never build the two URLs independently.
+//
+// The URL is suffixed with `?v=<uploadedAt>` when a file is present. The API
+// route already sends `Cache-Control: no-store` so a *new* request never
+// serves stale bytes, but an unchanged <img src> string never triggers a new
+// request in the first place — replacing your own avatar wouldn't visibly
+// update until a hard reload without this. `avatarUploadedAt` changing is
+// exactly the signal that the underlying file changed.
+export function avatarUrl(user: {
+  id: string
+  avatarFile?: string | null
+  avatarSeed: string
+  pseudo: string
+  avatarUploadedAt?: string | null
+}): string {
+  if (user.avatarFile) {
+    const v = user.avatarUploadedAt ? `?v=${encodeURIComponent(user.avatarUploadedAt)}` : ""
+    return `/api/avatar/${user.id}${v}`
+  }
+  return dicebearUrl(user.avatarSeed || user.pseudo)
+}
