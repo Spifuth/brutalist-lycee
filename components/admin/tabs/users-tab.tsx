@@ -4,6 +4,10 @@ import { useEffect, useState } from "react"
 import { KeyRound, Ban, ShieldCheck, RotateCcw, Trash2, Shield, Search, Copy, Check } from "lucide-react"
 import {
   listUsers,
+  listBadgesForUser,
+  grantBadge,
+  revokeBadge,
+  type GrantableBadge,
   resetUserPassphrase,
   setUserStatus,
   setUserAdmin,
@@ -11,6 +15,7 @@ import {
   deleteUser,
   type AdminUser,
 } from "@/app/actions/admin"
+import { Award } from "lucide-react"
 import { AdminCard, TextInput, Btn, ConfirmBtn, Flash } from "@/components/admin/ui"
 import { cn } from "@/lib/utils"
 
@@ -19,6 +24,25 @@ export function UsersTab({ currentUserId }: { currentUserId: string }) {
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
   const [flash, setFlash] = useState<{ ok: boolean; msg: string } | null>(null)
+  // Badge panel for one user. `manual` badges had no grant path at all before
+  // this — nothing outside awardBadge() ever wrote to user_badges, so seven
+  // of them were on the badge wall and impossible to obtain.
+  const [badgeFor, setBadgeFor] = useState<{ id: string; pseudo: string } | null>(null)
+  const [badges, setBadges] = useState<GrantableBadge[] | null>(null)
+
+  async function openBadges(u: { id: string; pseudo: string }) {
+    setBadgeFor(u)
+    setBadges(null)
+    setBadges(await listBadgesForUser(u.id))
+  }
+
+  async function toggleBadge(b: GrantableBadge) {
+    if (!badgeFor) return
+    if (b.held) await revokeBadge(badgeFor.id, b.slug)
+    else await grantBadge(badgeFor.id, b.slug)
+    setBadges(await listBadgesForUser(badgeFor.id))
+    setFlash({ ok: true, msg: `${b.name} ${b.held ? "retiré" : "attribué"} à ${badgeFor.pseudo}.` })
+  }
   const [revealed, setRevealed] = useState<{ id: string; phrase: string } | null>(null)
   const [copied, setCopied] = useState(false)
 
@@ -141,6 +165,9 @@ export function UsersTab({ currentUserId }: { currentUserId: string }) {
                     </td>
                     <td className="px-3">
                       <div className="flex items-center justify-end gap-1">
+                        <Btn variant="ghost" aria-label="Badges" onClick={() => openBadges(u)}>
+                          <Award size={14} />
+                        </Btn>
                         <Btn variant="ghost" aria-label="Réinitialiser la phrase de passe" onClick={() => onReset(u)}>
                           <KeyRound size={14} />
                         </Btn>
@@ -189,6 +216,53 @@ export function UsersTab({ currentUserId }: { currentUserId: string }) {
             </tbody>
           </table>
           {users.length === 0 && <p className="py-6 text-center font-mono text-sm text-muted-foreground">Aucun compte.</p>}
+        </div>
+      )}
+
+      {badgeFor && (
+        <div className="border-2 border-foreground mt-4">
+          <div className="border-b-2 border-foreground bg-foreground text-background px-4 py-2.5 flex items-center gap-3">
+            <Award size={14} className="text-accent" />
+            <span className="text-[10px] font-mono uppercase tracking-widest">
+              Badges — {badgeFor.pseudo}
+            </span>
+            <button
+              onClick={() => setBadgeFor(null)}
+              className="ml-auto text-[10px] font-mono uppercase tracking-widest hover:text-accent transition-colors"
+            >
+              Fermer
+            </button>
+          </div>
+          <div className="p-4">
+            {badges === null ? (
+              <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                Chargement…
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {badges.map((b) => (
+                  <button
+                    key={b.slug}
+                    onClick={() => toggleBadge(b)}
+                    className={
+                      "flex items-center gap-2 border-2 border-foreground px-3 py-2 text-left text-xs font-mono transition-colors " +
+                      (b.held
+                        ? "bg-foreground text-background"
+                        : "hover:bg-muted")
+                    }
+                  >
+                    <span className="flex-1">{b.name}</span>
+                    <span className="text-[10px] uppercase tracking-widest opacity-70">
+                      {b.held ? "retirer" : "donner"}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+            <p className="mt-3 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+              Cliquer attribue ou retire le badge. Les points suivent.
+            </p>
+          </div>
         </div>
       )}
     </AdminCard>

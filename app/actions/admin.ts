@@ -486,3 +486,61 @@ export async function deleteQuestion(id: string) {
   revalidatePath("/admin")
   revalidatePath("/questions")
 }
+
+// ---------------- Manual badge grants ----------------
+
+export interface GrantableBadge {
+  slug: string
+  name: string
+  points: number
+  held: boolean
+}
+
+/**
+ * Every badge, flagged with whether this user already holds it.
+ *
+ * Exists because `kind: "manual"` badges had no grant path at all: nothing
+ * outside awardBadge() ever wrote to user_badges, so seven of them
+ * (citoyen, marathonien, matinal, night-owl, perfectionniste, polyvalent,
+ * vieux-gamer) were displayed on the badge wall and were literally
+ * impossible to obtain. "Manual" only means anything if a human can do it.
+ */
+export async function listBadgesForUser(userId: string): Promise<GrantableBadge[]> {
+  await requireAdmin()
+  return await query<GrantableBadge>(
+    `SELECT b.slug, b.name, b.points, (ub.user_id IS NOT NULL) AS held
+       FROM badges b
+       LEFT JOIN user_badges ub ON ub.badge_id = b.id AND ub.user_id = $1
+      ORDER BY b.position, b.slug`,
+    [userId],
+  )
+}
+
+/** Grants a badge by slug. Idempotent, and adds the badge's points once. */
+export async function grantBadge(userId: string, slug: string): Promise<void> {
+  await requireAdmin()
+  const { awardBadge } = await import("@/lib/awards")
+  await awardBadge(userId, slug)
+}
+
+/** Removes a badge and takes its points back, so a mis-click is fully undoable. */
+export async function revokeBadge(userId: string, slug: string): Promise<void> {
+  await requireAdmin()
+  const badge = await queryOne<{ id: string; points: number }>(
+    "SELECT id, points FROM badges WHERE slug = $1",
+    [slug],
+  )
+  if (!badge) return
+  const removed = await query<{ id: string }>(
+    "DELETE FROM user_badges WHERE user_id = $1 AND badge_id = $2 RETURNING id",
+    [userId, badge.id],
+  )
+  if (removed.length > 0 && badge.points > 0) {
+    // Symmetrical with awardBadge, and floored at 0 so revoking a badge the
+    // student earned before a progress reset cannot push them negative.
+    await query("UPDATE users SET points = GREATEST(0, points - $1) WHERE id = $2", [
+      badge.points,
+      userId,
+    ])
+  }
+}
