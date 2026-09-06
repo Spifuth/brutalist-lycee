@@ -152,7 +152,7 @@ wss.on("connection", (ws, req) => {
 })
 
 // --------------------------------------------------------------------------
-// One student session = one container + one exec stream
+// One student session = one container + one attached stream to its main shell
 // --------------------------------------------------------------------------
 
 async function handleSession(ws) {
@@ -190,7 +190,15 @@ async function handleSession(ws) {
     Image: IMAGE,
     Cmd: ["/bin/sh"],
     Tty: true,
+    // OpenStdin keeps stdin open; AttachStdin/out/err declare at CREATE time
+    // that a stream will be attached to them. Without the Attach* flags the
+    // later attach gets a TTY that echoes keystrokes but never delivers them
+    // to the shell's stdin — the shell sits alive and idle while the student
+    // types into nothing.
     OpenStdin: true,
+    AttachStdin: true,
+    AttachStdout: true,
+    AttachStderr: true,
     User: "1000:1000",
     WorkingDir: "/home/eleve",
     Env: ["HOME=/home/eleve", "PS1=eleve@sandbox:\\w$ "],
@@ -214,15 +222,27 @@ async function handleSession(ws) {
   await container.start()
   send(ws, { type: "ready" })
 
-  // Attach an interactive exec.
-  const exec = await container.exec({
-    Cmd: ["/bin/sh"],
-    AttachStdin: true,
-    AttachStdout: true,
-    AttachStderr: true,
-    Tty: true,
+  // Attach to the container's OWN main process, which is already `/bin/sh`
+  // (see Cmd above, with Tty + OpenStdin). An `exec` here would spawn a
+  // redundant second shell inside a container that is already a shell.
+  //
+  // It also matters for security, not just tidiness. `exec` needs
+  // `POST /exec/{id}/start`, which is NOT under `/containers`, so
+  // socket-proxy-lycee would need `EXEC: 1`. That flag is not scopeable to
+  // one container: with it, anything reaching the proxy could start an exec
+  // in ANY container on the host, including the live site's `lycee-api`.
+  // (Measured: `POST /containers/lycee-api/exec` already returns 201 through
+  // this proxy; `EXEC: 0` is the only thing stopping it being *started*.)
+  //
+  // `attach` lives under `/containers`, which the proxy already permits, so
+  // this keeps EXEC at 0 and the blast radius at one disposable container.
+  stream = await container.attach({
+    stream: true,
+    stdin: true,
+    stdout: true,
+    stderr: true,
+    hijack: true,
   })
-  stream = await exec.start({ hijack: true, stdin: true, Tty: true })
 
   stream.on("data", (chunk) => send(ws, { type: "output", data: chunk.toString("utf8") }))
   stream.on("end", () => teardown("session terminee"))
@@ -241,9 +261,9 @@ async function handleSession(ws) {
       resetIdle()
       stream.write(msg.data)
     } else if (msg.type === "resize") {
-      exec.resize({ w: msg.cols, h: msg.rows }).catch(() => {})
+      container.resize({ w: msg.cols, h: msg.rows }).catch(() => {})
     } else if (msg.type === "hello") {
-      exec.resize({ w: msg.cols || 80, h: msg.rows || 24 }).catch(() => {})
+      container.resize({ w: msg.cols || 80, h: msg.rows || 24 }).catch(() => {})
     }
   })
 
