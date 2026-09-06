@@ -165,15 +165,18 @@ export function UsersTab({ currentUserId }: { currentUserId: string }) {
                     </td>
                     <td className="px-3">
                       <div className="flex items-center justify-end gap-1">
-                        <Btn variant="ghost" aria-label="Badges" onClick={() => openBadges(u)}>
+                        <Btn variant="ghost" aria-label="Badges"
+                          title="Badges" onClick={() => openBadges(u)}>
                           <Award size={14} />
                         </Btn>
-                        <Btn variant="ghost" aria-label="Réinitialiser la phrase de passe" onClick={() => onReset(u)}>
+                        <Btn variant="ghost" aria-label="Réinitialiser la phrase de passe"
+                          title="Réinitialiser la phrase de passe" onClick={() => onReset(u)}>
                           <KeyRound size={14} />
                         </Btn>
                         <Btn
                           variant="ghost"
                           aria-label="Réinitialiser la progression"
+                          title="Réinitialiser la progression"
                           onClick={() => run(() => resetUserProgress(u.id), `Progression de ${u.pseudo} réinitialisée.`)}
                         >
                           <RotateCcw size={14} />
@@ -181,6 +184,7 @@ export function UsersTab({ currentUserId }: { currentUserId: string }) {
                         <Btn
                           variant="ghost"
                           aria-label={u.isAdmin ? "Retirer admin" : "Promouvoir admin"}
+                          title={u.isAdmin ? "Retirer admin" : "Promouvoir admin"}
                           onClick={() => run(() => setUserAdmin(u.id, !u.isAdmin), `${u.pseudo} mis à jour.`)}
                         >
                           <Shield size={14} className={u.isAdmin ? "text-accent" : ""} />
@@ -189,6 +193,7 @@ export function UsersTab({ currentUserId }: { currentUserId: string }) {
                           <Btn
                             variant="ghost"
                             aria-label="Suspendre"
+                          title="Suspendre"
                             disabled={isSelf}
                             onClick={() => run(() => setUserStatus(u.id, "suspended"), `${u.pseudo} suspendu.`)}
                           >
@@ -198,6 +203,7 @@ export function UsersTab({ currentUserId }: { currentUserId: string }) {
                           <Btn
                             variant="ghost"
                             aria-label="Réactiver"
+                          title="Réactiver"
                             onClick={() => run(() => setUserStatus(u.id, "active"), `${u.pseudo} réactivé.`)}
                           >
                             <ShieldCheck size={14} className="text-accent" />

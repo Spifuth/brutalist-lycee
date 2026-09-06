@@ -119,7 +119,9 @@ export function ConfirmBtn({
     )
   }
   return (
-    <Btn variant="ghost" aria-label={label} onClick={() => setArmed(true)}>
+    // title as well as aria-label: these sit in rows of identical ghost icon
+    // buttons, and aria-label alone shows a sighted user nothing on hover.
+    <Btn variant="ghost" aria-label={label} title={label} onClick={() => setArmed(true)}>
       {children}
     </Btn>
   )
