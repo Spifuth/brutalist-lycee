@@ -1,6 +1,16 @@
-// Data-driven documentation. SWAP POINT: content is placeholder lorem, ready
-// to be replaced (e.g. loaded from a CMS or Neon). Each article is a list of
-// typed blocks rendered generically by the docs renderer.
+// Data-driven documentation. Each article is a list of typed blocks rendered
+// generically by the docs renderer.
+//
+// SWAP POINT: most subjects below are still placeholder lorem built by
+// makeArticle(), ready to be replaced by the real course. "Git & GitHub" is the
+// first one that is actually written — it lives in ./docs-git so real content
+// does not bury the subject index. Follow that shape for the next subject you
+// write: a DocSubject in its own file, imported here.
+
+// Explicit .ts extension (tsconfig allowImportingTsExtensions): tests run under
+// `node --test --experimental-strip-types`, which resolves ESM specifiers
+// literally and cannot find an extensionless one.
+import { GIT_SUBJECT } from "./docs-git.ts"
 
 export type DocBlock =
   | { type: "para"; text: string }
@@ -156,6 +166,9 @@ export const DOC_SUBJECTS: DocSubject[] = [
       makeArticle("scripts", "Petits scripts", "Automatiser des tâches simples.", ["Variables", "Boucles", "Bonnes pratiques"]),
     ],
   },
+  // Placed right after "Linux & terminal": Git is the next tool you meet once
+  // you are comfortable in a shell.
+  GIT_SUBJECT,
   {
     slug: "web",
     title: "Le Web",

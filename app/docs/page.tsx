@@ -24,8 +24,8 @@ export default async function DocsIndexPage() {
       </div>
       <h1 className="font-pixel text-4xl lg:text-5xl tracking-tight mb-3">Documentation</h1>
       <p className="text-sm text-muted-foreground max-w-2xl mb-8 leading-relaxed">
-        Une base de connaissances organisée par sujet. Le contenu est un exemple structuré, prêt à
-        être remplacé par le cours définitif.
+        Une base de connaissances organisée par sujet. « Git &amp; GitHub » est rédigé ; les autres
+        sujets sont encore des trames d&apos;exemple, en attente du cours définitif.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 border-2 border-foreground">
