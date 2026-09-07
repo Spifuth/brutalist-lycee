@@ -31,11 +31,15 @@ conteneur `init`.
 
 ## Développement
 
+    cp .env.example .env          # Windows PowerShell : copy .env.example .env
     docker compose up -d db
     pnpm install
-    export DATABASE_URL=postgres://lycee:lycee@localhost:5432/lycee_sin
     pnpm db:setup
-    pnpm dev
+    pnpm dev                      # http://localhost:3000
+
+`DATABASE_URL` est déjà dans `.env.example` : rien à exporter. La base est
+publiée sur `127.0.0.1:5432` seulement — change `POSTGRES_PORT` si ce port est
+déjà pris chez toi.
 
 ## Contrôles avant de pousser
 
