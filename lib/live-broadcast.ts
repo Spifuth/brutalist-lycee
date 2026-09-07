@@ -1,4 +1,5 @@
 import type { LiveState } from "@/lib/live-session"
+import { createBroadcaster } from "./broadcast.ts"
 
 // SWAP POINT: single-poller broadcaster for the teacher-driven live quiz.
 // Instead of every connected student's browser polling the database on its
@@ -110,162 +111,18 @@ export interface LiveSnapshot {
   voteOpen?: boolean
 }
 
-type Poller = () => Promise<LiveSnapshot>
-type Subscriber = (snapshot: LiveSnapshot) => void
+// The generic single-poller machinery moved to ./broadcast so the live quiz
+// and the pixel canvas can each own a subscriber set and a timer instead of
+// fighting over one module-scope pair. The exported surface below is
+// deliberately unchanged: app/api/live/stream/route.ts and
+// tests/live-broadcast.test.ts should not have to know this moved.
+const broadcaster = createBroadcaster<LiveSnapshot>("live-broadcast")
 
-const DEFAULT_INTERVAL_MS = 1000
-
-const subscribers = new Set<Subscriber>()
-
-function defaultPoller(): Promise<LiveSnapshot> {
-  throw new Error("live-broadcast: setPoller() must be called before polling can start")
-}
-
-let poller: Poller = defaultPoller
-let intervalMs = DEFAULT_INTERVAL_MS
-let intervalHandle: ReturnType<typeof setInterval> | null = null
-
-type ErrorHandler = (err: unknown) => void
-
-function defaultErrorHandler(err: unknown): void {
-  console.error("[live-broadcast] subscriber threw:", err)
-}
-
-let errorHandler: ErrorHandler = defaultErrorHandler
-let dropped = 0
-
-/**
- * Registers the function invoked when a subscriber callback throws during
- * fan-out (see `publishNow`). Defaults to logging via `console.error` so a
- * misbehaving client is visible in production logs instead of vanishing
- * silently. Injectable so tests can collect the error and assert on it
- * instead of printing to stderr — test tidiness must not cost production
- * observability.
- */
-export function setErrorHandler(fn: ErrorHandler): void {
-  errorHandler = fn
-}
-
-/**
- * Running count of subscriber callbacks that have thrown during fan-out.
- * Cheap, and it turns "some students stopped updating" into a number an
- * operator can actually read.
- */
-export function droppedCount(): number {
-  return dropped
-}
-
-function startPollingIfNeeded(): void {
-  if (intervalHandle !== null) return
-  const handle = setInterval(() => {
-    void publishNow()
-  }, intervalMs)
-  // Never let the poller's timer keep the process alive on its own — only
-  // real work (an open server, an active request) should do that. This also
-  // keeps `node --test` from hanging when a test leaves subscribers
-  // registered; `_reset()` is what actually clears the interval and
-  // subscriber set between tests, this just stops it blocking process exit.
-  handle.unref()
-  intervalHandle = handle
-}
-
-function stopPollingIfIdle(): void {
-  if (subscribers.size > 0) return
-  if (intervalHandle !== null) {
-    clearInterval(intervalHandle)
-    intervalHandle = null
-  }
-}
-
-/**
- * Registers the function used to fetch the current live-session snapshot
- * and, optionally, the tick interval. Injectable so tests (and any future
- * caller) never need a real database. Safe to call again later, e.g. if the
- * poll target changes — an already-running interval is restarted at the
- * new period.
- */
-export function setPoller(fn: Poller, ms: number = DEFAULT_INTERVAL_MS): void {
-  poller = fn
-  intervalMs = ms
-  if (intervalHandle !== null) {
-    clearInterval(intervalHandle)
-    intervalHandle = null
-    startPollingIfNeeded()
-  }
-}
-
-/**
- * Subscribes to snapshot updates. The poller starts on the first subscriber
- * and stops on the last unsubscribe — nobody watching means nobody polling.
- * Returns an unsubscribe function.
- */
-export function subscribe(fn: Subscriber): () => void {
-  subscribers.add(fn)
-  startPollingIfNeeded()
-
-  let unsubscribed = false
-  return () => {
-    if (unsubscribed) return
-    unsubscribed = true
-    subscribers.delete(fn)
-    stopPollingIfIdle()
-  }
-}
-
-/** Number of currently active subscribers. */
-export function subscriberCount(): number {
-  return subscribers.size
-}
-
-/**
- * Performs exactly one poll and delivers the result to every subscriber.
- * Used both by the interval tick and to force an immediate refresh right
- * after a mutation (Task 5). A subscriber that throws is caught and
- * isolated — one broken client must not take down the rest of the class.
- *
- * Publishing to nobody is a valid state, not an error: if no poller has
- * been registered yet (e.g. a Server Action mutates the database before
- * `/api/live/stream` has been hit once in this process, so `setPoller()`
- * never ran) or there are simply no subscribers right now, there is no
- * fan-out to do and nothing to report, so this resolves immediately
- * without touching the database. This mirrors the "no poll while nobody is
- * subscribed" property enforced by `startPollingIfNeeded`/`stopPollingIfIdle`
- * for the interval path — a forced immediate publish must not bypass it.
- */
-export async function publishNow(): Promise<void> {
-  if (poller === defaultPoller) return
-  if (subscribers.size === 0) return
-  const snapshot = await poller()
-  for (const fn of subscribers) {
-    try {
-      fn(snapshot)
-    } catch (err) {
-      // Isolate a broken subscriber: one student's connection misbehaving
-      // must not stop the snapshot from reaching everyone else. The failure
-      // is reported (via errorHandler/droppedCount), not swallowed, so it
-      // shows up somewhere an operator can see it instead of just looking
-      // like a student who silently stopped updating.
-      dropped++
-      errorHandler(err)
-    }
-  }
-}
-
-/**
- * TEST-ONLY. Clears all subscribers, stops any active interval, and resets
- * the poller and error handler to their unset/default state, zeroing the
- * dropped-subscriber count. Exists so tests don't leak timers, subscribers,
- * or error handlers into one another; do not call this from application
- * code.
- */
-export function _reset(): void {
-  subscribers.clear()
-  if (intervalHandle !== null) {
-    clearInterval(intervalHandle)
-    intervalHandle = null
-  }
-  poller = defaultPoller
-  intervalMs = DEFAULT_INTERVAL_MS
-  errorHandler = defaultErrorHandler
-  dropped = 0
-}
+export const subscribe = broadcaster.subscribe
+export const setPoller = broadcaster.setPoller
+export const publishNow = broadcaster.publishNow
+export const subscriberCount = broadcaster.subscriberCount
+export const setErrorHandler = broadcaster.setErrorHandler
+export const droppedCount = broadcaster.droppedCount
+/** TEST-ONLY. See Broadcaster._reset in ./broadcast. */
+export const _reset = broadcaster._reset

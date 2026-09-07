@@ -266,3 +266,30 @@ CREATE TABLE IF NOT EXISTS live_answers (
   UNIQUE (session_id, user_id, question_key)
 );
 CREATE INDEX IF NOT EXISTS live_answers_session_idx ON live_answers(session_id);
+
+-- ---------------------------------------------------------------------
+-- PIXELWAR  (a shared 300x300 canvas)
+-- ---------------------------------------------------------------------
+
+-- Sparse on purpose: one row per cell that has actually been painted, not
+-- 90 000 rows of empty. A class paints hundreds in a session, so reading the
+-- whole canvas is a few hundred rows and wiping it is a DELETE.
+CREATE TABLE IF NOT EXISTS pixel_cells (
+  x          INTEGER NOT NULL,
+  y          INTEGER NOT NULL,
+  color      SMALLINT NOT NULL,
+  -- Attribution survives the painter leaving; the pixel does not need them.
+  user_id    UUID REFERENCES users(id) ON DELETE SET NULL,
+  placed_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (x, y)
+);
+-- The stream asks "what changed in the last few seconds" once per tick.
+CREATE INDEX IF NOT EXISTS pixel_cells_placed_at_idx ON pixel_cells(placed_at);
+
+-- The cooldown cannot be read from pixel_cells: painting over someone's pixel
+-- reassigns that row's user_id, which would erase the previous painter's only
+-- record of having placed anything and hand them a free turn.
+CREATE TABLE IF NOT EXISTS pixel_cooldowns (
+  user_id    UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  placed_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
