@@ -3,6 +3,13 @@
 // runtime via app/api/terminal/config/route.ts) is not set. The real
 // terminal connects to a container gateway over WebSocket.
 
+/**
+ * Navigation sentinel. SimShell has no router and must not grow one — it
+ * returns this line and the caller (components/terminal/terminal-playground)
+ * decides what to do with it. Same idiom as the "\u0000CLEAR" line below.
+ */
+export const GOTO_PREFIX = "\u0000GOTO:"
+
 type FileNode = { type: "file"; content: string }
 type DirNode = { type: "dir"; children: Record<string, Node> }
 type Node = FileNode | DirNode
@@ -26,6 +33,13 @@ export class SimShell {
             "Bienvenue dans le terminal bac a sable !\nTape `help` pour voir les commandes disponibles.",
           ),
           "notes.md": file("# Mes notes\n- Ne jamais reutiliser un mot de passe\n- Verifier avant de cliquer"),
+          // Hidden on purpose: a plain `ls` must not show it. It is the only
+          // place the `life` command is named, and `help` never mentions it.
+          ".vie": file(
+            "Il existe une page qui n'est dans aucun menu.\n" +
+              "Des cellules y naissent, survivent et meurent, sur une grille, en suivant quatre regles.\n" +
+              "Tape `life` pour y aller.",
+          ),
           projets: dir({
             "hello.js": file('console.log("Bonjour depuis le bac a sable")'),
           }),
@@ -74,7 +88,7 @@ export class SimShell {
       case "help":
         return [
           "commandes : ls, cd, pwd, cat, echo, mkdir, node, clear, help",
-          "  ls [chemin]         lister le contenu d'un dossier",
+          "  ls [-a] [chemin]    lister un dossier (-a : y compris les fichiers caches)",
           "  cd <chemin>         changer de dossier",
           "  pwd                 afficher le dossier courant",
           "  cat <fichier>       afficher un fichier",
@@ -86,12 +100,17 @@ export class SimShell {
       case "pwd":
         return [`/${this.cwd.join("/")}`]
       case "ls": {
-        const target = args[0] ? this.resolve(args[0]) : this.cwd
+        // A name starting with a dot is hidden unless -a is given — the same
+        // convention as a real shell, and the reason /home/eleve/.vie is worth
+        // looking for at all.
+        const showHidden = args.includes("-a")
+        const path = args.find((a) => !a.startsWith("-"))
+        const target = path ? this.resolve(path) : this.cwd
         if (!target) return [`ls: chemin invalide`]
         const node = this.nodeAt(target)
-        if (!node) return [`ls: ${args[0] ?? ""}: introuvable`]
-        if (node.type === "file") return [args[0] ?? ""]
-        const names = Object.keys(node.children)
+        if (!node) return [`ls: ${path ?? ""}: introuvable`]
+        if (node.type === "file") return [path ?? ""]
+        const names = Object.keys(node.children).filter((n) => showHidden || !n.startsWith("."))
         if (names.length === 0) return [""]
         return [
           names
@@ -134,6 +153,9 @@ export class SimShell {
       }
       case "node":
         return this.runNode(args)
+      case "life":
+        // Not in `help`. Found through `ls -a` then `cat .vie`.
+        return ["ouverture de /vie — le jeu de la vie de Conway…", `${GOTO_PREFIX}/vie`]
       case "whoami":
         return ["eleve"]
       case "clear":

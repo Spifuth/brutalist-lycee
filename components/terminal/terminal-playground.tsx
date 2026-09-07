@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import { ChevronRight, Wifi, WifiOff, Info } from "lucide-react"
 import "@xterm/xterm/css/xterm.css"
-import { SimShell } from "@/lib/sim-shell"
+import { GOTO_PREFIX, SimShell } from "@/lib/sim-shell"
 import { cn } from "@/lib/utils"
 import { PAPER_DARK, INK_DARK, ACCENT_DARK } from "@/lib/theme-tokens"
 import { issueTerminalToken } from "@/app/actions/terminal"
@@ -14,6 +15,12 @@ type Mode = "connecting" | "gateway" | "sim"
 export function TerminalPlayground() {
   const containerRef = useRef<HTMLDivElement>(null)
   const [mode, setMode] = useState<Mode>("connecting")
+  // Held in a ref, not read straight from the closure: the terminal is built
+  // once in an effect with an empty dependency list, and adding `router` there
+  // would tear down and rebuild the whole xterm instance.
+  const router = useRouter()
+  const routerRef = useRef(router)
+  routerRef.current = router
   const [showProtocol, setShowProtocol] = useState(false)
   // `terminal-init` is awarded on the first command actually submitted, in
   // either mode — the in-browser sandbox counts, because from the student's
@@ -168,7 +175,15 @@ export function TerminalPlayground() {
             if (out[0] === "\u0000CLEAR") {
               term.clear()
             } else {
-              for (const l of out) term.writeln(l)
+              for (const l of out) {
+                // SimShell has no router and must not grow one — it names a
+                // destination and the page takes it. See GOTO_PREFIX.
+                if (l.startsWith(GOTO_PREFIX)) {
+                  routerRef.current.push(l.slice(GOTO_PREFIX.length))
+                  continue
+                }
+                term.writeln(l)
+              }
             }
             writePrompt()
           } else if (code === 127) {

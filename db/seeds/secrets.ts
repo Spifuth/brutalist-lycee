@@ -955,7 +955,7 @@ export const SECRET_SEEDS: SecretSeed[] = [
     code: "SIN-DEBUG-PARAM",
     name: "Paramètre debug true secret",
     hint: "Un paramètre d'URL oublié en production peut en dire beaucoup trop.",
-    location: "À IMPLÉMENTER — ?debug=true révélant le code",
+    location: "Page /vie (jeu de la vie) — panneau de debug affiché par ?debug=true",
     points: 25,
     category: "WEB",
     difficulty: "hard",

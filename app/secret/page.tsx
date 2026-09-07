@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth/auth-provider"
 import { redeemSecret, getMySecrets } from "@/app/actions/engage"
 
@@ -39,6 +40,7 @@ export default function SecretPage() {
   const endRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const { user } = useAuth()
+  const router = useRouter()
 
   useEffect(() => {
     getMySecrets().then((s) => {
@@ -98,6 +100,12 @@ export default function SecretPage() {
         } else {
           push({ text: `unlock: code invalide : ${args[0] ?? "(vide)"}`, tone: "err" })
         }
+        break
+      // Deliberately absent from HELP: the way to learn about `life` is the
+      // hidden ~/.vie file in the /terminal sandbox, not a list on this page.
+      case "life":
+        push({ text: "ouverture de /vie — le jeu de la vie de Conway…", tone: "accent" })
+        router.push("/vie")
         break
       case "clear":
         setLines([])
