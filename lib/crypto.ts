@@ -1,4 +1,5 @@
-import { randomBytes, scrypt as _scrypt, timingSafeEqual } from "crypto"
+import { randomBytes, randomInt, scrypt as _scrypt, timingSafeEqual } from "crypto"
+import { WORDS_FR } from "./wordlist-fr.ts"
 import { promisify } from "util"
 
 const scrypt = promisify(_scrypt)
@@ -21,20 +22,36 @@ export async function verifyPassphrase(passphrase: string, stored: string): Prom
   return timingSafeEqual(derived, expected)
 }
 
-const WORDS = [
-  "console", "port", "cache", "jeton", "orage", "cobalt", "lynx", "ardoise",
-  "script", "boucle", "cookie", "paquet", "noyau", "octet", "trame", "pixel",
-  "vecteur", "matrice", "signal", "brume", "silex", "granit", "cyan", "ambre",
-  "nord", "delta", "sigma", "zenith", "havre", "prisme", "quartz", "ecran",
-  "modem", "relais", "tunnel", "phare", "socle", "rouage", "givre", "braise",
-]
+/** The list a passphrase is drawn from. Re-exported so tests can measure it. */
+export const PASSPHRASE_WORDS = WORDS_FR
 
-/** Generates a 4-word passphrase like "console-port-cache-jeton". */
+const PASSPHRASE_LENGTH = 4
+
+/**
+ * How much a generated passphrase is actually worth, from the real list size.
+ *
+ * Derived rather than written down, because the number that matters is a
+ * property of the wordlist and a constant would go stale the moment the list
+ * changes. tests/passphrase.test.ts asserts it stays above 40 bits.
+ */
+export function passphraseBits(): number {
+  let combinations = 1
+  for (let i = 0; i < PASSPHRASE_LENGTH; i++) combinations *= PASSPHRASE_WORDS.length - i
+  return Math.log2(combinations)
+}
+
+/**
+ * Generates a 4-word passphrase like "console-port-cache-jeton".
+ *
+ * Uses `randomInt` from node:crypto, NOT Math.random. Math.random is
+ * xorshift128+: fast, seeded per context, and predictable from enough observed
+ * output. That is fine for shuffling and wrong for minting a credential — and
+ * this function mints every student's only credential.
+ */
 export function generatePassphrase(): string {
-  const pick = () => WORDS[Math.floor(Math.random() * WORDS.length)]
   const words: string[] = []
-  while (words.length < 4) {
-    const w = pick()
+  while (words.length < PASSPHRASE_LENGTH) {
+    const w = PASSPHRASE_WORDS[randomInt(PASSPHRASE_WORDS.length)]
     if (!words.includes(w)) words.push(w)
   }
   return words.join("-")
