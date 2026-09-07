@@ -2,7 +2,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { DOC_SUBJECTS, getSubject, type DocBlock } from "../lib/docs.ts"
 
-const BLOCK_TYPES = new Set(["para", "section", "code", "callout", "keylist", "list"])
+const BLOCK_TYPES = new Set(["para", "section", "code", "callout", "keylist", "list", "table"])
 
 test("subject slugs are unique", () => {
   const slugs = DOC_SUBJECTS.map((s) => s.slug)
@@ -30,6 +30,27 @@ test("every block has a type the renderer knows", () => {
           BLOCK_TYPES.has(b.type),
           `${s.slug}/${a.slug}: block type "${b.type}" is not rendered by DocBlocks — it would vanish`,
         )
+      }
+    }
+  }
+})
+
+test("every table row has exactly one cell per header", () => {
+  // A row shorter or longer than the header row does not crash: the browser
+  // just shifts the remaining cells left, or drops them off the right edge. A
+  // price lands under the wrong column and the comparison quietly lies.
+  for (const s of DOC_SUBJECTS) {
+    for (const a of s.articles) {
+      for (const b of a.blocks as DocBlock[]) {
+        if (b.type !== "table") continue
+        assert.ok(b.headers.length > 0, `${s.slug}/${a.slug}: a table has no header row`)
+        b.rows.forEach((row, i) => {
+          assert.equal(
+            row.length,
+            b.headers.length,
+            `${s.slug}/${a.slug}: table row ${i} has ${row.length} cells for ${b.headers.length} columns — the cells would land under the wrong headers`,
+          )
+        })
       }
     }
   }
