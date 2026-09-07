@@ -12,6 +12,7 @@
 // literally and cannot find an extensionless one.
 import { GIT_SUBJECT } from "./docs-git.ts"
 import { PASSWORD_MANAGERS_ARTICLE } from "./docs-gestionnaires-mdp.ts"
+import { RESEAUX_SUBJECT } from "./docs-reseaux.ts"
 
 export type DocBlock =
   | { type: "para"; text: string }
@@ -128,20 +129,7 @@ export const DOC_SUBJECTS: DocSubject[] = [
       makeArticle("hygiene", "Hygiène numérique", "Les bonnes habitudes du quotidien.", ["Mises à jour", "Sauvegardes", "Vigilance"]),
     ],
   },
-  {
-    slug: "reseaux",
-    title: "Réseaux",
-    command: "man network",
-    description: "Comment les machines communiquent.",
-    articles: [
-      makeArticle("internet", "Internet vs le Web", "Deux choses souvent confondues.", ["Le réseau", "Le Web", "Les services"]),
-      makeArticle("ip", "Adresses IP", "Le numéro d'identité des machines.", ["IPv4 et IPv6", "Public/privé", "Localiser"]),
-      makeArticle("dns", "Le DNS", "L'annuaire qui traduit les noms.", ["Principe", "Résolution", "Sécurité"]),
-      makeArticle("http", "HTTP et HTTPS", "Le langage du Web.", ["Requêtes", "Réponses", "Chiffrement"]),
-      makeArticle("wifi", "Le Wi-Fi", "Se connecter sans fil, avec prudence.", ["Fonctionnement", "Risques", "Bonnes pratiques"]),
-      makeArticle("vpn", "Les VPN", "Un tunnel chiffré, pour quoi faire.", ["Principe", "Usages", "Fausses idées"]),
-    ],
-  },
+  RESEAUX_SUBJECT,
   {
     slug: "ia",
     title: "Intelligence artificielle",
