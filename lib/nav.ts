@@ -56,6 +56,7 @@ export const SITEMAP: SitemapGroup[] = [
     title: "Outils",
     links: [
       { label: "Docs", href: "/docs" },
+      { label: "Casser un mot de passe", href: "/force-brute" },
       { label: "Terminal", href: "/terminal" },
       { label: "Profil", href: "/profil" },
       { label: "Console admin", href: "/admin" },

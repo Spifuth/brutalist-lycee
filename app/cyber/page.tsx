@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { PageShell, PageHeader } from "@/components/site/page-shell"
 import { Section, CodeBlock, Callout, KeyList, List, P } from "@/components/primitives"
 
@@ -57,9 +58,13 @@ export default function CyberPage() {
             "La double authentification (2FA) sur les comptes sensibles.",
           ]}
         />
-        <Callout tone="tip" title="Teste l'idée">
-          Plus un mot de passe est long, plus le nombre de combinaisons explose. C'est la longueur
-          qui compte le plus, pas les symboles bizarres.
+        <Callout tone="tip" title="Teste l'idée, ne la crois pas sur parole">
+          Plus un mot de passe est long, plus le nombre de combinaisons explose — et les symboles
+          bizarres comptent beaucoup moins qu'on ne le croit.{" "}
+          <Link href="/force-brute" className="text-accent underline underline-offset-2">
+            Essaie sur la page « Casser un mot de passe »
+          </Link>{" "}
+          : tout se calcule dans ton navigateur, rien n'est envoyé.
         </Callout>
       </Section>
 
