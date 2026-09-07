@@ -16,13 +16,22 @@ import {
 // lib/bug-report.ts en fait. Les deux sorties sont montrées en même temps —
 // on colle le message ET on ouvre l'issue, ce n'est pas un choix à faire.
 
+// Un jeu de réponses par type : changer d'onglet ne doit pas effacer ce que
+// l'élève a déjà tapé dans un autre onglet.
+const emptyFieldsByKind: Record<ReportKind, Record<string, string>> = {
+  bug: {},
+  contenu: {},
+  code: {},
+  idee: {},
+}
+
 export function ReportForm() {
   const { user } = useAuth()
   const [kind, setKind] = useState<ReportKind>("bug")
-  const [fields, setFields] = useState<Record<string, string>>({})
+  const [fieldsByKind, setFieldsByKind] = useState<Record<ReportKind, Record<string, string>>>(emptyFieldsByKind)
   const [pseudo, setPseudo] = useState("")
   const [agent, setAgent] = useState("")
-  const [copied, setCopied] = useState(false)
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle")
 
   useEffect(() => {
     if (user?.pseudo) setPseudo(user.pseudo)
@@ -34,6 +43,7 @@ export function ReportForm() {
     setAgent(navigator.userAgent)
   }, [])
 
+  const fields = fieldsByKind[kind]
   const spec = specFor(kind)
   const report = { kind, fields, pseudo, agent }
   const message = useMemo(() => buildDiscordMessage(report), [kind, fields, pseudo, agent])
@@ -42,17 +52,19 @@ export function ReportForm() {
   const missing = spec.fields.filter((f) => f.required && !(fields[f.id] ?? "").trim())
   const ready = missing.length === 0
 
-  const set = (id: string, value: string) => setFields((prev) => ({ ...prev, [id]: value }))
+  const set = (id: string, value: string) =>
+    setFieldsByKind((prev) => ({ ...prev, [kind]: { ...prev[kind], [id]: value } }))
 
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(message)
+      setCopyState("copied")
     } catch {
-      // Contexte non sécurisé ou permission refusée : le bloc en dessous reste
-      // sélectionnable, c'est le repli.
+      // Contexte non sécurisé (pas de navigator.clipboard) ou permission
+      // refusée : rien n'est parti, on le dit à l'élève plutôt que de mentir.
+      setCopyState("failed")
     }
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    setTimeout(() => setCopyState("idle"), 2000)
   }
 
   const inputClass =
@@ -64,10 +76,8 @@ export function ReportForm() {
         {KINDS.map((k) => (
           <button
             key={k.kind}
-            onClick={() => {
-              setKind(k.kind)
-              setFields({})
-            }}
+            onClick={() => setKind(k.kind)}
+            aria-pressed={kind === k.kind}
             className={`border-2 border-foreground px-4 py-2 text-[11px] font-mono uppercase tracking-widest transition-colors ${
               kind === k.kind ? "bg-foreground text-background" : "text-foreground hover:bg-muted"
             }`}
@@ -153,21 +163,28 @@ export function ReportForm() {
             disabled={!ready}
             className="flex items-center gap-2 border-2 border-foreground bg-foreground px-4 py-2 text-[11px] font-mono uppercase tracking-widest text-background disabled:opacity-40"
           >
-            {copied ? <Check size={13} /> : <Copy size={13} />}
-            {copied ? "copié" : `copier pour ${DISCORD_CHANNEL}`}
+            {copyState === "copied" ? <Check size={13} /> : <Copy size={13} />}
+            {copyState === "copied" ? "copié" : `copier pour ${DISCORD_CHANNEL}`}
           </button>
-          <a
-            href={ready ? issueUrl : undefined}
-            target="_blank"
-            rel="noreferrer"
-            aria-disabled={!ready}
-            className={`flex items-center gap-2 border-2 border-foreground px-4 py-2 text-[11px] font-mono uppercase tracking-widest text-foreground hover:bg-muted ${
-              ready ? "" : "pointer-events-none opacity-40"
-            }`}
+          {/* Bouton, pas <a> sans href : un lien sans href n'est pas focusable
+              et disparaît de la navigation au clavier. Même sémantique
+              disabled que le bouton copier, donc même comportement pour un
+              clavier ou un lecteur d'écran dans les deux états. */}
+          <button
+            type="button"
+            onClick={() => window.open(issueUrl, "_blank", "noopener,noreferrer")}
+            disabled={!ready}
+            className="flex items-center gap-2 border-2 border-foreground px-4 py-2 text-[11px] font-mono uppercase tracking-widest text-foreground hover:bg-muted disabled:opacity-40"
           >
             <ExternalLink size={13} /> ouvrir l&apos;issue pré-remplie
-          </a>
+          </button>
         </div>
+
+        {copyState === "failed" && (
+          <p role="alert" className="font-mono text-[11px] uppercase tracking-widest text-destructive">
+            la copie automatique a échoué : sélectionne le texte ci-dessus et copie-le à la main
+          </p>
+        )}
 
         <p className="text-xs leading-relaxed text-muted-foreground">
           Fais les deux : le message sur Discord pour que la classe le voie tout de suite, l&apos;issue
