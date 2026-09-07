@@ -8,13 +8,17 @@ aucune dépendance chargée depuis Internet.
 
 ## Tu veux contribuer ?
 
-**Lis [`CONTRIBUTING.md`](./CONTRIBUTING.md).** Tout y est : installation,
-workflow git, comment ajouter un quiz ou un cours, et ce qui est regardé en
-revue.
+**Lis [`CONTRIBUTING.md`](./CONTRIBUTING.md).** Tout y est : le vocabulaire,
+l'installation, le workflow git, comment ajouter un quiz ou un cours, et ce qui
+se passe après ta pull request.
 
-Pas besoin de savoir faire du React : la plus grande partie du site est du
-**contenu** (`db/seeds/`, `lib/docs-*.ts`), modifiable sans écrire une ligne de
-composant. Regarde les issues marquées
+**Tu n'as rien à installer pour commencer.** Ajouter une question de quiz ou
+corriger une faute se fait depuis le navigateur, en dix minutes : GitHub crée la
+branche et la pull request à ta place — voir
+[CONTRIBUTING.md §1](./CONTRIBUTING.md#1-ta-première-contribution-sans-rien-installer).
+
+Pas besoin de savoir faire du React non plus : la plus grande partie du site est
+du **contenu** (`db/seeds/`, `lib/docs-*.ts`). Regarde les issues marquées
 [`good first issue`](https://github.com/Spifuth/brutalist-lycee/labels/good%20first%20issue).
 
 ## Démarrer en une commande
