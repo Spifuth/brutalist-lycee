@@ -24,7 +24,29 @@
     --input: 0 0% 75%;
     --ring: 0 0% 4%;
     --radius: 0rem;
-  }
+    /* PixelWar palette — sixteen fixed colours, indices 0..15.
+     Defined once in :root and deliberately NOT overridden in .dark: a drawing
+     the class made together must look the same to everyone, so these are
+     content, not theme. lib/pixelwar.ts names them; the canvas resolves each
+     variable at draw time because a canvas needs a real colour string and raw
+     hex is only allowed in lib/theme-tokens.ts. */
+  --pixel-0: 0 0% 8%;
+  --pixel-1: 0 0% 35%;
+  --pixel-2: 0 0% 65%;
+  --pixel-3: 43 23% 93%;
+  --pixel-4: 350 60% 30%;
+  --pixel-5: 0 72% 48%;
+  --pixel-6: 20 90% 50%;
+  --pixel-7: 40 90% 55%;
+  --pixel-8: 70 45% 38%;
+  --pixel-9: 130 50% 38%;
+  --pixel-10: 155 55% 55%;
+  --pixel-11: 185 65% 45%;
+  --pixel-12: 205 75% 50%;
+  --pixel-13: 230 65% 45%;
+  --pixel-14: 275 50% 48%;
+  --pixel-15: 325 65% 58%;
+}
   .dark {
     --background: 0 0% 6%;
     --foreground: 43 23% 93%;

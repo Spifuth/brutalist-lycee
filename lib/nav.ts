@@ -18,6 +18,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Terminal", cmd: "ssh", href: "/terminal" },
   { label: "Quiz", cmd: "quiz", href: "/quiz" },
   { label: "Chasse", cmd: "sudo find", href: "/chasse" },
+  { label: "PixelWar", cmd: "paint", href: "/pixelwar" },
   { label: "Profil", cmd: "whoami", href: "/profil" },
 ]
 
@@ -50,6 +51,7 @@ export const SITEMAP: SitemapGroup[] = [
       { label: "Questions", href: "/questions" },
       { label: "Questions en direct", href: "/questions-live" },
       { label: "Chasse aux secrets", href: "/chasse" },
+      { label: "PixelWar", href: "/pixelwar" },
       { label: "Classement", href: "/classement" },
     ],
   },
