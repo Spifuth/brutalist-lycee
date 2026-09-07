@@ -36,6 +36,7 @@ export const SITEMAP: SitemapGroup[] = [
       { label: "IA", href: "/ia" },
       { label: "Métiers", href: "/metiers" },
       { label: "Comment ça marche", href: "/comment-ca-marche" },
+      { label: "Le voyage d'une donnée", href: "/voyage" },
       { label: "Parcours", href: "/parcours" },
       { label: "Pour aller plus loin", href: "/pour-aller-plus-loin" },
     ],

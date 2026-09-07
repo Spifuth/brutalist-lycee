@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { PageShell, PageHeader } from "@/components/site/page-shell"
 import { Section, CodeBlock, Callout, KeyList, List, P } from "@/components/primitives"
 
@@ -27,6 +28,14 @@ export default function CommentCaMarchePage() {
           code={`toi -> box/wifi -> fournisseur d'acces -> routeurs -> serveur
      <----------------- reponse ------------------`}
         />
+        <P>
+          Ce schéma cache le plus intéressant : à chaque étape, quelqu&apos;un de différent peut
+          voir quelque chose de différent.{" "}
+          <Link href="/voyage" className="text-accent underline underline-offset-2">
+            Déroule le voyage étape par étape
+          </Link>{" "}
+          pour voir qui lit quoi, et à partir de quand plus personne ne lit rien.
+        </P>
       </Section>
 
       <Section title="Le vocabulaire de base" eyebrow="// glossaire" id="glossaire">
