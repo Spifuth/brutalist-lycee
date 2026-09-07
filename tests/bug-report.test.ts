@@ -69,10 +69,19 @@ test("l'URL vise le bon template pour chaque type", () => {
 })
 
 test("l'URL reste sous le budget, en tronquant le plus long champ", () => {
-  const url = buildIssueUrl({
-    kind: "bug",
-    fields: { quoi: "court", reproduire: "y".repeat(20000), attendu: "rien", ou: "Sur le site en ligne" },
-  })
+  // Un seul champ énorme et pur ASCII ne suffit pas à mettre la garantie à
+  // l'épreuve : la vraie vie, c'est du français accentué (é, à, œ, —, « »
+  // pèsent jusqu'à 3 octets — donc 9 caractères une fois encodés en %) collé
+  // dans plusieurs champs à la fois, pas un seul champ isolé.
+  const accents =
+    "Erreur détectée à l'école : « le résultat n'est pas correct » — on réessaye, mais l'œuvre reste bloquée. ".repeat(
+      200,
+    )
+  const bugSpec = specFor("bug")
+  const fields = Object.fromEntries(bugSpec.fields.map((field) => [field.id, accents]))
+  fields.quoi = "court"
+
+  const url = buildIssueUrl({ kind: "bug", fields })
   assert.ok(url.length <= URL_BUDGET, `${url.length} caractères — au-delà, le navigateur ou GitHub coupe`)
   assert.ok(url.includes("quoi=court"), "le champ court ne doit pas être sacrifié")
 })

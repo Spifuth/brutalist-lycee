@@ -110,7 +110,11 @@ export function specFor(kind: ReportKind): KindSpec {
 
 function truncate(text: string, max: number): string {
   if (text.length <= max) return text
-  const keep = Math.max(0, max - TRUNCATION_MARK.length - 1)
+  if (max <= 0) return ""
+  // Pas assez de place pour le repère de coupure lui-même : l'ajouter
+  // dépasserait `max`. On tronque net plutôt que de mentir sur la longueur.
+  if (max <= TRUNCATION_MARK.length) return text.slice(0, max)
+  const keep = max - TRUNCATION_MARK.length - 1
   return `${text.slice(0, keep).trimEnd()}\n${TRUNCATION_MARK}`
 }
 
@@ -146,14 +150,37 @@ export function buildIssueUrl(report: Report): string {
     return `${REPO_URL}/issues/new?${params.toString()}`
   }
 
-  // Un champ « message d'erreur » collé depuis la console dépasse largement le
-  // budget une fois encodé. On rogne le plus long d'abord, jamais les autres.
+  // Un champ « message d'erreur » collé depuis la console — ou simplement du
+  // texte accentué, qui pèse jusqu'à 3 octets par caractère une fois encodé
+  // en % — peut dépasser largement le budget. On rogne le plus long d'abord,
+  // jamais les autres : tant qu'un champ plus long survit, un champ plus
+  // court n'est pas touché.
+  //
+  // La condition d'arrêt originale se basait sur la longueur du champ
+  // restant, pas sur celle de l'URL réelle : elle pouvait sortir de boucle
+  // en pensant avoir fini alors que l'URL dépassait encore le budget. Ici on
+  // ne sort que dans deux cas : l'URL tient, ou il n'y a plus rien à rogner
+  // (tous les champs vides — auquel cas l'URL ne contient plus que le
+  // gabarit fixe, très en-dessous d'URL_BUDGET). La garantie est donc
+  // structurelle : elle tient même si on ajoute un champ à un KindSpec, si
+  // on baisse URL_BUDGET ou si on allonge TRUNCATION_MARK.
   let url = render()
   while (url.length > URL_BUDGET) {
     const longest = [...values.entries()].sort((a, b) => b[1].length - a[1].length)[0]
-    if (!longest || longest[1].length <= TRUNCATION_MARK.length + 2) break
-    values.set(longest[0], truncate(longest[1], Math.floor(longest[1].length * 0.6)))
+    if (!longest || longest[1].length === 0) break
+    const [id, value] = longest
+    const next = Math.max(0, Math.min(value.length - 1, Math.floor(value.length * 0.6)))
+    values.set(id, truncate(value, next))
     url = render()
+  }
+  if (url.length > URL_BUDGET) {
+    // Ne devrait jamais arriver : même tous champs vidés, il ne reste que le
+    // gabarit fixe (URL du dépôt + nom des champs), largement sous le
+    // budget. Si ça se produit, la config elle-même est incohérente — on le
+    // signale fort plutôt que de renvoyer une URL trop longue en silence.
+    throw new Error(
+      `buildIssueUrl : impossible de tenir sous ${URL_BUDGET} caractères même en vidant tous les champs (${url.length})`,
+    )
   }
   return url
 }
