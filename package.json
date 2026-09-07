@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22.9"
+  },
   "packageManager": "pnpm@11.22.0",
   "scripts": {
     "dev": "next dev --turbo",
@@ -10,9 +13,9 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "db:migrate": "node db/migrate.mjs",
-    "db:seed": "tsx db/seed.ts",
-    "db:setup": "node db/migrate.mjs && tsx db/seed.ts",
+    "db:migrate": "node --env-file-if-exists=.env db/migrate.mjs",
+    "db:seed": "tsx --env-file-if-exists=.env db/seed.ts",
+    "db:setup": "node --env-file-if-exists=.env db/migrate.mjs && tsx --env-file-if-exists=.env db/seed.ts",
     "db:migrate-legacy": "node --experimental-sqlite --experimental-strip-types db/migrate-from-sqlite.ts",
     "check:origins": "node scripts/check-no-external-origins.mjs .next/static",
     "test": "node --test --experimental-strip-types tests/*.test.ts"

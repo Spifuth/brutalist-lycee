@@ -6,7 +6,14 @@ __v0_jsx-dev-runtime.ts
 # Common ignores
 node_modules/
 .next/
-.env*.local
+
+# Every local env file. `.env` is the one CONTRIBUTING.md tells you to create,
+# and `git add -A` would otherwise commit your database password to a public
+# repo (GitHub push protection does not flag a plain Postgres password).
+# `.env.example` is the tracked template and is deliberately not matched here.
+.env
+.env.*
+!.env.example
 .DS_Store
 .vercel
 

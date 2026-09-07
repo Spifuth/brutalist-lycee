@@ -42,7 +42,7 @@ et laisse le reste — c'est très bien comme ça.
 **Si tu as touché à l'interface :**
 
 - [ ] Ni coin arrondi, ni ombre, ni couleur écrite en dur — voir
-      [STYLE.md](../STYLE.md).
+      [STYLE.md](https://github.com/Spifuth/brutalist-lycee/blob/dev/STYLE.md).
 - [ ] Capture d'écran ajoutée ci-dessous.
 
 <!--

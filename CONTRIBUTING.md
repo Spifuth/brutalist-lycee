@@ -107,7 +107,7 @@ comme ça » avant que tu y aies passé trois heures.
 | Outil | Où le prendre | Pour quoi |
 |---|---|---|
 | **Git** | <https://git-scm.com/downloads> | récupérer et envoyer le code |
-| **Node.js 22+** | <https://nodejs.org> (version LTS) | faire tourner le site |
+| **Node.js 22.9+** | <https://nodejs.org> (version LTS) | faire tourner le site |
 | **Docker Desktop** | <https://docs.docker.com/get-started/get-docker/> | la base de données, sans l'installer à la main |
 
 Sous **Windows**, Docker Desktop demande WSL2 ; son installateur le propose, dis
@@ -152,30 +152,28 @@ réaffichée.
 ### Chemin B — Node en local, base en Docker
 
 C'est le mode confortable pour développer : la page se recharge toute seule
-quand tu enregistres un fichier.
-
-**macOS / Linux**
+quand tu enregistres un fichier. **Les mêmes commandes sur Windows, macOS et
+Linux**, à la première près :
 
 ```bash
-docker compose up -d db
+cp .env.example .env        # Windows PowerShell : copy .env.example .env
+docker compose up -d db     # la base seule, en arrière-plan
 pnpm install
-export DATABASE_URL=postgres://lycee:lycee@localhost:5432/lycee_sin
-pnpm db:setup
-pnpm dev
+pnpm db:setup               # crée les tables et met le contenu de départ
+pnpm dev                    # http://localhost:3000
 ```
 
-**Windows (PowerShell)**
+Tu n'as **aucune variable à taper** : `pnpm db:setup` et `pnpm dev` lisent
+l'adresse de la base dans ton fichier `.env`, à la ligne `DATABASE_URL` — que
+`.env.example` remplit déjà pour ce cas précis. Si tu as changé
+`POSTGRES_PASSWORD` ou `POSTGRES_PORT` dans `.env`, corrige-la pour qu'elle
+corresponde.
 
-```powershell
-docker compose up -d db
-pnpm install
-$env:DATABASE_URL = "postgres://lycee:lycee@localhost:5432/lycee_sin"
-pnpm db:setup
-pnpm dev
-```
-
-⚠️ La ligne `DATABASE_URL` ne vaut que pour **ce** terminal. Si tu en ouvres un
-nouveau, il faut la retaper.
+> [!TIP]
+> **`docker compose up -d db` refuse de démarrer ?** Si le message parle du
+> port `5432`, c'est qu'un autre PostgreSQL tourne déjà sur ta machine. Mets
+> `POSTGRES_PORT=5433` dans `.env`, remplace `5432` par `5433` dans
+> `DATABASE_URL`, et relance.
 
 `pnpm db:setup` est *idempotent* : relance-le autant de fois que tu veux, il ne
 casse rien et il remet le contenu des seeds à jour. C'est la commande à lancer
@@ -198,6 +196,28 @@ dev    ← la branche de travail. C'est la cible de TOUTES les PR.
   └── feat/ma-fonctionnalite   ← ta branche
 ```
 
+### D'abord, ton fork
+
+Tu n'as pas le droit d'écrire dans ce dépôt, et **c'est normal** : personne ne
+l'a à part le prof. Tu travailles dans **ta copie**, et tu proposes ensuite.
+
+1. Sur la page du dépôt, clique **Fork** en haut à droite, puis **Create fork**.
+2. Clone **ta** copie — celle dont l'URL contient *ton* pseudo, pas `Spifuth` :
+
+```bash
+git clone https://github.com/TON-PSEUDO/brutalist-lycee.git
+cd brutalist-lycee
+git remote add upstream https://github.com/Spifuth/brutalist-lycee.git
+```
+
+Tu as maintenant deux adresses : `origin` est ta copie — c'est la seule où tu
+peux **pousser** ; `upstream` est le dépôt commun — c'est là que tu **proposes**
+et d'où tu récupères le travail des autres.
+
+> Si le prof t'a ajouté comme collaborateur du dépôt, saute le fork et clone
+> directement `https://github.com/Spifuth/brutalist-lycee.git`. Partout où on
+> écrit `upstream` ci-dessous, écris `origin`.
+
 ### Se connecter à GitHub
 
 Au premier `git push`, GitHub demande une identification. **Ton mot de passe de
@@ -215,21 +235,26 @@ affiché. C'est à faire une seule fois sur ton ordinateur.
 
 ```bash
 git checkout dev                      # revenir sur la branche commune
-git pull                              # récupérer les nouveautés des autres
+git pull upstream dev                 # récupérer les nouveautés des autres
 git checkout -b feat/quiz-reseaux     # créer TA branche, une par sujet
 
 # ... tu modifies des fichiers ...
 
+git status                            # regarde ce que tu t'apprêtes à envoyer
 git add -A                            # prendre toutes tes modifications
 git commit -m "feat(quiz): ajoute le quiz sur les réseaux"
-git push -u origin feat/quiz-reseaux  # les envoyer sur GitHub
+git push -u origin feat/quiz-reseaux  # les envoyer sur TA copie
 ```
 
 GitHub répond avec un lien : clique-le, ou va sur le dépôt et clique
-**Compare & pull request**. Vérifie que la cible est **`dev`**.
+**Compare & pull request**. Sur l'écran suivant, vérifie la ligne du haut :
+la cible doit être **`Spifuth/brutalist-lycee`, branche `dev`**.
 
-Si tu n'es pas collaborateur du dépôt, clique d'abord **Fork** en haut à droite
-et travaille dans ta copie. Le reste est identique.
+> [!TIP]
+> `git add -A` prend **tout** ce que tu as modifié, y compris des fichiers que
+> tu ne voulais pas envoyer. `git status` juste avant te montre la liste — un
+> coup d'œil, une seconde. Ton `.env` n'y apparaîtra pas : il est ignoré exprès
+> (voir §12), et un test du dépôt vérifie qu'il le reste.
 
 ### Nommer sa branche
 
@@ -268,9 +293,16 @@ update
 
 ## 6. Les cinq vérifications automatiques
 
-Chaque pull request déclenche des tests automatiques (la *CI*). **Les cinq
-doivent être vertes** ou la PR ne peut pas être fusionnée. Tu peux les lancer
-chez toi avant de pousser, ça évite les allers-retours :
+Chaque pull request déclenche des tests automatiques (la *CI*).
+
+En bas de ta PR, tu ne verras pas cinq lignes mais **deux** : `build`, qui
+enchaîne les quatre contrôles ci-dessous, et `style-gate`, qui est le
+cinquième (§7). **Les deux doivent être vertes** ou la PR ne peut pas être
+fusionnée — clique sur *Details* pour voir lequel des contrôles a lâché.
+
+Tu peux lancer les quatre premiers chez toi avant de pousser, ça évite les
+allers-retours (dans cet ordre : `check:origins` relit ce que `build` vient de
+produire) :
 
 ```bash
 pnpm build          # 1. le site compile
@@ -461,6 +493,11 @@ tu corriges.
 **1. Les vérifications tournent** (2–3 minutes). En bas de la page de ta PR
 tu verras des ✅ ou des ❌.
 
+> **À ta toute première PR**, GitHub ne les lance pas tout seul : il affiche
+> *« 1 workflow awaiting approval »* et attend que le prof clique. C'est une
+> sécurité de GitHub pour les dépôts publics, pas une erreur de ta part, et ça
+> n'arrive qu'une fois. Si ça traîne, dis-le en commentaire de ta PR.
+
 **Une croix rouge n'est pas une punition** — c'est une machine qui te dit où
 regarder. Clique sur **Details** à côté de la ligne rouge, descends jusqu'à la
 ligne surlignée en rouge : c'est l'erreur. Corrige, recommite, repousse — la PR
@@ -493,7 +530,11 @@ supprimée automatiquement. Ton travail sera en ligne au prochain déploiement.
 ## 12. Ce qu'il ne faut jamais faire
 
 - **Enregistrer un `.env`, un mot de passe, une clé ou un jeton.** Le dépôt est
-  public et GitHub bloquera le push. Si un secret est déjà parti quelque part :
+  public. `.env` et ses variantes sont ignorés par git (`.gitignore`), et
+  `tests/repo-hygiene.test.ts` échoue si quelqu'un défait cette protection —
+  mais ==ne compte pas là-dessus pour un secret collé ailleurs==, dans un test
+  ou un commentaire : GitHub ne bloque que les jetons qu'il sait reconnaître,
+  pas un mot de passe ordinaire. Si un secret est déjà parti quelque part :
   préviens, et considère-le comme grillé — il faut le changer, pas seulement
   l'effacer du fichier.
 - **Charger quelque chose depuis Internet** (CDN, police, script de

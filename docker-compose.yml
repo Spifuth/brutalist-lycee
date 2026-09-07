@@ -18,6 +18,11 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-lycee}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lycee}
       POSTGRES_DB: ${POSTGRES_DB:-lycee_sin}
+    ports:
+      # Published on the loopback only, so `pnpm db:setup` / `pnpm dev` can
+      # reach the database from the host (CONTRIBUTING.md §4, chemin B). It is
+      # NOT reachable from the network. Change POSTGRES_PORT if 5432 is taken.
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
