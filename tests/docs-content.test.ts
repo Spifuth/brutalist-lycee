@@ -105,3 +105,16 @@ test("every git article opens with prose, not a bare heading", () => {
     assert.equal(first.type, "para", `git/${a.slug} starts with a "${first.type}" block — articles open with a paragraph`)
   }
 })
+
+test("written sécurité articles stay real, not placeholder", () => {
+  const securite = getSubject("securite")
+  assert.ok(securite, 'no "securite" subject')
+  for (const slug of ["mots-de-passe", "phishing"]) {
+    const article = securite.articles.find((a) => a.slug === slug)
+    assert.ok(article, `missing securite/${slug}`)
+    const text = JSON.stringify(article.blocks)
+    assert.ok(!text.includes("contenu d'exemple"), `securite/${slug} still contains placeholder lorem`)
+    assert.ok(!text.includes("à remplacer"), `securite/${slug} still contains a "à remplacer" placeholder`)
+    assert.ok(article.summary.length > 0, `securite/${slug} has no summary — it is shown on the subject index`)
+  }
+})

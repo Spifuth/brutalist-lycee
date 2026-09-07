@@ -12,6 +12,7 @@
 // literally and cannot find an extensionless one.
 import { GIT_SUBJECT } from "./docs-git.ts"
 import { PASSWORD_MANAGERS_ARTICLE } from "./docs-gestionnaires-mdp.ts"
+import { PHISHING_ARTICLE, STRONG_PASSWORDS_ARTICLE } from "./docs-securite.ts"
 
 export type DocBlock =
   | { type: "para"; text: string }
@@ -117,10 +118,10 @@ export const DOC_SUBJECTS: DocSubject[] = [
     command: "man security",
     description: "Se protéger et comprendre les menaces.",
     articles: [
-      makeArticle("mots-de-passe", "Mots de passe solides", "Longueur, unicité et gestionnaires.", ["Phrase de passe", "Gestionnaire", "Fuites"]),
+      STRONG_PASSWORDS_ARTICLE,
       // Written content, not lorem — it follows the placeholder it extends.
       PASSWORD_MANAGERS_ARTICLE,
-      makeArticle("phishing", "Le phishing", "Reconnaître et éviter les messages piégés.", ["Les signes", "Les réflexes", "Que faire"]),
+      PHISHING_ARTICLE,
       makeArticle("2fa", "Double authentification", "Ajouter une seconde barrière.", ["Principe", "Les méthodes", "Limites"]),
       makeArticle("malwares", "Virus et malwares", "Panorama des logiciels malveillants.", ["Types", "Contamination", "Protection"]),
       makeArticle("ransomware", "Les rançongiciels", "Quand tes fichiers sont pris en otage.", ["Fonctionnement", "Prévention", "Réaction"]),
