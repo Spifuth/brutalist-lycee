@@ -1,0 +1,44 @@
+name: "Code — duplication, code mort, incohérence"
+description: Le site marche, mais le code a un problème. Signale-le ici.
+labels: ["code"]
+body:
+  - type: markdown
+    attributes:
+      value: >
+        Rien n'est cassé pour l'utilisateur ? C'est ici. Si une page plante,
+        prends plutôt le formulaire **Bug**.
+  - type: input
+    id: fichiers
+    attributes:
+      label: Les fichiers concernés
+      description: Un chemin par fichier, séparés par des virgules.
+      placeholder: "components/quiz/quiz-runner.tsx, components/quiz/live-quiz.tsx"
+    validations:
+      required: true
+  - type: textarea
+    id: constat
+    attributes:
+      label: Ce que tu as remarqué
+      description: >
+        Décris ce que tu vois, pas ce qu'il faudrait faire. Si c'est du code
+        dupliqué, dis quelles lignes se ressemblent.
+    validations:
+      required: true
+  - type: textarea
+    id: pourquoi
+    attributes:
+      label: Pourquoi ça pose problème
+      description: >
+        Une réponse honnête est acceptée : « je ne sais pas, ça m'a juste
+        surpris ». Un doute qui se révèle infondé ne coûte rien ; un doute tu
+        n'as jamais écrit coûte le prochain bug.
+  - type: dropdown
+    id: corriger
+    attributes:
+      label: Est-ce que tu veux le corriger toi-même ?
+      options:
+        - "Oui, je veux essayer"
+        - "Oui, mais j'aurai besoin d'aide"
+        - "Non, je signale seulement"
+    validations:
+      required: true
