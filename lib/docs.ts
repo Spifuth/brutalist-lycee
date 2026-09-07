@@ -11,6 +11,7 @@
 // `node --test --experimental-strip-types`, which resolves ESM specifiers
 // literally and cannot find an extensionless one.
 import { GIT_SUBJECT } from "./docs-git.ts"
+import { PASSWORD_MANAGERS_ARTICLE } from "./docs-gestionnaires-mdp.ts"
 
 export type DocBlock =
   | { type: "para"; text: string }
@@ -19,6 +20,7 @@ export type DocBlock =
   | { type: "callout"; tone: "info" | "warning" | "tip" | "success"; title?: string; text: string }
   | { type: "keylist"; items: { term: string; desc: string }[] }
   | { type: "list"; ordered?: boolean; items: string[] }
+  | { type: "table"; caption?: string; headers: string[]; rows: string[][] }
 
 export interface DocArticle {
   slug: string
@@ -116,6 +118,8 @@ export const DOC_SUBJECTS: DocSubject[] = [
     description: "Se protéger et comprendre les menaces.",
     articles: [
       makeArticle("mots-de-passe", "Mots de passe solides", "Longueur, unicité et gestionnaires.", ["Phrase de passe", "Gestionnaire", "Fuites"]),
+      // Written content, not lorem — it follows the placeholder it extends.
+      PASSWORD_MANAGERS_ARTICLE,
       makeArticle("phishing", "Le phishing", "Reconnaître et éviter les messages piégés.", ["Les signes", "Les réflexes", "Que faire"]),
       makeArticle("2fa", "Double authentification", "Ajouter une seconde barrière.", ["Principe", "Les méthodes", "Limites"]),
       makeArticle("malwares", "Virus et malwares", "Panorama des logiciels malveillants.", ["Types", "Contamination", "Protection"]),

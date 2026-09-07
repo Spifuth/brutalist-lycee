@@ -156,6 +156,63 @@ export function List({ items, ordered = false }: ListProps) {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Table (comparison / pricing grid)                                          */
+/* -------------------------------------------------------------------------- */
+
+interface TableProps {
+  headers: string[]
+  rows: ReactNode[][]
+  /** Footnote under the grid — asterisks, "prices read in September 2026". */
+  caption?: string
+}
+
+export function Table({ headers, rows, caption }: TableProps) {
+  return (
+    <figure className="m-0">
+      {/* A four-column pricing grid does not fit a phone. Let the grid scroll
+          inside its border rather than squeezing every cell to two words. */}
+      <div className="overflow-x-auto border-2 border-foreground">
+        <table className="w-full min-w-[34rem] border-collapse text-sm">
+          <thead>
+            <tr className="bg-muted">
+              {headers.map((h, i) => (
+                <th
+                  key={i}
+                  scope="col"
+                  className="border-b-2 border-foreground px-3 py-2 text-left text-[10px] font-mono uppercase tracking-widest font-bold"
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, i) => (
+              <tr key={i} className="border-b-2 border-border last:border-b-0">
+                {row.map((cell, j) => (
+                  <td
+                    key={j}
+                    className={cn(
+                      "px-3 py-2 align-top text-foreground/90",
+                      j === 0 && "font-mono font-bold text-foreground",
+                    )}
+                  >
+                    {cell}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {caption && (
+        <figcaption className="mt-2 text-xs text-muted-foreground">{caption}</figcaption>
+      )}
+    </figure>
+  )
+}
+
+/* -------------------------------------------------------------------------- */
 /* Prose paragraph helper                                                     */
 /* -------------------------------------------------------------------------- */
 

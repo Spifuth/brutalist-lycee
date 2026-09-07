@@ -1,5 +1,5 @@
 import type { DocBlock } from "@/lib/docs"
-import { CodeBlock, Callout, KeyList, List, P } from "@/components/primitives"
+import { CodeBlock, Callout, KeyList, List, P, Table } from "@/components/primitives"
 
 export function DocBlocks({ blocks }: { blocks: DocBlock[] }) {
   return (
@@ -30,6 +30,8 @@ export function DocBlocks({ blocks }: { blocks: DocBlock[] }) {
             return <KeyList key={i} items={block.items} />
           case "list":
             return <List key={i} items={block.items} ordered={block.ordered} />
+          case "table":
+            return <Table key={i} headers={block.headers} rows={block.rows} caption={block.caption} />
           default:
             return null
         }
