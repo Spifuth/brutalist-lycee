@@ -1,0 +1,10 @@
+# Toute pull request demande la revue de l'administrateur du dépôt.
+# La protection de branche exige l'approbation d'un code owner.
+*       @Spifuth
+
+# Zones sensibles : à ne modifier qu'en connaissance de cause.
+/gateway/               @Spifuth
+/db/schema.sql          @Spifuth
+/.github/               @Spifuth
+/STYLE.md               @Spifuth
+/lib/theme-tokens.ts    @Spifuth

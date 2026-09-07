@@ -1,0 +1,46 @@
+name: "Contenu — quiz, badge, secret, cours"
+description: Proposer du contenu à ajouter ou à corriger. La contribution la plus utile.
+labels: ["contenu", "good first issue"]
+body:
+  - type: markdown
+    attributes:
+      value: >
+        Tu peux proposer l'idée ici, ou directement ouvrir une pull request —
+        voir la section « Ajouter du contenu » de
+        [CONTRIBUTING.md](https://github.com/Spifuth/brutalist-lycee/blob/dev/CONTRIBUTING.md).
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type de contenu
+      options:
+        - Quiz (db/seeds/quizzes.ts)
+        - Badge (db/seeds/badges.ts)
+        - Secret de la chasse (db/seeds/secrets.ts)
+        - Article de cours (lib/docs-*.ts)
+        - Correction de texte / faute
+    validations:
+      required: true
+  - type: textarea
+    id: proposition
+    attributes:
+      label: Ta proposition
+      description: >
+        Pour un quiz : les questions, les réponses possibles, la bonne réponse
+        et l'explication. Pour un cours : le plan des sections.
+    validations:
+      required: true
+  - type: input
+    id: pourquoi
+    attributes:
+      label: Pourquoi c'est utile pour la classe
+    validations:
+      required: true
+  - type: checkboxes
+    id: verifs
+    attributes:
+      label: Vérifications
+      options:
+        - label: Mon contenu n'expose aucune donnée personnelle d'un camarade.
+          required: true
+        - label: "Si c'est un secret : je n'ai pas proposé de rendre le site réellement vulnérable."
+          required: true

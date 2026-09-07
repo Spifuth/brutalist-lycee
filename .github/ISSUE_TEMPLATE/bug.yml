@@ -1,0 +1,47 @@
+name: "Bug — quelque chose ne marche pas"
+description: Une page plante, un bouton ne fait rien, un badge ne s'attribue pas.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: quoi
+    attributes:
+      label: Ce qui se passe
+      description: Décris le problème en une ou deux phrases.
+      placeholder: "Sur /chasse, quand je valide un code correct, rien ne se passe."
+    validations:
+      required: true
+  - type: textarea
+    id: reproduire
+    attributes:
+      label: Comment le reproduire
+      description: Les étapes exactes, dans l'ordre. C'est la partie la plus utile.
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: input
+    id: attendu
+    attributes:
+      label: Ce que tu attendais à la place
+    validations:
+      required: true
+  - type: textarea
+    id: erreur
+    attributes:
+      label: Message d'erreur
+      description: >
+        Colle le texte complet (console du navigateur : F12 → Console, ou la
+        sortie du terminal). Du texte, pas une capture d'écran.
+      render: text
+  - type: dropdown
+    id: ou
+    attributes:
+      label: Où
+      options:
+        - Sur le site en ligne
+        - En local (pnpm dev)
+        - En local (docker compose)
+    validations:
+      required: true

@@ -1,0 +1,30 @@
+name: "Idée — une nouvelle fonctionnalité"
+description: Une page, un mécanisme, une amélioration.
+labels: ["idée"]
+body:
+  - type: textarea
+    id: idee
+    attributes:
+      label: L'idée
+      description: Décris-la comme si tu l'expliquais à un camarade.
+    validations:
+      required: true
+  - type: textarea
+    id: probleme
+    attributes:
+      label: Quel problème ça résout
+      description: >
+        Qu'est-ce qui est pénible ou manquant aujourd'hui ? Une idée sans
+        problème derrière est souvent une idée qu'on n'implémente pas.
+    validations:
+      required: true
+  - type: dropdown
+    id: aide
+    attributes:
+      label: Est-ce que tu veux la coder toi-même ?
+      options:
+        - "Oui, je veux essayer"
+        - "Oui, mais j'aurai besoin d'aide"
+        - "Non, je propose seulement"
+    validations:
+      required: true

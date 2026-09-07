@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Comment contribuer
+    url: https://github.com/Spifuth/brutalist-lycee/blob/dev/CONTRIBUTING.md
+    about: Installation, workflow git, ajout de contenu, revue — lis ça d'abord.
+  - name: Faille de sécurité
+    url: https://github.com/Spifuth/brutalist-lycee/security/advisories/new
+    about: Ne l'écris PAS dans une issue publique. Passe par un signalement privé.
