@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Radio, Users, Clock, Trophy, Check, X } from "lucide-react"
-import { getQuiz } from "@/lib/quizzes"
 import { useAuth } from "@/components/auth/auth-provider"
 import { joinSession, submitAnswer } from "@/app/actions/live"
 import type { LiveSnapshot } from "@/lib/live-broadcast"
@@ -77,7 +76,6 @@ export function LiveQuiz() {
     startedAtMs === null ? durationS : Math.max(0, durationS - Math.floor((Date.now() - startedAtMs) / 1000))
 
   const selected = localSelected ?? snapshot?.viewerAnswer?.choice ?? null
-  const quiz = snapshot?.quizSlug ? getQuiz(snapshot.quizSlug) : null
 
   const choose = async (i: number) => {
     if (!question || state !== "question" || selected !== null || !user) return
@@ -109,7 +107,7 @@ export function LiveQuiz() {
         {(state === null || state === "lobby" || state === "aborted") && (
           <motion.div key="waiting" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-8 text-center">
             <p className="text-[10px] font-mono uppercase tracking-widest text-accent mb-2">// salle d'attente</p>
-            <h2 className="font-pixel text-3xl mb-3">{quiz?.title ?? "Quiz en direct"}</h2>
+            <h2 className="font-pixel text-3xl mb-3">{snapshot?.quizTitle ?? "Quiz en direct"}</h2>
             <p className="text-xs text-muted-foreground mb-6 max-w-sm mx-auto">
               {state === "aborted"
                 ? "La session a été interrompue par ton professeur. Attends qu'il en ouvre une nouvelle."

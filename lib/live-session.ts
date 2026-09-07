@@ -1,15 +1,27 @@
 import type { QuizQuestion } from "@/lib/quizzes"
 
-// SWAP POINT: this module is the server-authoritative replacement for the
-// browser-simulated /live quiz (components/quiz/live-quiz.tsx). It is pure —
-// no DB, no React — so the scoring/timing/state-machine rules that used to
-// live inline in a useEffect can be tested in isolation and reused by the
-// real teacher-driven session once it exists.
+// The server-authoritative rules of the live quiz. Pure — no DB, no React — so
+// scoring, timing and the state machine can be unit-tested in isolation. The
+// questions themselves come from Postgres via lib/content.ts and are snapshotted
+// into `QuestionRef[]` by `openSession`; this module never resolves content.
 
-/** A lightweight reference into a quiz's question list, in play order. */
+/**
+ * One question of a live session, in play order.
+ *
+ * The full payload is carried here rather than looked up per render. Two
+ * reasons, both load-bearing: the SSE fan-out builds a question view on every
+ * tick and must stay synchronous with no database round-trip, and a session
+ * snapshotted at `openSession` time cannot change under the players if someone
+ * edits the quiz in /admin while it is running.
+ */
 export interface QuestionRef {
   quizSlug: string
   questionId: string
+  prompt: string
+  options: string[]
+  /** Index into `options`. */
+  correct: number
+  explanation: string
 }
 
 export type LiveState = "lobby" | "question" | "reveal" | "finished" | "aborted"
@@ -40,7 +52,14 @@ export function buildQuestionOrder(
   questions: QuizQuestion[],
   seed?: number,
 ): QuestionRef[] {
-  const refs: QuestionRef[] = questions.map((q) => ({ quizSlug, questionId: q.id }))
+  const refs: QuestionRef[] = questions.map((q) => ({
+    quizSlug,
+    questionId: q.id,
+    prompt: q.prompt,
+    options: q.options,
+    correct: q.correct,
+    explanation: q.explanation,
+  }))
   const random = seed === undefined ? Math.random : mulberry32(seed)
 
   for (let i = refs.length - 1; i > 0; i--) {
