@@ -125,7 +125,7 @@ export const SECRET_SEEDS: SecretSeed[] = [
   },
   {
     code: "BANE",
-    name: "The Dark Knight rises le villain",
+    name: "The Dark Knight Rises : le vilain",
     hint: "You merely adopted the dark.",
     location: "Devinette — la réponse est le code",
     points: 12,
@@ -152,7 +152,7 @@ export const SECRET_SEEDS: SecretSeed[] = [
   },
   {
     code: "BILLIE-EILISH",
-    name: "Musicienne pop blond",
+    name: "Musicienne pop blonde",
     hint: "Bad guy. Jeune. Whisper vocal.",
     location: "Devinette — la réponse est le code",
     points: 10,
@@ -180,7 +180,7 @@ export const SECRET_SEEDS: SecretSeed[] = [
   {
     code: "BRAVE-NEW-WORLD",
     name: "Dystopie Brave New World",
-    hint: "Aldous Huxley. Bonheur controlé.",
+    hint: "Aldous Huxley. Bonheur contrôlé.",
     location: "Devinette — la réponse est le code",
     points: 15,
     category: "BOOKS",
@@ -215,7 +215,7 @@ export const SECRET_SEEDS: SecretSeed[] = [
   },
   {
     code: "CIVILIZATION",
-    name: "Jeu stratégie tour au tour",
+    name: "Jeu de stratégie au tour par tour",
     hint: "Sid Meier. Construction empire.",
     location: "Devinette — la réponse est le code",
     points: 15,
