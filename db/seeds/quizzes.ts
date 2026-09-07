@@ -1167,4 +1167,78 @@ export const QUIZ_SEEDS: QuizSeed[] = [
       },
     ],
   },
+  {
+    slug: "linux-bases",
+    title: "Le terminal, sans peur",
+    topic: "Linux & terminal",
+    level: "tous",
+    description: "cd, ls, pwd, et pourquoi la ligne de commande existe encore.",
+    questions: [
+      {
+        prompt: "Quelle commande affiche le chemin du dossier dans lequel tu te trouves actuellement ?",
+        options: ["pwd", "cd", "ls", "mkdir"],
+        correct: 0,
+        explanation: "`pwd` signifie \"print working directory\" : elle affiche ton emplacement actuel dans l'arborescence.",
+      },
+      {
+        prompt: "Tu veux voir la liste des fichiers et dossiers du répertoire courant. Quelle commande utilises-tu ?",
+        options: ["cat", "ls", "mv", "touch"],
+        correct: 1,
+        explanation: "`ls` liste le contenu du dossier courant ; avec des options (comme `-l`), tu peux voir plus de détails.",
+      },
+      {
+        prompt: "Que fait la commande `cd ..` ?",
+        options: [
+          "Elle supprime le dossier courant",
+          "Elle crée un nouveau dossier nommé `..`",
+          "Elle remonte d'un niveau vers le dossier parent",
+          "Elle retourne toujours au dossier personnel",
+        ],
+        correct: 2,
+        explanation: "`..` désigne le dossier parent ; `cd ..` permet donc de remonter d'un niveau dans l'arborescence.",
+      },
+      {
+        prompt: "Quelle commande crée un fichier vide nommé `notes.txt` (s'il n'existe pas) ?",
+        options: ["mkdir notes.txt", "touch notes.txt", "nano notes.txt", "echo notes.txt"],
+        correct: 1,
+        explanation: "`touch notes.txt` crée un fichier vide s'il n'existe pas (ou met à jour sa date de modification).",
+      },
+      {
+        prompt: "Tu veux créer un nouveau dossier nommé `projet`. Quelle commande est correcte ?",
+        options: ["mk projet", "create projet", "mkdir projet", "newdir projet"],
+        correct: 2,
+        explanation: "`mkdir` signifie \"make directory\" : c'est la commande standard pour créer un dossier.",
+      },
+      {
+        prompt: "À quoi sert principalement le terminal aujourd'hui ?",
+        options: [
+          "Uniquement à pirater des systèmes",
+          "À interagir rapidement et précisément avec le système, notamment pour l'administration et l'automatisation",
+          "À remplacer complètement tous les logiciels graphiques",
+          "À afficher uniquement l'heure et la date",
+        ],
+        correct: 1,
+        explanation:
+          "Le terminal est puissant pour enchaîner des tâches, automatiser des actions et administrer un système de façon fine, en complément des interfaces graphiques.",
+      },
+      {
+        prompt: "Quelle commande déplace ou renomme un fichier sous Linux ?",
+        options: ["mv", "cp", "rm", "grep"],
+        correct: 0,
+        explanation: "`mv` (move) sert à déplacer un fichier vers un autre dossier ou à le renommer selon la destination fournie.",
+      },
+      {
+        prompt: "Pourquoi faut-il être prudent avec la commande `rm` ?",
+        options: [
+          "Parce qu'elle peut supprimer des fichiers immédiatement sans corbeille",
+          "Parce qu'elle formate automatiquement tout le disque",
+          "Parce qu'elle coupe la connexion internet",
+          "Parce qu'elle ne fonctionne jamais sans redémarrer",
+        ],
+        correct: 0,
+        explanation:
+          "`rm` supprime directement les fichiers ciblés ; selon le contexte, il n'y a pas de récupération simple, donc on vérifie toujours la commande avant validation.",
+      },
+    ],
+  },
 ]
