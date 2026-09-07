@@ -9,8 +9,7 @@ import {
   type LiveViewerAnswer,
   type LiveQuestionItemView,
 } from "@/lib/live-broadcast"
-import type { LiveState } from "@/lib/live-session"
-import { getQuiz } from "@/lib/quizzes"
+import type { LiveState, QuestionRef } from "@/lib/live-session"
 import { isVoteOpen } from "@/lib/settings"
 
 // This is the only streaming surface in the app: Server Actions cannot
@@ -25,9 +24,12 @@ const HEARTBEAT_MS = 15_000
 interface SessionRow {
   id: string
   quiz_slug: string
+  quiz_title: string | null
   state: LiveState
   current_q_idx: number
-  question_order: { quizSlug: string; questionId: string }[]
+  // Rows written before the payload snapshot landed carry only the two id
+  // fields; `buildQuestionView` treats a missing `prompt` as "no question".
+  question_order: Partial<QuestionRef>[]
   question_started_at: Date | null
   question_duration_s: number
 }
@@ -65,6 +67,7 @@ const EMPTY_SNAPSHOT: LiveSnapshot = {
   state: "lobby",
   sessionId: null,
   quizSlug: null,
+  quizTitle: null,
   question: null,
   questionStartedAt: null,
   questionDurationS: 0,
@@ -96,19 +99,27 @@ const EMPTY_ANSWERS: ReadonlyMap<string, LiveViewerAnswer> = new Map()
  * this is the one line that keeps a student from reading the answer off
  * the network tab before the teacher reveals it.
  */
+/** True once a ref carries the question itself, not just its ids. */
+function hasPayload(ref: Partial<QuestionRef>): ref is QuestionRef {
+  return typeof ref.prompt === "string" && Array.isArray(ref.options)
+}
+
 function buildQuestionView(session: SessionRow): LiveQuestionView | null {
   const ref = session.question_order[session.current_q_idx]
   if (!ref) return null
-  const quiz = getQuiz(ref.quizSlug)
-  const q = quiz?.questions.find((item) => item.id === ref.questionId)
-  if (!q) return null
+  // The payload is snapshotted onto the ref by `openSession`, so this stays
+  // synchronous: the fan-out runs on a 1s tick and must not hit the database
+  // per connected client. A ref without a payload is a session opened before
+  // that snapshot existed — render nothing rather than a half-empty question.
+  if (!hasPayload(ref)) return null
+  const q = ref
 
   const answerRevealed =
     session.state === "reveal" || session.state === "finished" || session.state === "aborted"
 
   return {
-    // `question_key` format contract: the bare quiz question id (`q.id`,
-    // e.g. "q1") — never prefixed with a quiz slug or session id. A
+    // `question_key` format contract: the bare `quiz_questions.id` (a UUID)
+    // — never prefixed with a quiz slug or session id. A
     // session's `question_order` is always built from a single quiz (see
     // `startSession` in lib/live-session.ts), so this stays unique within
     // one session. Task 5's `submitAnswer()` must write
@@ -117,7 +128,7 @@ function buildQuestionView(session: SessionRow): LiveQuestionView | null {
     // (`fetchAnswers` below) and the `UNIQUE (session_id, user_id,
     // question_key)` idempotency constraint silently useless — rows just
     // never match, with no error pointing at the mismatch.
-    key: q.id,
+    key: ref.questionId,
     index: session.current_q_idx,
     total: session.question_order.length,
     prompt: q.prompt,
@@ -148,10 +159,11 @@ async function fetchSnapshot(): Promise<SharedSnapshot> {
   // behind it, so adding them doesn't turn one poll into a chain of three.
   const [session, questions, voteTallies, voteOpen] = await Promise.all([
     queryOne<SessionRow>(
-      `SELECT id, quiz_slug, state, current_q_idx, question_order,
-              question_started_at, question_duration_s
-         FROM live_sessions
-        ORDER BY created_at DESC
+      `SELECT s.id, s.quiz_slug, q.title AS quiz_title, s.state, s.current_q_idx,
+              s.question_order, s.question_started_at, s.question_duration_s
+         FROM live_sessions s
+         LEFT JOIN quizzes q ON q.slug = s.quiz_slug
+        ORDER BY s.created_at DESC
         LIMIT 1`,
     ),
     fetchQuestions(),
@@ -174,6 +186,7 @@ async function fetchSnapshot(): Promise<SharedSnapshot> {
       state: "lobby",
       sessionId: session.id,
       quizSlug: session.quiz_slug,
+      quizTitle: session.quiz_title,
       participants,
       questions,
       voteTallies,
@@ -192,6 +205,7 @@ async function fetchSnapshot(): Promise<SharedSnapshot> {
     state: session.state,
     sessionId: session.id,
     quizSlug: session.quiz_slug,
+    quizTitle: session.quiz_title,
     question,
     questionStartedAt: session.question_started_at
       ? session.question_started_at.toISOString()

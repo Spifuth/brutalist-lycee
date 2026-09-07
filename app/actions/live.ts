@@ -10,7 +10,7 @@ import type {
   LiveViewerAnswer,
 } from "@/lib/live-broadcast"
 import { buildQuestionOrder, calcScore, nextState, type QuestionRef, type LiveState } from "@/lib/live-session"
-import { getQuiz } from "@/lib/quizzes"
+import { getQuizContent } from "@/lib/content"
 import { isVoteOpen, isAiOpen, isTerminalOpen, setSetting } from "@/lib/settings"
 
 // SWAP POINT: the only place teacher/player intent turns into a DB write for
@@ -22,6 +22,7 @@ import { isVoteOpen, isAiOpen, isTerminalOpen, setSetting } from "@/lib/settings
 interface SessionRow {
   id: string
   quiz_slug: string
+  quiz_title: string | null
   state: LiveState
   current_q_idx: number
   question_order: QuestionRef[]
@@ -48,10 +49,11 @@ interface ParticipantRow {
  */
 async function getCurrentSession(): Promise<SessionRow | null> {
   return queryOne<SessionRow>(
-    `SELECT id, quiz_slug, state, current_q_idx, question_order,
-            question_started_at, question_duration_s
-       FROM live_sessions
-      ORDER BY created_at DESC
+    `SELECT s.id, s.quiz_slug, q.title AS quiz_title, s.state, s.current_q_idx,
+            s.question_order, s.question_started_at, s.question_duration_s
+       FROM live_sessions s
+       LEFT JOIN quizzes q ON q.slug = s.quiz_slug
+      ORDER BY s.created_at DESC
       LIMIT 1`,
   )
 }
@@ -81,7 +83,9 @@ async function setSessionState(id: string, state: LiveState): Promise<void> {
 export async function openSession(quizSlug: string, durationS: number): Promise<void> {
   await requireAdmin()
 
-  const quiz = getQuiz(quizSlug)
+  // Same source as /quiz and /admin. Reading it here, once, is what makes the
+  // live session play the whole quiz instead of a stale hardcoded prefix.
+  const quiz = await getQuizContent(quizSlug)
   if (!quiz || quiz.questions.length === 0) {
     throw new Error("Quiz introuvable ou sans questions.")
   }
@@ -293,20 +297,23 @@ export async function submitAnswer(questionKey: string, choice: number): Promise
     throw new Error("La question n'est pas ouverte aux réponses.")
   }
 
+  // The question is carried on the ref, snapshotted when the session opened
+  // (see `QuestionRef` in lib/live-session.ts). Sessions created before that
+  // snapshot existed have no payload and cannot accept new answers.
   const ref = session.question_order[session.current_q_idx]
-  const quiz = ref ? getQuiz(ref.quizSlug) : undefined
-  const q = quiz?.questions.find((item) => item.id === ref?.questionId)
+  const q = ref?.prompt === undefined ? undefined : ref
   if (!ref || !q) {
     throw new Error("Question actuelle introuvable.")
   }
 
   // `question_key` format contract (see app/api/live/stream/route.ts's
-  // `buildQuestionView`): the bare quiz question id, e.g. "q1" — never
-  // prefixed with a quiz slug or session id. A mismatch here means the
+  // `buildQuestionView`): the bare `quiz_questions.id` — a UUID since the
+  // live path started reading Postgres — never prefixed with a quiz slug or
+  // session id. A mismatch here means the
   // caller's client is showing a stale question (already superseded by
   // `nextQuestion`); recording it under the wrong key would make both this
   // constraint and the stream route's per-viewer lookup silently useless.
-  if (questionKey !== q.id) {
+  if (questionKey !== ref.questionId) {
     throw new Error("Cette réponse ne correspond pas à la question en cours.")
   }
   if (!Number.isInteger(choice) || choice < 0 || choice >= q.options.length) {
@@ -371,6 +378,7 @@ export async function getLiveStateOnce(): Promise<LiveSnapshot> {
       state: "lobby",
       sessionId: null,
       quizSlug: null,
+      quizTitle: null,
       question: null,
       questionStartedAt: null,
       questionDurationS: 0,
@@ -401,13 +409,12 @@ export async function getLiveStateOnce(): Promise<LiveSnapshot> {
 
   if (session.state !== "lobby") {
     const ref = session.question_order[session.current_q_idx]
-    const quiz = ref ? getQuiz(ref.quizSlug) : undefined
-    const q = quiz?.questions.find((item) => item.id === ref?.questionId)
+    const q = ref?.prompt === undefined ? undefined : ref
     if (ref && q) {
       const answerRevealed =
         session.state === "reveal" || session.state === "finished" || session.state === "aborted"
       question = {
-        key: q.id,
+        key: ref.questionId,
         index: session.current_q_idx,
         total: session.question_order.length,
         prompt: q.prompt,
@@ -419,7 +426,7 @@ export async function getLiveStateOnce(): Promise<LiveSnapshot> {
         const answer = await queryOne<{ choice: number; is_correct: boolean; score: number }>(
           `SELECT choice, is_correct, score FROM live_answers
             WHERE session_id = $1 AND user_id = $2 AND question_key = $3`,
-          [session.id, user.id, q.id],
+          [session.id, user.id, ref.questionId],
         )
         viewerAnswer = answer
           ? { choice: answer.choice, isCorrect: answer.is_correct, score: answer.score }
@@ -432,6 +439,7 @@ export async function getLiveStateOnce(): Promise<LiveSnapshot> {
     state: session.state,
     sessionId: session.id,
     quizSlug: session.quiz_slug,
+    quizTitle: session.quiz_title,
     question,
     questionStartedAt: session.question_started_at
       ? session.question_started_at.toISOString()

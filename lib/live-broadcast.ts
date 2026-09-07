@@ -78,6 +78,8 @@ export interface LiveSnapshot {
   state: LiveState
   sessionId: string | null
   quizSlug: string | null
+  /** The quiz's title, read from Postgres alongside the session row. */
+  quizTitle: string | null
   question: LiveQuestionView | null
   /** ISO timestamp, or null before the first question has started. */
   questionStartedAt: string | null
