@@ -135,8 +135,16 @@ export function buildDiscordMessage(report: Report): string {
   return truncate(lines.join("\n"), DISCORD_LIMIT)
 }
 
-/** L'URL d'une issue GitHub dont le formulaire est déjà rempli. */
-export function buildIssueUrl(report: Report): string {
+/**
+ * L'URL d'une issue GitHub dont le formulaire est déjà rempli.
+ *
+ * `budget` par défaut à `URL_BUDGET` : les appelants existants (la page
+ * /bug-report) n'ont rien à changer. Le paramètre existe surtout pour les
+ * tests — il permet de mettre la garantie « toujours ≤ budget » à l'épreuve
+ * à une taille où la boucle de rognage est réellement sollicitée, sans avoir
+ * à générer des mégaoctets de texte pour dépasser 6000 caractères.
+ */
+export function buildIssueUrl(report: Report, budget: number = URL_BUDGET): string {
   const spec = specFor(report.kind)
   const values = new Map<string, string>()
   for (const field of spec.fields) {
@@ -165,7 +173,7 @@ export function buildIssueUrl(report: Report): string {
   // structurelle : elle tient même si on ajoute un champ à un KindSpec, si
   // on baisse URL_BUDGET ou si on allonge TRUNCATION_MARK.
   let url = render()
-  while (url.length > URL_BUDGET) {
+  while (url.length > budget) {
     const longest = [...values.entries()].sort((a, b) => b[1].length - a[1].length)[0]
     if (!longest || longest[1].length === 0) break
     const [id, value] = longest
@@ -173,13 +181,14 @@ export function buildIssueUrl(report: Report): string {
     values.set(id, truncate(value, next))
     url = render()
   }
-  if (url.length > URL_BUDGET) {
+  if (url.length > budget) {
     // Ne devrait jamais arriver : même tous champs vidés, il ne reste que le
     // gabarit fixe (URL du dépôt + nom des champs), largement sous le
-    // budget. Si ça se produit, la config elle-même est incohérente — on le
-    // signale fort plutôt que de renvoyer une URL trop longue en silence.
+    // budget — sauf si l'appelant demande un budget plus petit que ce
+    // gabarit lui-même (cas volontairement testé). On le signale fort
+    // plutôt que de renvoyer une URL trop longue en silence.
     throw new Error(
-      `buildIssueUrl : impossible de tenir sous ${URL_BUDGET} caractères même en vidant tous les champs (${url.length})`,
+      `buildIssueUrl : impossible de tenir sous ${budget} caractères même en vidant tous les champs (${url.length})`,
     )
   }
   return url

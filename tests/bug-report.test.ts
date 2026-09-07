@@ -68,19 +68,52 @@ test("l'URL vise le bon template pour chaque type", () => {
   }
 })
 
-test("l'URL reste sous le budget, en tronquant le plus long champ", () => {
-  // Un seul champ énorme et pur ASCII ne suffit pas à mettre la garantie à
-  // l'épreuve : la vraie vie, c'est du français accentué (é, à, œ, —, « »
-  // pèsent jusqu'à 3 octets — donc 9 caractères une fois encodés en %) collé
-  // dans plusieurs champs à la fois, pas un seul champ isolé.
-  const accents =
-    "Erreur détectée à l'école : « le résultat n'est pas correct » — on réessaye, mais l'œuvre reste bloquée. ".repeat(
-      200,
+// Texte accentué : é, à, œ, —, « » pèsent jusqu'à 3 octets — donc jusqu'à 9
+// caractères une fois encodés en % — contrairement à un champ pur ASCII qui
+// ne met pas vraiment la garantie à l'épreuve.
+const accents =
+  "Erreur détectée à l'école : « le résultat n'est pas correct » — on réessaye, mais l'œuvre reste bloquée. ".repeat(
+    200,
+  )
+
+test("l'URL respecte un budget minuscule, ou échoue fort — jamais un dépassement silencieux", () => {
+  // À budget de production (6000) et avec les champs actuels de KINDS, aucun
+  // test boîte noire ne peut distinguer la boucle de rognage corrigée de
+  // l'ancienne, bogué : même l'ancienne version (qui sortait de boucle sur la
+  // longueur du champ restant, pas sur celle de l'URL réellement rendue) ne
+  // dépasse jamais 6000 caractères avec les champs d'aujourd'hui — mesuré à
+  // 5952/6000. Un budget minuscule force la boucle à réellement rogner et
+  // met sa condition de sortie à l'épreuve : c'est le seul moyen boîte noire
+  // de faire la différence entre les deux implémentations.
+  const bugSpec = specFor("bug")
+  const fields = Object.fromEntries(bugSpec.fields.map((field) => [field.id, accents]))
+  const smallBudget = 400
+
+  let url: string
+  try {
+    url = buildIssueUrl({ kind: "bug", fields }, smallBudget)
+  } catch (err) {
+    assert.match(
+      (err as Error).message,
+      /impossible de tenir sous/,
+      "si buildIssueUrl échoue, ce doit être son erreur explicite, jamais un plantage inattendu",
     )
+    return
+  }
+  assert.ok(
+    url.length <= smallBudget,
+    `${url.length} caractères pour un budget de ${smallBudget} — la garantie n'est pas tenue`,
+  )
+})
+
+test("l'URL reste sous le budget de production, en tronquant le plus long champ", () => {
   const bugSpec = specFor("bug")
   const fields = Object.fromEntries(bugSpec.fields.map((field) => [field.id, accents]))
   fields.quoi = "court"
 
+  // Pas de deuxième argument : vérifie que le paramètre `budget` reste
+  // optionnel et que l'appel à un seul argument (celui de la page
+  // /bug-report) continue de fonctionner sans changement.
   const url = buildIssueUrl({ kind: "bug", fields })
   assert.ok(url.length <= URL_BUDGET, `${url.length} caractères — au-delà, le navigateur ou GitHub coupe`)
   assert.ok(url.includes("quoi=court"), "le champ court ne doit pas être sacrifié")
