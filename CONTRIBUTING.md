@@ -328,11 +328,6 @@ dans ta PR, c'est fait pour.
 
 **4. `pnpm test`** — les tests du dossier `tests/`. Voir §10.
 
-> `pnpm lint` existe dans `package.json` mais **aucune configuration ESLint
-> n'est présente** : la commande échoue. Elle n'est pas dans la CI, donc ce
-> n'est jamais la faute de ta PR. La brancher est une bonne première
-> contribution `chore/`.
-
 ---
 
 ## 7. STYLE.md, ou pourquoi ta PR peut être refusée
