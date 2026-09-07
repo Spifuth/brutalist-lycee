@@ -191,6 +191,18 @@ CREATE TABLE IF NOT EXISTS secrets (
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Added after the first 8 secrets shipped, so ALTER rather than a column in the
+-- CREATE above: schema.sql is applied on every container start and the table
+-- already exists in prod.
+--   category    free text, grouped into families by lib/secret-taxonomy.ts
+--   difficulty  easy | medium | hard | insane — a filter on the hunt board
+--   unlock_at   NULL for an ordinary secret. For a milestone, how many ORDINARY
+--               secrets must be found before it is granted automatically. See
+--               lib/milestones.ts; typing a milestone code is refused.
+ALTER TABLE secrets ADD COLUMN IF NOT EXISTS category   TEXT NOT NULL DEFAULT 'AUTRE';
+ALTER TABLE secrets ADD COLUMN IF NOT EXISTS difficulty TEXT NOT NULL DEFAULT 'medium';
+ALTER TABLE secrets ADD COLUMN IF NOT EXISTS unlock_at  INTEGER;
+
 CREATE TABLE IF NOT EXISTS secret_redemptions (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

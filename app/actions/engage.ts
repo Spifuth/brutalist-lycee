@@ -2,7 +2,8 @@
 
 import { query, queryOne } from "@/lib/db"
 import { requireUser, getSessionUser } from "@/lib/auth"
-import { awardBadge } from "@/lib/awards"
+import { awardBadge, addPoints } from "@/lib/awards"
+import { milestonesReached, isMilestone } from "@/lib/milestones"
 import { isVoteOpen } from "@/lib/settings"
 import { publishNow } from "@/lib/live-broadcast"
 import { revalidatePath } from "next/cache"
@@ -207,6 +208,51 @@ export interface RedeemResult {
   name?: string
   points?: number
   badge?: string
+  /** Milestones granted as a side effect of this redemption, if any. */
+  milestones?: { name: string; points: number }[]
+}
+
+/**
+ * Grants every milestone the user has now reached.
+ *
+ * Called after a successful redemption. Idempotent in both directions: the
+ * redemption insert is ON CONFLICT DO NOTHING, so a milestone already held adds
+ * nothing and returns no row, and points are only added for rows that were
+ * actually inserted. That matters because milestonesReached() deliberately
+ * returns every gate at or below the count, not just the one just crossed.
+ */
+async function grantMilestones(userId: string): Promise<{ name: string; points: number }[]> {
+  // Ordinary secrets only. Milestones are rows in `secrets` too, so counting
+  // everything would let one milestone push a student through the next gate.
+  const found = await queryOne<{ n: string }>(
+    `SELECT COUNT(*)::text AS n
+       FROM secret_redemptions sr
+       JOIN secrets s ON s.id = sr.secret_id
+      WHERE sr.user_id = $1 AND s.active AND s.unlock_at IS NULL`,
+    [userId],
+  )
+  const ordinaryFound = Number(found?.n ?? 0)
+
+  const gates = await query<{ id: string; code: string; name: string; points: number; unlock_at: number; badge_slug: string | null }>(
+    "SELECT id, code, name, points, unlock_at, badge_slug FROM secrets WHERE active AND unlock_at IS NOT NULL",
+  )
+  const earned = new Set(milestonesReached(ordinaryFound, gates.map((g) => ({ code: g.code, unlockAt: g.unlock_at }))))
+
+  const granted: { name: string; points: number }[] = []
+  for (const g of gates) {
+    if (!earned.has(g.code)) continue
+    const inserted = await query<{ id: string }>(
+      `INSERT INTO secret_redemptions (user_id, secret_id) VALUES ($1, $2)
+       ON CONFLICT (user_id, secret_id) DO NOTHING
+       RETURNING id`,
+      [userId, g.id],
+    )
+    if (inserted.length === 0) continue // already held
+    await addPoints(userId, g.points)
+    if (g.badge_slug) await awardBadge(userId, g.badge_slug)
+    granted.push({ name: g.name, points: g.points })
+  }
+  return granted
 }
 
 export async function redeemSecret(code: string): Promise<RedeemResult> {
@@ -214,11 +260,20 @@ export async function redeemSecret(code: string): Promise<RedeemResult> {
   const clean = (code || "").trim().toUpperCase()
   if (!clean) return { ok: false, error: "Entre un code." }
 
-  const secret = await queryOne<{ id: string; name: string; points: number; badge_slug: string | null }>(
-    "SELECT id, name, points, badge_slug FROM secrets WHERE upper(code) = $1 AND active = TRUE",
+  const secret = await queryOne<{ id: string; name: string; points: number; badge_slug: string | null; unlock_at: number | null }>(
+    "SELECT id, name, points, badge_slug, unlock_at FROM secrets WHERE upper(code) = $1 AND active = TRUE",
     [clean],
   )
   if (!secret) return { ok: false, error: "Code inconnu ou désactivé." }
+
+  // A milestone is reached, not typed. Without this a student who saw the code
+  // in a screenshot could skip the 50 secrets it is supposed to reward.
+  if (isMilestone({ unlockAt: secret.unlock_at })) {
+    return {
+      ok: false,
+      error: "Ce secret se débloque tout seul quand tu as trouvé assez de secrets. Il ne se tape pas.",
+    }
+  }
 
   const already = await queryOne("SELECT 1 FROM secret_redemptions WHERE user_id = $1 AND secret_id = $2", [
     user.id,
@@ -230,6 +285,11 @@ export async function redeemSecret(code: string): Promise<RedeemResult> {
   await query("UPDATE users SET points = points + $1 WHERE id = $2", [secret.points, user.id])
   await awardBadge(user.id, "hunter")
   if (secret.badge_slug) await awardBadge(user.id, secret.badge_slug)
+
+  // Before the coverage check below, so the milestone redemptions it just wrote
+  // are counted — otherwise "found everything" could never be true, since the
+  // milestones themselves are rows in `secrets`.
+  const milestones = await grantMilestones(user.id)
 
   // "legend" if the user has now found every active secret
   const coverage = await queryOne<{ done: string; total: string }>(
@@ -244,7 +304,13 @@ export async function redeemSecret(code: string): Promise<RedeemResult> {
 
   revalidatePath("/chasse")
   revalidatePath("/classement")
-  return { ok: true, name: secret.name, points: secret.points, badge: secret.badge_slug ?? undefined }
+  return {
+    ok: true,
+    name: secret.name,
+    points: secret.points,
+    badge: secret.badge_slug ?? undefined,
+    milestones: milestones.length > 0 ? milestones : undefined,
+  }
 }
 
 export async function getMySecrets(): Promise<{ found: number; total: number; names: string[] }> {
@@ -266,13 +332,22 @@ export interface HuntEntry {
   hint: string
   location: string
   points: number
+  category: string
+  difficulty: string
+  /** Set on milestones: how many ordinary secrets unlock this one. */
+  unlockAt: number | null
   found: boolean
 }
 
 export async function getHuntBoard(): Promise<{ entries: HuntEntry[]; found: number; total: number }> {
   const user = await getSessionUser()
-  const secrets = await query<{ id: string; name: string; hint: string; location: string; points: number }>(
-    "SELECT id, name, hint, location, points FROM secrets WHERE active ORDER BY points ASC, name ASC",
+  const secrets = await query<{
+    id: string; name: string; hint: string; location: string; points: number
+    category: string; difficulty: string; unlock_at: number | null
+  }>(
+    `SELECT id, name, hint, location, points, category, difficulty, unlock_at
+       FROM secrets WHERE active
+      ORDER BY unlock_at NULLS FIRST, points ASC, name ASC`,
   )
   let foundIds = new Set<string>()
   if (user) {
@@ -287,6 +362,9 @@ export async function getHuntBoard(): Promise<{ entries: HuntEntry[]; found: num
     hint: s.hint,
     location: s.location,
     points: s.points,
+    category: s.category,
+    difficulty: s.difficulty,
+    unlockAt: s.unlock_at,
     found: foundIds.has(s.id),
   }))
   return { entries, found: entries.filter((e) => e.found).length, total: entries.length }

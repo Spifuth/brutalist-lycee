@@ -214,6 +214,8 @@ export async function deleteBadge(id: string) {
 
 // ---------------- Secrets CRUD ----------------
 
+const VALID_DIFFICULTIES = new Set(["easy", "medium", "hard", "insane"])
+
 export interface SecretRow {
   id: string
   code: string
@@ -221,6 +223,14 @@ export interface SecretRow {
   hint: string
   location: string
   points: number
+  category: string
+  difficulty: string
+  /**
+   * NULL for an ordinary secret. For a milestone, the number of ORDINARY
+   * secrets a student must find before it is granted automatically — a
+   * milestone cannot be redeemed by typing its code. See lib/milestones.ts.
+   */
+  unlockAt: number | null
   badgeSlug: string | null
   active: boolean
   redemptions: number
@@ -230,24 +240,36 @@ export async function listSecrets(): Promise<SecretRow[]> {
   await requireAdmin()
   return query<SecretRow>(
     `SELECT s.id, s.code, s.name, s.hint, s.location, s.points,
+            s.category, s.difficulty, s.unlock_at AS "unlockAt",
             s.badge_slug AS "badgeSlug", s.active,
             (SELECT COUNT(*)::int FROM secret_redemptions sr WHERE sr.secret_id = s.id) AS redemptions
-       FROM secrets s ORDER BY s.points ASC, s.name ASC`,
+       FROM secrets s ORDER BY s.unlock_at NULLS FIRST, s.category ASC, s.points ASC, s.name ASC`,
   )
 }
 
 export async function upsertSecret(input: Omit<SecretRow, "id" | "redemptions"> & { id?: string }) {
   await requireAdmin()
   const code = input.code.trim().toUpperCase()
+  const category = (input.category || "AUTRE").trim().toUpperCase()
+  const difficulty = VALID_DIFFICULTIES.has(input.difficulty) ? input.difficulty : "medium"
+  // 0 and NaN both mean "ordinary secret". A milestone at 0 would be granted to
+  // every student on their first redemption, which is not something an admin
+  // should be able to create by leaving the field blank.
+  const unlockAt = Number(input.unlockAt) > 0 ? Number(input.unlockAt) : null
   if (input.id) {
     await query(
-      "UPDATE secrets SET code=$2, name=$3, hint=$4, location=$5, points=$6, badge_slug=$7, active=$8 WHERE id=$1",
-      [input.id, code, input.name, input.hint, input.location, input.points, input.badgeSlug || null, input.active],
+      `UPDATE secrets SET code=$2, name=$3, hint=$4, location=$5, points=$6,
+              category=$7, difficulty=$8, unlock_at=$9, badge_slug=$10, active=$11
+         WHERE id=$1`,
+      [input.id, code, input.name, input.hint, input.location, input.points,
+       category, difficulty, unlockAt, input.badgeSlug || null, input.active],
     )
   } else {
     await query(
-      "INSERT INTO secrets (code, name, hint, location, points, badge_slug, active) VALUES ($1,$2,$3,$4,$5,$6,$7)",
-      [code, input.name, input.hint, input.location, input.points, input.badgeSlug || null, input.active],
+      `INSERT INTO secrets (code, name, hint, location, points, category, difficulty, unlock_at, badge_slug, active)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+      [code, input.name, input.hint, input.location, input.points,
+       category, difficulty, unlockAt, input.badgeSlug || null, input.active],
     )
   }
   revalidatePath("/admin")

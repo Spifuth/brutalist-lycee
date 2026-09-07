@@ -12,9 +12,19 @@ const EMPTY: Omit<SecretRow, "id" | "redemptions"> & { id?: string } = {
   hint: "",
   location: "",
   points: 10,
+  category: "AUTRE",
+  difficulty: "medium",
+  unlockAt: null,
   badgeSlug: "",
   active: true,
 }
+
+const DIFFICULTIES = [
+  ["easy", "Facile"],
+  ["medium", "Moyen"],
+  ["hard", "Difficile"],
+  ["insane", "Démentiel"],
+] as const
 
 export function SecretsTab() {
   const [rows, setRows] = useState<SecretRow[]>([])
@@ -64,6 +74,12 @@ export function SecretsTab() {
                   {s.name} <span className="text-accent">· {s.code}</span>
                 </p>
                 <p className="truncate font-mono text-xs text-muted-foreground">{s.hint}</p>
+                <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                  {s.category} · {s.difficulty}
+                  {s.unlockAt !== null && (
+                    <span className="text-accent"> · palier à {s.unlockAt}</span>
+                  )}
+                </p>
               </div>
               <span className="shrink-0 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                 {s.redemptions} trouvé{s.redemptions > 1 ? "s" : ""} · +{s.points}
@@ -114,6 +130,40 @@ export function SecretsTab() {
                 onChange={(e) => setDraft({ ...draft, badgeSlug: e.target.value })}
               />
             </Field>
+            <Field label="Catégorie" hint="regroupée en familles sur la page chasse">
+              <TextInput
+                value={draft.category}
+                onChange={(e) => setDraft({ ...draft, category: e.target.value.toUpperCase() })}
+                className="uppercase"
+              />
+            </Field>
+            <Field label="Difficulté">
+              <select
+                value={draft.difficulty}
+                onChange={(e) => setDraft({ ...draft, difficulty: e.target.value })}
+                className="w-full border-2 border-foreground bg-background px-3 py-2 font-mono text-sm outline-none focus:bg-muted"
+              >
+                {DIFFICULTIES.map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <div className="sm:col-span-2">
+              <Field
+                label="Palier automatique (optionnel)"
+                hint="nombre de secrets ordinaires à trouver pour le débloquer. Vide ou 0 = secret normal, validé en tapant le code. Rempli = accordé tout seul, et le code est refusé à la saisie."
+              >
+                <TextInput
+                  type="number"
+                  value={draft.unlockAt ?? ""}
+                  onChange={(e) =>
+                    setDraft({ ...draft, unlockAt: e.target.value === "" ? null : Number(e.target.value) })
+                  }
+                />
+              </Field>
+            </div>
             <div className="sm:col-span-2">
               <Field label="Indice (visible par tous)">
                 <TextArea rows={2} value={draft.hint} onChange={(e) => setDraft({ ...draft, hint: e.target.value })} />
