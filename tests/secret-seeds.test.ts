@@ -149,8 +149,13 @@ test("no hint promises a vulnerability the site does not have", () => {
 })
 
 test("secrets that still need hiding are marked for the operator", () => {
+  // This floor only ever moves DOWN, and only when a secret is genuinely
+  // hidden somewhere: 12 → 11 on 2026-09-07 when SIN-DEBUG-PARAM became real
+  // behind /vie?debug=true. A drop with no page to show for it means someone
+  // stripped the marking and the hunt board is now promising cachettes that
+  // do not exist.
   const todo = SECRET_SEEDS.filter((s) => s.location.startsWith("À IMPLÉMENTER"))
-  assert.ok(todo.length >= 12, "the not-yet-hidden secrets lost their À IMPLÉMENTER marking")
+  assert.ok(todo.length >= 11, "the not-yet-hidden secrets lost their À IMPLÉMENTER marking")
   for (const s of todo) {
     assert.ok(s.location.includes("—"), `${s.code} says À IMPLÉMENTER without saying what to hide where`)
   }
