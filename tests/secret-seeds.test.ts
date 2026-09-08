@@ -148,16 +148,20 @@ test("no hint promises a vulnerability the site does not have", () => {
   }
 })
 
-test("secrets that still need hiding are marked for the operator", () => {
-  // This floor only ever moves DOWN, and only when a secret is genuinely
-  // hidden somewhere: 12 → 11 on 2026-09-07 when SIN-DEBUG-PARAM became real
-  // behind /vie?debug=true. A drop with no page to show for it means someone
-  // stripped the marking and the hunt board is now promising cachettes that
-  // do not exist.
+test("un secret encore à cacher dit quoi cacher et où", () => {
+  // Ce plancher n'a jamais fait que descendre, et seulement quand un secret
+  // était réellement posé quelque part : 12 → 11 le 2026-09-07 quand
+  // SIN-DEBUG-PARAM est devenu vrai derrière /vie?debug=true, puis **11 → 0**
+  // le 2026-09-08 quand les onze derniers ont été posés pour de bon
+  // (lib/secret-placements.ts). Le compte est donc tombé à zéro, et
+  // tests/secret-placements.test.ts garde désormais l'invariant fort : plus
+  // aucun secret ne promet une cachette qui n'existe pas.
+  //
+  // Ce qui reste vérifié ici vaut pour le prochain : si quelqu'un remet un
+  // marqueur, il doit dire quoi cacher et où, pas seulement « à faire ».
   const todo = SECRET_SEEDS.filter((s) => s.location.startsWith("À IMPLÉMENTER"))
-  assert.ok(todo.length >= 11, "the not-yet-hidden secrets lost their À IMPLÉMENTER marking")
   for (const s of todo) {
-    assert.ok(s.location.includes("—"), `${s.code} says À IMPLÉMENTER without saying what to hide where`)
+    assert.ok(s.location.includes("—"), `${s.code} dit À IMPLÉMENTER sans dire quoi cacher ni où`)
   }
 })
 

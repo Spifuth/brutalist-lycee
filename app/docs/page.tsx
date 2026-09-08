@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { getDocSubjects, countDocs } from "@/lib/content"
+import { getPlacedCodes, encodeZeroWidth } from "@/lib/secret-placements"
 
 export const metadata: Metadata = {
   title: "Documentation",
@@ -13,6 +14,10 @@ export const dynamic = "force-dynamic"
 export default async function DocsIndexPage() {
   const subjects = await getDocSubjects()
   const counts = await countDocs()
+  // SIN-ZERO-WIDTH : le paragraphe ci-dessous contient des caractères de
+  // largeur nulle. Invisibles à l'écran, ils survivent au copier-coller — et
+  // Unicode sert exactement à ça, pour le meilleur comme pour le pire.
+  const codes = await getPlacedCodes(["zero-width"])
   return (
     <div>
       <div className="flex items-center gap-4 mb-6">
@@ -26,6 +31,7 @@ export default async function DocsIndexPage() {
       <p className="text-sm text-muted-foreground max-w-2xl mb-8 leading-relaxed">
         Une base de connaissances organisée par sujet. « Git &amp; GitHub » est rédigé ; les autres
         sujets sont encore des trames d&apos;exemple, en attente du cours définitif.
+        {codes["zero-width"] && <span aria-hidden="true">{encodeZeroWidth(codes["zero-width"])}</span>}
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 border-2 border-foreground">

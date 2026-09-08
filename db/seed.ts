@@ -102,16 +102,17 @@ async function seedDocs() {
 async function seedSecrets() {
   for (const s of SECRET_SEEDS) {
     await db.query(
-      `INSERT INTO secrets (code, name, hint, location, points, category, difficulty, unlock_at, badge_slug, active)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,TRUE)
+      `INSERT INTO secrets (code, name, hint, location, points, category, difficulty, unlock_at, badge_slug, placement, active)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,TRUE)
        ON CONFLICT (code) DO UPDATE SET
          name=EXCLUDED.name, hint=EXCLUDED.hint, location=EXCLUDED.location,
          points=EXCLUDED.points, category=EXCLUDED.category,
          difficulty=EXCLUDED.difficulty, unlock_at=EXCLUDED.unlock_at,
-         badge_slug=EXCLUDED.badge_slug`,
+         badge_slug=EXCLUDED.badge_slug, placement=EXCLUDED.placement`,
       [
         s.code, s.name, s.hint, s.location, s.points,
         s.category, s.difficulty, s.unlockAt ?? null, s.badgeSlug ?? null,
+        s.placement ?? null,
       ],
     )
   }
