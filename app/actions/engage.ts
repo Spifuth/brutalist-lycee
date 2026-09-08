@@ -260,8 +260,18 @@ export async function redeemSecret(code: string): Promise<RedeemResult> {
   const clean = (code || "").trim().toUpperCase()
   if (!clean) return { ok: false, error: "Entre un code." }
 
+  // Le code canonique OU l'un de ses alias. Les alias existent parce qu'une
+  // réponse juste mais non prévue était refusée en plein cours (voir la table
+  // `secret_aliases` dans db/schema.sql) ; ils créditent toujours le secret
+  // canonique, donc une seule validation et un seul lot de points.
   const secret = await queryOne<{ id: string; name: string; points: number; badge_slug: string | null; unlock_at: number | null }>(
-    "SELECT id, name, points, badge_slug, unlock_at FROM secrets WHERE upper(code) = $1 AND active = TRUE",
+    `SELECT s.id, s.name, s.points, s.badge_slug, s.unlock_at
+       FROM secrets s
+      WHERE s.active = TRUE
+        AND (upper(s.code) = $1
+             OR EXISTS (SELECT 1 FROM secret_aliases a
+                         WHERE a.secret_id = s.id AND upper(a.code) = $1))
+      LIMIT 1`,
     [clean],
   )
   if (!secret) return { ok: false, error: "Code inconnu ou désactivé." }
