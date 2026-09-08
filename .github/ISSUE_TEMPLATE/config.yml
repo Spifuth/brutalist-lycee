@@ -1,5 +1,11 @@
 blank_issues_enabled: true
 contact_links:
+  - name: Signaler depuis le site (le plus simple)
+    url: https://lycee-next.nebulahost.tech/bug-report
+    about: >
+      Tu remplis un formulaire une fois, et tu repars avec le message à coller
+      sur Discord et une issue déjà pré-remplie. Pas besoin de savoir quoi
+      écrire ni quel formulaire choisir.
   - name: Comment contribuer
     url: https://github.com/Spifuth/brutalist-lycee/blob/dev/CONTRIBUTING.md
     about: Installation, workflow git, ajout de contenu, revue — lis ça d'abord.

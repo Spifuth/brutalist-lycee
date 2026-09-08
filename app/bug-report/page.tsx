@@ -54,10 +54,17 @@ export default function BugReportPage() {
             Pas de compte GitHub ?
           </h2>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Colle juste le message dans <span className="text-accent">{DISCORD_CHANNEL}</span> : c&apos;est
-            déjà utile, quelqu&apos;un ouvrira l&apos;issue. Créer un compte prend deux minutes si tu
-            veux suivre ce que devient ton signalement — et c&apos;est le même compte qui te permettra
-            de proposer une correction toi-même.
+            Colle juste le message dans <span className="text-accent">{DISCORD_CHANNEL}</span>, sur
+            le Discord de la classe — pas encore dessus ? demande le lien au prof. C&apos;est déjà
+            utile, quelqu&apos;un ouvrira l&apos;issue. Créer un compte GitHub prend deux minutes si
+            tu veux suivre ce que devient ton signalement — et c&apos;est le même compte qui te
+            permettra de proposer une correction toi-même.
+          </p>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Si tu ouvres quand même un compte : une issue est publique et signée avec ton nom
+            GitHub — souvent ton vrai nom — de façon permanente, sur un dépôt lié à la classe.
+            Choisis un pseudonyme si ça compte pour toi. Ne poster que sur Discord reste un choix
+            parfaitement valable.
           </p>
         </div>
       </section>

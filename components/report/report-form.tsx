@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Copy, Check, ExternalLink } from "lucide-react"
 import { useAuth } from "@/components/auth/auth-provider"
 import {
@@ -32,10 +32,26 @@ export function ReportForm() {
   const [pseudo, setPseudo] = useState("")
   const [agent, setAgent] = useState("")
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle")
+  // Le pseudo est le seul champ « vie privée » du formulaire : une fois que
+  // l'élève l'a effacé volontairement, il ne doit pas revenir tout seul au
+  // prochain rendu déclenché par un `refresh()` de la session. On ne le
+  // pré-remplit donc qu'une fois par montage, jamais après.
+  const pseudoFilledRef = useRef(false)
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    if (user?.pseudo) setPseudo(user.pseudo)
+    if (user?.pseudo && !pseudoFilledRef.current) {
+      setPseudo(user.pseudo)
+      pseudoFilledRef.current = true
+    }
   }, [user])
+
+  useEffect(() => {
+    // Le timeout de « copié » ne doit pas retomber sur un composant démonté.
+    return () => {
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current)
+    }
+  }, [])
 
   useEffect(() => {
     // Le navigateur et l'OS expliquent la moitié des bugs d'affichage. C'est
@@ -64,7 +80,8 @@ export function ReportForm() {
       // refusée : rien n'est parti, on le dit à l'élève plutôt que de mentir.
       setCopyState("failed")
     }
-    setTimeout(() => setCopyState("idle"), 2000)
+    if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current)
+    copyTimeoutRef.current = setTimeout(() => setCopyState("idle"), 2000)
   }
 
   const inputClass =
@@ -110,6 +127,10 @@ export function ReportForm() {
             ) : field.input === "textarea" ? (
               <textarea
                 rows={4}
+                // Sans limite, un log entier collé ici ne se découvre tronqué
+                // qu'à la prévisualisation — et fait tourner la boucle de
+                // rognage de buildIssueUrl à chaque frappe pour rien.
+                maxLength={4000}
                 className={inputClass}
                 placeholder={field.placeholder}
                 value={fields[field.id] ?? ""}
@@ -145,11 +166,15 @@ export function ReportForm() {
 
       <div className="flex flex-col gap-3 border-2 border-foreground p-5">
         <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-          Ce que tu vas envoyer
+          Le message pour {DISCORD_CHANNEL}
         </span>
         <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words border-2 border-border bg-muted p-4 font-mono text-xs text-foreground">
           {message}
         </pre>
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          L&apos;issue GitHub, elle, ne reprend que les champs du formulaire ci-dessus — ni ton
+          pseudo, ni ton navigateur.
+        </p>
 
         {!ready && (
           <p className="font-mono text-[11px] uppercase tracking-widest text-destructive">

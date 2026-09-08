@@ -15,7 +15,19 @@ export const DISCORD_CHANNEL = "#bug-report"
 export const DISCORD_LIMIT = 2000
 /** Au-delà, une URL est tronquée ou refusée selon le navigateur. */
 export const URL_BUDGET = 6000
+/**
+ * Utilisé quand c'est le message Discord qui est coupé : la suite existe
+ * réellement ailleurs, dans l'issue.
+ */
 export const TRUNCATION_MARK = "…(coupé — la suite est dans l'issue)"
+/**
+ * Utilisé quand c'est un champ *dans l'URL de l'issue* qui est coupé. Là, il
+ * n'y a pas d'« ailleurs » : la partie rognée n'existe nulle part. Reprendre
+ * TRUNCATION_MARK ici promettrait une suite qui n'existe pas.
+ */
+export const URL_TRUNCATION_MARK = "…(texte trop long, coupé)"
+/** Longueur du résumé de titre d'issue, voir `issueTitle` ci-dessous. */
+const TITLE_SUMMARY_MAX = 60
 
 export type ReportKind = "bug" | "contenu" | "code" | "idee"
 
@@ -108,14 +120,45 @@ export function specFor(kind: ReportKind): KindSpec {
   return spec
 }
 
-function truncate(text: string, max: number): string {
+function truncate(text: string, max: number, mark: string = TRUNCATION_MARK): string {
   if (text.length <= max) return text
   if (max <= 0) return ""
   // Pas assez de place pour le repère de coupure lui-même : l'ajouter
   // dépasserait `max`. On tronque net plutôt que de mentir sur la longueur.
-  if (max <= TRUNCATION_MARK.length) return text.slice(0, max)
-  const keep = max - TRUNCATION_MARK.length - 1
-  return `${text.slice(0, keep).trimEnd()}\n${TRUNCATION_MARK}`
+  if (max <= mark.length) return text.slice(0, max)
+  const keep = max - mark.length - 1
+  return `${text.slice(0, keep).trimEnd()}\n${mark}`
+}
+
+/**
+ * Le tag court en tête du titre d'issue, un par type. Dérivé du label
+ * plutôt que dupliqué dans une table à part : ajouter un type à KINDS n'a
+ * rien de plus à tenir à jour ici.
+ */
+export function titleTagFor(kind: ReportKind): string {
+  return `[${specFor(kind).label.toUpperCase()}]`
+}
+
+/**
+ * Le titre d'une issue pré-remplie. GitHub exige toujours un titre — le
+ * laisser vide, c'est promettre une issue « déjà remplie » et échouer dès la
+ * première case que l'élève voit (voir buildIssueUrl). On construit un
+ * résumé court à partir du premier champ obligatoire du type — celui que
+ * l'élève a le plus de chances d'avoir rempli en premier — coupé à ~60
+ * caractères : assez pour identifier le signalement dans la liste des
+ * issues, jamais assez pour peser sur le budget d'URL.
+ */
+function issueTitle(spec: KindSpec, fields: Record<string, string>): string {
+  const tag = titleTagFor(spec.kind)
+  const first = spec.fields.find((f) => f.required)
+  const raw = first ? (fields[first.id] ?? "").trim() : ""
+  if (!raw) return tag
+  const oneLine = raw.replace(/\s+/g, " ").trim()
+  const summary =
+    oneLine.length <= TITLE_SUMMARY_MAX
+      ? oneLine
+      : `${oneLine.slice(0, TITLE_SUMMARY_MAX - 1).trimEnd()}…`
+  return `${tag} ${summary}`
 }
 
 /** Le texte que l'élève colle dans #bug-report. */
@@ -146,6 +189,10 @@ export function buildDiscordMessage(report: Report): string {
  */
 export function buildIssueUrl(report: Report, budget: number = URL_BUDGET): string {
   const spec = specFor(report.kind)
+  // Calculé une fois, à partir des champs tels que l'élève les a tapés : le
+  // titre reste un court résumé quoi qu'il arrive au corps pendant le
+  // rognage ci-dessous, donc pas besoin de le recalculer à chaque itération.
+  const title = issueTitle(spec, report.fields)
   const values = new Map<string, string>()
   for (const field of spec.fields) {
     const value = (report.fields[field.id] ?? "").trim()
@@ -153,7 +200,7 @@ export function buildIssueUrl(report: Report, budget: number = URL_BUDGET): stri
   }
 
   const render = () => {
-    const params = new URLSearchParams({ template: spec.template })
+    const params = new URLSearchParams({ template: spec.template, title })
     for (const [id, value] of values) params.set(id, value)
     return `${REPO_URL}/issues/new?${params.toString()}`
   }
@@ -171,14 +218,17 @@ export function buildIssueUrl(report: Report, budget: number = URL_BUDGET): stri
   // (tous les champs vides — auquel cas l'URL ne contient plus que le
   // gabarit fixe, très en-dessous d'URL_BUDGET). La garantie est donc
   // structurelle : elle tient même si on ajoute un champ à un KindSpec, si
-  // on baisse URL_BUDGET ou si on allonge TRUNCATION_MARK.
+  // on baisse URL_BUDGET ou si on allonge URL_TRUNCATION_MARK.
   let url = render()
   while (url.length > budget) {
     const longest = [...values.entries()].sort((a, b) => b[1].length - a[1].length)[0]
     if (!longest || longest[1].length === 0) break
     const [id, value] = longest
     const next = Math.max(0, Math.min(value.length - 1, Math.floor(value.length * 0.6)))
-    values.set(id, truncate(value, next))
+    // URL_TRUNCATION_MARK, pas TRUNCATION_MARK : ici il n'y a pas d'issue où
+    // « la suite » attendrait — c'est justement l'issue qu'on est en train
+    // de construire, et la partie rognée n'existe nulle part ailleurs.
+    values.set(id, truncate(value, next, URL_TRUNCATION_MARK))
     url = render()
   }
   if (url.length > budget) {

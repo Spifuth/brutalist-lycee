@@ -17,6 +17,7 @@ minutes. C'est la section 1.
 | Tu veux… | Va à |
 |---|---|
 | corriger une faute, ajouter une question de quiz | **§1** — dans le navigateur, rien à installer |
+| signaler un truc cassé, une faute, du code bizarre | **§13** — un formulaire, deux canaux |
 | comprendre les mots que tout le monde utilise | **§2** — le vocabulaire |
 | lancer le site sur ton ordi | **§4** — l'installation |
 | coder une vraie fonctionnalité | **§4** puis **§5** à **§8** |
