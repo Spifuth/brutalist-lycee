@@ -165,3 +165,55 @@ test("the whole set is the size the design settled on", () => {
   assert.equal(SECRET_SEEDS.length, 153, "153 = 8 original + 145 genuinely new (5 of the 150 merged into existing codes)")
   assert.equal(ordinary.length, 149)
 })
+
+// Mesuré le 2026-09-08 sur la base de prod : 37 secrets sur 160 avaient la
+// réponse écrite dans leur propre nom, donc il n'y avait rien à chercher — on
+// recopiait le titre. Les 26 secrets de culture concernés ont été réécrits ;
+// ce test empêche le suivant de revenir. `lib/secrets-yaml.ts` applique la même
+// règle au fichier privé, pour que les deux sources de secrets se tiennent.
+//
+// Les `SIN-*` en sont exemptés à dessein : leur nom décrit *où chercher dans le
+// site* (« Message dans la console », « Vue sur la source »), ce qui est
+// précisément son rôle. Ce qui les trahit, c'est la régularité du préfixe, pas
+// leur nom.
+test("le nom d'un secret ne contient pas sa propre réponse", () => {
+  const words = (text: string) =>
+    text
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter(Boolean)
+
+  const contains = (haystack: string[], needle: string[]) =>
+    needle.length > 0 &&
+    needle.length <= haystack.length &&
+    haystack.some((_, i) => needle.every((w, j) => haystack[i + j] === w))
+
+  const offenders = SECRET_SEEDS.filter(
+    (s) => !s.code.startsWith("SIN-") && contains(words(s.name), words(s.code)),
+  ).map((s) => `${s.code} → « ${s.name} »`)
+
+  assert.deepEqual(
+    offenders,
+    [],
+    "le nom donne la réponse : décris le secret sans le nommer, sinon il n'y a rien à chercher",
+  )
+})
+
+// Le barème a été ramené à quatre valeurs le 2026-09-08 (il en comptait 14).
+// Deux exceptions sont des blagues assumées et documentées ici plutôt que
+// tolérées en silence.
+test("les points d'un secret ordinaire découlent de sa difficulté", () => {
+  const SCALE: Record<string, number> = { easy: 10, medium: 20, hard: 30, insane: 50 }
+  const JOKES = new Set(["NICE-NUMBER", "CHICKEN-JOKE"])
+
+  for (const s of SECRET_SEEDS) {
+    if (s.unlockAt !== undefined || JOKES.has(s.code)) continue
+    assert.equal(
+      s.points,
+      SCALE[s.difficulty],
+      `${s.code} vaut ${s.points} points pour une difficulté « ${s.difficulty} » (attendu ${SCALE[s.difficulty]})`,
+    )
+  }
+})
