@@ -21,6 +21,15 @@ node_modules/
 # bind mount outside the repo — see lib/avatar-storage.ts)
 /data/avatars/
 
+# Secrets de la chasse — la liste privée ne remonte JAMAIS dans le dépôt.
+# Le dépôt est public : `db/seeds/secrets.ts` a déjà publié les 153 premiers
+# codes avec le jeu, et on ne dépublie pas. Les suivants vivent ici, et
+# `db/secrets.example.yml` (versionné, sans rien de neuf) suffit à documenter
+# le format.
+db/secrets.yml
+db/secrets.*.yml
+!db/secrets.example.yml
+
 # sdd scratch
 .superpowers/
 

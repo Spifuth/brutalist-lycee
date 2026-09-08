@@ -15,6 +15,8 @@
     "typecheck": "tsc --noEmit",
     "db:migrate": "node --env-file-if-exists=.env db/migrate.mjs",
     "db:seed": "tsx --env-file-if-exists=.env db/seed.ts",
+    "secrets:import": "tsx --env-file-if-exists=.env db/import-secrets.ts",
+    "secrets:export": "tsx --env-file-if-exists=.env db/export-secrets.ts",
     "db:setup": "node --env-file-if-exists=.env db/migrate.mjs && tsx --env-file-if-exists=.env db/seed.ts",
     "db:migrate-legacy": "node --experimental-sqlite --experimental-strip-types db/migrate-from-sqlite.ts",
     "check:origins": "node scripts/check-no-external-origins.mjs .next/static",

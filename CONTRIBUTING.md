@@ -428,18 +428,44 @@ après la réponse, c'est le moment où l'élève apprend quelque chose. Écris-
   (commit `fix(badges): four badges could never be earned`). Si tu ajoutes un
   `auto:`, ajoute aussi le code qui le déclenche, sinon mets `"manual"`.
 
-### Un secret — `db/seeds/secrets.ts`
+### Un secret — **pas dans une pull request**
 
-Lis l'en-tête du fichier avant d'y toucher : il décrit **quatre familles** de
-secrets qui ne se traitent pas pareil. En particulier, les secrets
-`"Connaissance — …"` nomment une vraie faille que ce site **n'a pas** : il ne
-faut surtout pas la créer pour rendre le secret « trouvable ».
+> [!WARNING]
+> **Les nouveaux secrets ne passent plus par le dépôt.** Ce dépôt est public :
+> tout code ajouté ici serait la réponse, publiée à côté de l'énigme. Les 153
+> premiers y sont restés — on ne dépublie pas ce qui est déjà sorti — mais les
+> suivants vivent dans un fichier `db/secrets.yml` **gitignoré**, qui ne quitte
+> jamais le serveur.
 
-Attention au **palier automatique** : sa valeur `unlockAt` doit correspondre au
-nombre de secrets ordinaires. Si tu en ajoutes un sans mettre le palier final à
-jour, la récompense « tu as tout trouvé » se déclenche trop tôt.
-`tests/secret-seeds.test.ts` le vérifie et fera échouer ta PR — c'est voulu, pas
-une brimade.
+Tu as une idée de secret ? **Ouvre une issue « Contenu »** en décrivant
+l'énigme *sans écrire le code*, ou passe par la page
+[`/bug-report`](https://lycee-next.nebulahost.tech/bug-report). Le prof
+l'ajoute au fichier privé et le verse en base :
+
+```bash
+pnpm secrets:import -- --file db/secrets.yml --dry-run   # contrôle
+pnpm secrets:import -- --file db/secrets.yml             # écriture
+```
+
+Le format est documenté par [`db/secrets.example.yml`](./db/secrets.example.yml),
+qui n'utilise que des secrets déjà publiés. Deux règles y sont **appliquées par
+l'import**, pas seulement recommandées :
+
+- le **nom ne contient jamais la réponse** — sinon il n'y a rien à chercher ;
+- la **catégorie doit exister** dans `lib/secret-taxonomy.ts`, sinon le secret
+  tomberait dans « Autre » sans prévenir.
+
+Un secret peut accepter **plusieurs réponses** (`aliases`) : une réponse juste
+mais non prévue refusée en plein cours, c'est un élève qui décroche.
+
+Le **palier final** n'est plus un nombre écrit à la main : `pnpm secrets:import`
+et `pnpm db:setup` le recalent tous les deux sur le nombre réel de secrets
+ordinaires. Il l'a été, et la prod a tourné avec un palier sept secrets trop
+bas.
+
+Enfin, les secrets `"Connaissance — …"` de `db/seeds/secrets.ts` nomment une
+vraie faille que ce site **n'a pas** : il ne faut surtout pas la créer pour
+rendre le secret « trouvable ». Lis l'en-tête du fichier avant d'y toucher.
 
 ### Un article de cours — `lib/docs-*.ts`
 

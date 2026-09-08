@@ -37,7 +37,6 @@ CREATE TABLE IF NOT EXISTS users (
 -- bind-mounted avatars directory (see lib/avatar-storage.ts).
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_file        TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_uploaded_at TIMESTAMPTZ;
-
 -- ---------------------------------------------------------------------
 -- SESSIONS  (opaque token stored in an httpOnly cookie)
 -- ---------------------------------------------------------------------
@@ -211,6 +210,21 @@ CREATE TABLE IF NOT EXISTS secret_redemptions (
   UNIQUE (user_id, secret_id)
 );
 CREATE INDEX IF NOT EXISTS secret_redemptions_user_idx ON secret_redemptions(user_id);
+
+-- Un secret, plusieurs formulations acceptées.
+--
+-- Né d'une mesure : quatre secrets « en double » de la base de prod ont tous
+-- été créés le 2026-09-07 à la même seconde, en pleine intervention, parce que
+-- des élèves donnaient une réponse juste mais non prévue et que le jeu la
+-- refusait. Le défaut n'était pas le contenu mais le modèle — un secret n'avait
+-- qu'un seul code. Un alias crédite le secret canonique : une validation, un
+-- lot de points, quelle que soit la formulation tapée.
+CREATE TABLE IF NOT EXISTS secret_aliases (
+  code       TEXT PRIMARY KEY,                 -- toujours stocké en majuscules
+  secret_id  UUID NOT NULL REFERENCES secrets(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS secret_aliases_secret_idx ON secret_aliases(secret_id);
 
 -- ---------------------------------------------------------------------
 -- SETTINGS  (key/value app config, e.g. live-quiz state)

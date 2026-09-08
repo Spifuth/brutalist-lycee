@@ -13,6 +13,7 @@ import { QUIZ_SEEDS } from "./seeds/quizzes"
 import { SECRET_SEEDS } from "./seeds/secrets"
 import { DOC_SUBJECTS } from "../lib/docs"
 import { hashPassphrase, generatePassphrase } from "../lib/crypto"
+import { FINAL_MILESTONE_CODE } from "../lib/milestones"
 
 const connectionString =
   process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.DATABASE_URL_UNPOOLED
@@ -141,6 +142,27 @@ async function seedAdmin() {
   console.log("========================================\n")
 }
 
+/**
+ * Recale le palier final sur le nombre réel de secrets ordinaires.
+ *
+ * Le fichier de seed déclare un seuil, et `tests/secret-seeds.test.ts` vérifie
+ * qu'il colle — mais seulement au fichier. La prod a tourné avec 149 pour 156
+ * secrets ordinaires, parce que sept avaient été créés depuis la console admin
+ * et que le test ne voit jamais la base. Le seuil est donc recalculé ici et à
+ * l'import : les deux chemins d'écriture le corrigent, aucun ne le laisse
+ * dériver.
+ */
+async function syncFinalMilestone() {
+  const { rows } = await db.query<{ unlock_at: number }>(
+    `UPDATE secrets
+        SET unlock_at = (SELECT COUNT(*) FROM secrets WHERE active AND unlock_at IS NULL)
+      WHERE code = $1
+      RETURNING unlock_at`,
+    [FINAL_MILESTONE_CODE],
+  )
+  if (rows[0]) console.log(`[seed] palier final : ${rows[0].unlock_at} secrets ordinaires.`)
+}
+
 async function seedSettings() {
   await db.query(
     `INSERT INTO settings (key, value) VALUES ('site', $1)
@@ -158,6 +180,7 @@ async function main() {
   await seedSecrets()
   await seedSettings()
   await seedAdmin()
+  await syncFinalMilestone()
   console.log("[seed] done.")
 }
 
