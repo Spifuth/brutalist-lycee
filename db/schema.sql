@@ -219,6 +219,12 @@ CREATE INDEX IF NOT EXISTS secret_redemptions_user_idx ON secret_redemptions(use
 -- refusait. Le défaut n'était pas le contenu mais le modèle — un secret n'avait
 -- qu'un seul code. Un alias crédite le secret canonique : une validation, un
 -- lot de points, quelle que soit la formulation tapée.
+-- L'endroit du site où un secret est posé (lib/secret-placements.ts).
+-- Le nom d'emplacement est dans le dépôt, le code reste ici : une page demande
+-- « le secret posé à tel endroit » et n'écrit jamais la réponse en clair.
+ALTER TABLE secrets ADD COLUMN IF NOT EXISTS placement TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS secrets_placement_key ON secrets(placement) WHERE placement IS NOT NULL;
+
 CREATE TABLE IF NOT EXISTS secret_aliases (
   code       TEXT PRIMARY KEY,                 -- toujours stocké en majuscules
   secret_id  UUID NOT NULL REFERENCES secrets(id) ON DELETE CASCADE,

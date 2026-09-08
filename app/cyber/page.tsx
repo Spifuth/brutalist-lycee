@@ -2,13 +2,23 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { PageShell, PageHeader } from "@/components/site/page-shell"
 import { Section, CodeBlock, Callout, KeyList, List, P } from "@/components/primitives"
+import { getPlacedCodes, encodeBase64, demoJwt, fakeApiKey } from "@/lib/secret-placements"
 
 export const metadata: Metadata = {
   title: "Cyber",
   description: "Les bases de la cybersécurité : menaces courantes, mots de passe, phishing et bons réflexes.",
 }
 
-export default function CyberPage() {
+// Trois cachettes de la chasse vivent dans la section « Lire ce qui traîne »
+// en bas de page. Elles ne sont pas décoratives : chacune illustre une erreur
+// réelle — un encodage pris pour un chiffrement, une charge utile de JWT lue
+// sans clé, une clé d'API laissée côté client. Les codes viennent de la base ;
+// le dépôt est public et ne doit jamais les contenir.
+export const dynamic = "force-dynamic"
+
+export default async function CyberPage() {
+  const codes = await getPlacedCodes(["base64", "jwt", "api-key"])
+
   return (
     <PageShell>
       <PageHeader
@@ -83,6 +93,46 @@ export default function CyberPage() {
         <Callout tone="warning" title="Le bon réflexe">
           En cas de doute, n'utilise jamais le lien du message. Va directement sur le site officiel
           en tapant l'adresse toi-même.
+        </Callout>
+      </Section>
+
+      <Section title="Lire ce qui traîne" eyebrow="// atelier" id="atelier">
+        <P>
+          Trois choses qu&apos;on croit protégées et qui ne le sont pas. Elles sont ici en vrai,
+          avec de fausses valeurs : à toi de les lire.
+        </P>
+
+        <P>
+          <strong>Encodé n&apos;est pas chiffré.</strong> Le Base64 sert à transporter du texte, pas
+          à le cacher : n&apos;importe quel navigateur le décode en une ligne.
+        </P>
+        {codes.base64 && <CodeBlock label="chaine.b64" code={encodeBase64(codes.base64)} />}
+
+        <P>
+          <strong>Un JWT se lit sans clé.</strong> Ses trois parties sont séparées par des points ;
+          la deuxième est du Base64. La signature ne protège pas le contenu, elle prouve seulement
+          qu&apos;il n&apos;a pas été modifié — celle-ci n&apos;en est pas une.
+        </P>
+        {codes.jwt && <CodeBlock label="jeton.jwt" code={demoJwt(codes.jwt)} />}
+
+        <P>
+          <strong>Une clé écrite côté client est publique.</strong> Tout ce que la page envoie au
+          navigateur est lisible : configuration comprise. Regarde le code source de cette page.
+        </P>
+        {codes["api-key"] && (
+          <script
+            type="application/json"
+            id="app-config"
+            // Une fausse clé, jamais une vraie : la faille est illustrée, pas créée.
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({ env: "demo", apiKey: fakeApiKey(codes["api-key"]) }, null, 2),
+            }}
+          />
+        )}
+
+        <Callout tone="warning" title="Ce que ça veut dire">
+          Aucun secret ne doit vivre dans une page. S&apos;il est arrivé jusqu&apos;au navigateur,
+          il appartient à celui qui regarde.
         </Callout>
       </Section>
 

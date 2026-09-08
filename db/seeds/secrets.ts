@@ -31,6 +31,16 @@ export interface SecretSeed {
   difficulty: SecretDifficulty
   badgeSlug?: string
   /**
+   * L'endroit du site où ce code est réellement posé, quand il l'est.
+   *
+   * Le nom d'emplacement vit ici, le code reste en base : une page demande
+   * « le secret posé à tel endroit » et n'écrit jamais la réponse dans le
+   * dépôt. Les valeurs possibles sont celles de `lib/secret-placements.ts`,
+   * et `tests/secret-placements.test.ts` vérifie que chacune est pourvue une
+   * fois et une seule.
+   */
+  placement?: string
+  /**
    * Number of NON-milestone secrets a student must have found for this one to
    * be granted automatically. `undefined` for an ordinary secret.
    *
@@ -901,37 +911,41 @@ export const SECRET_SEEDS: SecretSeed[] = [
     code: "SIN-ADMIN",
     name: "La page secrète /admin",
     hint: "Certains chemins d'URL sont tellement prévisibles qu'on les essaie en premier.",
-    location: "À IMPLÉMENTER — cacher le code sur une page au chemin prévisible",
+    location: "Dans le code de la page /admin",
     points: 30,
     category: "WEB",
     difficulty: "hard",
+    placement: "admin-path",
   },
   {
     code: "SIN-API-KEY-HARDCODED",
     name: "API key en dur",
     hint: "Une clé d'API écrite en dur dans le code d'une page est lisible par tout le monde. C'est une des fautes les plus courantes.",
-    location: "À IMPLÉMENTER — fausse clé (jamais une vraie) dans un commentaire JS",
+    location: "Fausse clé dans la configuration client de /cyber",
     points: 30,
     category: "CYBERSECURITY",
     difficulty: "hard",
+    placement: "api-key",
   },
   {
     code: "SIN-BACKUP-FILE",
     name: "Backup .bak oublié",
     hint: "Un fichier de sauvegarde oublié à côté de l'original garde en général tout son contenu.",
-    location: "À IMPLÉMENTER — fichier .bak leurre ne contenant que le code",
+    location: "/backup.bak, à la racine du site",
     points: 50,
     category: "CYBERSECURITY",
     difficulty: "insane",
+    placement: "backup-file",
   },
   {
     code: "SIN-BASE64-DECODE",
     name: "Décode-moi Base64",
     hint: "Le Base64 n'est pas du chiffrement, seulement un encodage. N'importe quel décodeur en ligne suffit à le lire.",
-    location: "À IMPLÉMENTER — chaîne base64 à placer dans une page",
+    location: "Chaîne encodée en Base64 sur /cyber",
     points: 20,
     category: "ENCODING",
     difficulty: "medium",
+    placement: "base64",
   },
   {
     code: "SIN-CONSOLE",
@@ -946,10 +960,11 @@ export const SECRET_SEEDS: SecretSeed[] = [
     code: "SIN-CSS-DISPLAY-NONE",
     name: "Cache-cache CSS display none",
     hint: "Le CSS sait rendre un texte invisible sans le supprimer. Sélectionne toute la page pour t'en convaincre.",
-    location: "À IMPLÉMENTER — texte masqué en CSS",
+    location: "Texte masqué en CSS sur /chasse — il ressort en sélectionnant la page",
     points: 30,
     category: "WEB",
     difficulty: "hard",
+    placement: "hidden-css",
   },
   {
     code: "SIN-DEBUG-PARAM",
@@ -982,19 +997,21 @@ export const SECRET_SEEDS: SecretSeed[] = [
     code: "SIN-HEADER-CUSTOM",
     name: "Headers HTTP secrets",
     hint: "Une réponse HTTP ne contient pas que la page : elle transporte aussi des en-têtes que le navigateur ne montre pas.",
-    location: "À IMPLÉMENTER — en-tête de réponse X-Custom-Secret",
+    location: "En-tête X-Custom-Secret de la réponse /api/decoy",
     points: 30,
     category: "CYBERSECURITY",
     difficulty: "hard",
+    placement: "header",
   },
   {
     code: "SIN-JWT-DECODE",
     name: "JWT token decodé",
     hint: "Un JWT n'est pas chiffré : sa charge utile est du Base64 que n'importe qui peut lire. La signature protège l'intégrité, pas le secret.",
-    location: "À IMPLÉMENTER — JWT de démonstration à décoder",
+    location: "Charge utile d'un JWT de démonstration sur /cyber",
     points: 30,
     category: "CYBERSECURITY",
     difficulty: "hard",
+    placement: "jwt",
   },
   {
     code: "SIN-KONAMI",
@@ -1010,19 +1027,21 @@ export const SECRET_SEEDS: SecretSeed[] = [
     code: "SIN-LOCALSTORAGE-HACK",
     name: "LocalStorage infiltration admin",
     hint: "Le navigateur garde des données pour chaque site. Outils de développement, onglet Application, Local Storage.",
-    location: "À IMPLÉMENTER — clé leurre dans localStorage",
+    location: "Clé leurre écrite dans le localStorage par /chasse",
     points: 20,
     category: "WEB",
     difficulty: "medium",
+    placement: "local-storage",
   },
   {
     code: "SIN-NETWORK-SPY",
     name: "Requête réseau suspecte",
     hint: "L'onglet Réseau des outils de développement montre tout ce qu'une page demande vraiment, pas seulement ce qu'elle affiche.",
-    location: "À IMPLÉMENTER — requête leurre visible dans l'onglet Réseau",
+    location: "Réponse de /api/decoy, visible dans l'onglet Réseau depuis /chasse",
     points: 30,
     category: "CYBERSECURITY",
     difficulty: "hard",
+    placement: "network",
   },
   {
     code: "SIN-PATH-TRAVERSAL",
@@ -1102,10 +1121,11 @@ export const SECRET_SEEDS: SecretSeed[] = [
     code: "SIN-TIMING-TRAP",
     name: "Timing parfait minuit",
     hint: "Certaines choses ne se montrent qu'à une heure très précise.",
-    location: "À IMPLÉMENTER — élément affiché uniquement à minuit",
+    location: "Affiché sur /chasse entre 00h00 et 00h05",
     points: 50,
     category: "HACKING",
     difficulty: "insane",
+    placement: "timing",
   },
   {
     code: "SIN-WEAK-PASSWORD",
@@ -1120,10 +1140,11 @@ export const SECRET_SEEDS: SecretSeed[] = [
     code: "SIN-ZERO-WIDTH",
     name: "Caractères invisibles Unicode",
     hint: "Unicode contient des caractères de largeur nulle : invisibles à l'œil, bien présents au copier-coller.",
-    location: "À IMPLÉMENTER — espaces zéro-largeur encodant le code",
+    location: "Caractères de largeur nulle dans un paragraphe de /docs",
     points: 30,
     category: "ENCODING",
     difficulty: "hard",
+    placement: "zero-width",
   },
   {
     code: "SLENDERMAN",
