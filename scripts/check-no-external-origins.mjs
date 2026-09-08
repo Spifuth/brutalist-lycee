@@ -36,10 +36,17 @@ const ALLOWED = new Set([
   "react.dev", // React's minified production error decoder embeds
                // "https://react.dev/errors/<code>" as a literal prefix.
                // Static string, never fetched.
-  "github.com", // core-js (bundled polyfill dependency) carries its license
-                // header as a comment: a
-                // "https://github.com/zloirock/core-js/blob/.../LICENSE" URL.
-                // Static string in a license comment, never fetched.
+  "github.com", // Two distinct reasons, both static strings, neither a
+                // subresource load:
+                // 1. core-js (bundled polyfill dependency) carries its license
+                //    header as a comment: a
+                //    "https://github.com/zloirock/core-js/blob/.../LICENSE" URL.
+                // 2. lib/bug-report.ts builds
+                //    "https://github.com/Spifuth/brutalist-lycee/issues/new?..."
+                //    so /bug-report can open a prefilled issue. That URL is
+                //    navigated to in a new tab on a click — the browser leaves
+                //    this site — it is never fetched into the page, so it
+                //    loads no third-party code and leaks nothing on render.
 ])
 
 // Origins that are fine in comments/docs but must never be fetched at runtime.

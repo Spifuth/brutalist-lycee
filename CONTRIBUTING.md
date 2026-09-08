@@ -17,6 +17,7 @@ minutes. C'est la section 1.
 | Tu veux… | Va à |
 |---|---|
 | corriger une faute, ajouter une question de quiz | **§1** — dans le navigateur, rien à installer |
+| signaler un truc cassé, une faute, du code bizarre | **§13** — un formulaire, deux canaux |
 | comprendre les mots que tout le monde utilise | **§2** — le vocabulaire |
 | lancer le site sur ton ordi | **§4** — l'installation |
 | coder une vraie fonctionnalité | **§4** puis **§5** à **§8** |
@@ -545,10 +546,41 @@ supprimée automatiquement. Ton travail sera en ligne au prochain déploiement.
 
 ---
 
-## 13. Bloqué ?
+## 13. Signaler quelque chose
 
-- Une erreur que tu ne comprends pas → ouvre une issue *Bug* et colle le message
-  **en entier, en texte** (pas une capture d'écran illisible).
+Tu n'as pas besoin de savoir corriger un problème pour le signaler. Un bon
+rapport vaut souvent plus qu'un correctif approximatif.
+
+**Le plus simple : la page [`/bug-report`](https://lycee-next.nebulahost.tech/bug-report) du site.**
+Tu remplis un formulaire une fois, et tu obtiens les deux choses à faire : le
+message à coller dans `#bug-report` sur le Discord de la classe, et un lien qui
+ouvre une issue GitHub **déjà remplie**.
+
+Quatre types, quatre destinations :
+
+| Ce que tu as trouvé | Ça part dans |
+|---|---|
+| une page qui plante, un bouton qui ne fait rien | `bug.yml` |
+| une faute, une réponse de quiz fausse, un cours à écrire | `contenu.yml` |
+| du code dupliqué, du code mort, un truc incohérent | `code.yml` |
+| une fonctionnalité qui manque | `idee.yml` |
+
+**Fais les deux canaux, pas un seul.** Le message Discord est vu tout de suite
+par toute la classe, mais il descend dans le fil et disparaît. L'issue ne
+disparaît pas : elle porte un numéro, elle se ferme quand c'est réparé, et
+c'est elle qu'on relit dans trois semaines.
+
+Un rapport utile tient en trois règles : **une seule chose à la fois**, **les
+étapes exactes dans l'ordre**, et **le message d'erreur en texte** (F12 →
+Console) et non en capture d'écran. Et jamais le nom, la photo ou l'adresse
+d'un camarade : le dépôt est public.
+
+---
+
+## 14. Bloqué ?
+
+- Une erreur que tu ne comprends pas → passe par [`/bug-report`](https://lycee-next.nebulahost.tech/bug-report)
+  (§13) et colle le message **en entier, en texte** — pas une capture d'écran illisible.
 - Une question sur le fonctionnement du site → la page `/comment-ca-marche`, puis
   [SELF_HOSTING.md](./SELF_HOSTING.md).
 - Git t'embrouille → le cours **Git & GitHub** du site, `/docs`.
