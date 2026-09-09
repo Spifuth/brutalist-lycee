@@ -10,6 +10,7 @@
 // Explicit .ts extension (tsconfig allowImportingTsExtensions): tests run under
 // `node --test --experimental-strip-types`, which resolves ESM specifiers
 // literally and cannot find an extensionless one.
+import { CE_SITE_SUBJECT } from "./docs-ce-site.ts"
 import { GIT_SUBJECT } from "./docs-git.ts"
 import { PASSWORD_MANAGERS_ARTICLE } from "./docs-gestionnaires-mdp.ts"
 import { RESEAUX_SUBJECT } from "./docs-reseaux.ts"
@@ -174,6 +175,9 @@ export const DOC_SUBJECTS: DocSubject[] = [
       makeArticle("cookies", "Cookies et traceurs", "Ce qui te suit d'un site à l'autre.", ["Rôle", "Traceurs", "Contrôle"]),
     ],
   },
+  // Straight after "Le Web": the same ideas, but applied to the one site the
+  // reader already has open, with traces they can go and measure themselves.
+  CE_SITE_SUBJECT,
   {
     slug: "donnees",
     title: "Données & vie privée",
