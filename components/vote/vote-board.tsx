@@ -6,6 +6,7 @@ import { VOTE_TOPICS, MAX_PICKS, type VoteTopic } from "@/lib/vote"
 import { getMyVotes, toggleVote } from "@/app/actions/engage"
 import { useAuth } from "@/components/auth/auth-provider"
 import type { LiveSnapshot } from "@/lib/live-broadcast"
+import { connectSse } from "@/lib/sse-client"
 import { cn } from "@/lib/utils"
 
 // Server-authoritative totals, like components/quiz/live-quiz.tsx: the vote
@@ -21,15 +22,18 @@ export function VoteBoard() {
   const [warn, setWarn] = useState<string | null>(null)
 
   useEffect(() => {
-    const source = new EventSource("/api/live/stream")
-    source.onmessage = (event) => {
-      try {
-        setSnapshot(JSON.parse(event.data) as LiveSnapshot)
-      } catch {
-        // Malformed frame — skip it, the next tick will correct itself.
-      }
-    }
-    return () => source.close()
+    const connection = connectSse("/api/live/stream", {
+      on: {
+        message: (data) => {
+          try {
+            setSnapshot(JSON.parse(data) as LiveSnapshot)
+          } catch {
+            // Malformed frame — skip it, the next tick will correct itself.
+          }
+        },
+      },
+    })
+    return () => connection.close()
   }, [])
 
   useEffect(() => {

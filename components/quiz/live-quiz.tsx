@@ -6,6 +6,7 @@ import { Radio, Users, Clock, Trophy, Check, X } from "lucide-react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { joinSession, submitAnswer } from "@/app/actions/live"
 import type { LiveSnapshot } from "@/lib/live-broadcast"
+import { connectSse } from "@/lib/sse-client"
 import { cn } from "@/lib/utils"
 
 // Server-authoritative: everything below is a render of the snapshot the
@@ -21,18 +22,24 @@ export function LiveQuiz() {
   const lastQuestionKey = useRef<string | null>(null)
   const joinedSessionId = useRef<string | null>(null)
 
-  // Subscribe to the live stream. A dropped connection is reopened by the
-  // browser's own EventSource retry, not by anything here.
+  // Subscribe to the live stream. This used to say the browser's own
+  // EventSource retry reopened a dropped connection; it does not when the
+  // response is a non-200, and it cannot see a stream that goes quiet without
+  // erroring. A teacher mid-session would have had a frozen board and no sign
+  // of it. lib/sse-client supervises both cases.
   useEffect(() => {
-    const source = new EventSource("/api/live/stream")
-    source.onmessage = (event) => {
-      try {
-        setSnapshot(JSON.parse(event.data) as LiveSnapshot)
-      } catch {
-        // Malformed frame — skip it, the next tick will correct itself.
-      }
-    }
-    return () => source.close()
+    const connection = connectSse("/api/live/stream", {
+      on: {
+        message: (data) => {
+          try {
+            setSnapshot(JSON.parse(data) as LiveSnapshot)
+          } catch {
+            // Malformed frame — skip it, the next tick will correct itself.
+          }
+        },
+      },
+    })
+    return () => connection.close()
   }, [])
 
   const state = snapshot?.state ?? null

@@ -11,6 +11,7 @@ import {
   isInBounds,
 } from "@/lib/pixelwar"
 import { placePixel, myCooldown } from "@/app/actions/pixelwar"
+import { connectSse } from "@/lib/sse-client"
 import { cn } from "@/lib/utils"
 
 /** 255 means "never painted" — the canvas shows the page background there. */
@@ -161,19 +162,22 @@ export function PixelCanvas({ signedIn }: { signedIn: boolean }) {
   }, [])
 
   // ------------------------------------------------------------------ stream
+  // Supervised rather than a bare EventSource: the browser abandons a stream
+  // for good on a non-200 (Traefik's 502 during a recreate), and a stream can
+  // also go quiet without reporting anything at all. Either way this badge
+  // used to read "hors ligne" until the student reloaded. See lib/sse-client.
   useEffect(() => {
-    const source = new EventSource("/api/pixelwar/stream")
-    source.addEventListener("full", (e) => {
-      setConnected(true)
-      applySnapshot(JSON.parse((e as MessageEvent).data) as Snapshot, true)
-      centreOnContent()
+    const connection = connectSse("/api/pixelwar/stream", {
+      on: {
+        full: (data) => {
+          applySnapshot(JSON.parse(data) as Snapshot, true)
+          centreOnContent()
+        },
+        tick: (data) => applySnapshot(JSON.parse(data) as Snapshot, false),
+      },
+      onStatus: setConnected,
     })
-    source.addEventListener("tick", (e) => {
-      setConnected(true)
-      applySnapshot(JSON.parse((e as MessageEvent).data) as Snapshot, false)
-    })
-    source.onerror = () => setConnected(false)
-    return () => source.close()
+    return () => connection.close()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [applySnapshot])
 

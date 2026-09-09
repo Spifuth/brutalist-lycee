@@ -6,6 +6,7 @@ import { Pause, Play, Radio, ThumbsUp } from "lucide-react"
 import { upvoteQuestion } from "@/app/actions/engage"
 import { useAuth } from "@/components/auth/auth-provider"
 import type { LiveSnapshot } from "@/lib/live-broadcast"
+import { connectSse } from "@/lib/sse-client"
 import { cn } from "@/lib/utils"
 
 // Server-authoritative, like components/quiz/live-quiz.tsx: every question on
@@ -28,17 +29,20 @@ export function LiveQuestions() {
   }, [paused])
 
   useEffect(() => {
-    const source = new EventSource("/api/live/stream")
-    source.onmessage = (event) => {
-      try {
-        const parsed = JSON.parse(event.data) as LiveSnapshot
-        latest.current = parsed
-        if (!pausedRef.current) setSnapshot(parsed)
-      } catch {
-        // Malformed frame — skip it, the next tick will correct itself.
-      }
-    }
-    return () => source.close()
+    const connection = connectSse("/api/live/stream", {
+      on: {
+        message: (data) => {
+          try {
+            const parsed = JSON.parse(data) as LiveSnapshot
+            latest.current = parsed
+            if (!pausedRef.current) setSnapshot(parsed)
+          } catch {
+            // Malformed frame — skip it, the next tick will correct itself.
+          }
+        },
+      },
+    })
+    return () => connection.close()
   }, [])
 
   // Applies the most recently received frame the moment playback resumes,
