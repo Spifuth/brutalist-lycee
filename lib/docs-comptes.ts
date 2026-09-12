@@ -371,14 +371,14 @@ const PASSKEYS_ARTICLE: DocArticle = {
     {
       type: "para",
       text:
-        "Ce que ça déplace : il n'y a plus rien à hameçonner, plus rien à deviner, plus rien à rejouer au moment de la connexion. Le maillon faible n'est plus ta mémoire ni ta vigilance — c'est ton appareil. Toute la sécurité de ton compte tient désormais à la propreté de la machine sur laquelle tu es connecté.",
+        "Ce que ça déplace : sur le chemin de la passkey, il n'y a plus rien à hameçonner, plus rien à deviner, plus rien à rejouer. Restent les deux portes qu'elle ne ferme pas — l'ancienne, restée ouverte à côté d'elle, et la session, une fois que tu es entré. Le maillon faible n'est donc plus ta mémoire ni ta vigilance : c'est ton appareil, et ta discipline à ne pas repasser par l'ancienne porte.",
     },
     {
       type: "callout",
       tone: "success",
       title: "La boucle est bouclée",
       text:
-        "Le tout premier article de cette matière posait une question simple : qu'est-ce qui prouve que c'est bien toi ? Une passkey rend cet instant-là presque inattaquable — plus rien à voler avant la connexion, plus rien à hameçonner pendant. Mais la preuve d'identité n'a jamais été le problème le plus dur ; c'est la session qui dure après elle qui reste, encore et toujours, ta responsabilité.",
+        "Le tout premier article de cette matière posait une question simple : qu'est-ce qui prouve que c'est bien toi ? Une passkey rend cet instant-là presque inattaquable — à condition de ne plus jamais repasser par l'ancienne porte. Mais la preuve d'identité n'a jamais été le problème le plus dur ; c'est la session qui dure après elle qui reste, encore et toujours, ta responsabilité.",
     },
   ],
 }
