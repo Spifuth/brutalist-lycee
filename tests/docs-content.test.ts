@@ -1,5 +1,6 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 import { DOC_SUBJECTS, getSubject, type DocBlock } from "../lib/docs.ts"
 import { buildPruneKeys } from "../lib/docs-prune-keys.ts"
 
@@ -155,6 +156,16 @@ test("the comptes subject is written, not placeholder", () => {
   const comptes = getSubject("comptes")
   assert.ok(comptes, 'no "comptes" subject — the accounts & identity course is missing')
 
+  // A substance floor, not just an absence-of-lorem check: an article stubbed
+  // to a single `{type: "para", text: "TODO"}` block has no lorem string in
+  // it and would otherwise pass this test outright. Thresholds are picked
+  // with real headroom below the branch's actual content (as of this test,
+  // the five comptes articles range 10-21 blocks and 2443-8981 characters of
+  // visible text) so genuine content is never at risk of tripping this, while
+  // a stub — one block, a few characters — trips both.
+  const MIN_BLOCKS_PER_ARTICLE = 6
+  const MIN_PROSE_LENGTH_PER_ARTICLE = 800
+
   for (const a of comptes.articles) {
     const text = JSON.stringify(a.blocks)
     assert.ok(
@@ -166,6 +177,18 @@ test("the comptes subject is written, not placeholder", () => {
       `comptes/${a.slug} still contains a "à remplacer" placeholder`,
     )
     assert.ok(a.summary.length > 0, `comptes/${a.slug} has no summary — it is shown on the subject index`)
+
+    assert.ok(
+      a.blocks.length >= MIN_BLOCKS_PER_ARTICLE,
+      `comptes/${a.slug} has only ${a.blocks.length} block(s) — below the floor of ${MIN_BLOCKS_PER_ARTICLE} chosen for a real article (current comptes articles have 10-21); a one-block stub would otherwise pass`,
+    )
+    const prose: string[] = []
+    collectStrings(a.blocks, prose)
+    const proseLength = prose.reduce((n, str) => n + str.length, 0)
+    assert.ok(
+      proseLength >= MIN_PROSE_LENGTH_PER_ARTICLE,
+      `comptes/${a.slug} has only ${proseLength} character(s) of visible text — below the floor of ${MIN_PROSE_LENGTH_PER_ARTICLE} chosen for a real article (current comptes articles have 2443-8981); a stub like {type:"para", text:"TODO"} would otherwise pass`,
+    )
   }
 })
 
@@ -266,18 +289,31 @@ function collectStrings(value: unknown, out: string[]): void {
 }
 
 test("no credential-shaped string is committed in the docs", () => {
+  // Walk the whole subject/article, not just its blocks: a token pasted into
+  // article.title, article.summary, subject.title or subject.description
+  // used to slip past this test entirely, because collectStrings was only
+  // ever called per-block. Strictly broader than before — no behaviour
+  // change on current content, since none of those fields hold a token today.
   for (const s of DOC_SUBJECTS) {
+    const subjectStrings: string[] = []
+    collectStrings(s.title, subjectStrings)
+    collectStrings(s.description, subjectStrings)
+    for (const str of subjectStrings) {
+      assert.equal(
+        looksLikeRealToken(str),
+        false,
+        `${s.slug}: the subject's title or description contains a string shaped like a real token, with no redaction marker — never commit a credential, even an expired one`,
+      )
+    }
     for (const a of s.articles) {
-      for (const b of a.blocks as DocBlock[]) {
-        const strings: string[] = []
-        collectStrings(b, strings)
-        for (const str of strings) {
-          assert.equal(
-            looksLikeRealToken(str),
-            false,
-            `${s.slug}/${a.slug}: a block contains a string shaped like a real token, with no redaction marker — never commit a credential, even an expired one`,
-          )
-        }
+      const strings: string[] = []
+      collectStrings(a, strings)
+      for (const str of strings) {
+        assert.equal(
+          looksLikeRealToken(str),
+          false,
+          `${s.slug}/${a.slug}: a string (its title, its summary, or a block) contains a string shaped like a real token, with no redaction marker — never commit a credential, even an expired one`,
+        )
       }
     }
   }
@@ -352,4 +388,44 @@ test("the retired securite placeholders are gone", () => {
     slugs.includes("gestionnaires"),
     "securite/gestionnaires was removed — it is written content and its URL is live; it stays where it is",
   )
+})
+
+// app/docs/page.tsx hand-writes, in its intro paragraph, the list of subjects
+// that are actually rédigés. Nothing ties that sentence to DOC_SUBJECTS: this
+// branch had to update it by hand (commit 7cbcd39, which fixed the exact same
+// sentence after it fell behind once already), and the next written subject
+// will need the same manual edit. Forget it, and the page keeps rendering a
+// confident, wrong sentence — it is prose, not a broken build, so nothing
+// else would ever catch it.
+
+/** A subject counts as written if none of its articles still carry a lorem marker. */
+function isWrittenSubject(subject: (typeof DOC_SUBJECTS)[number]): boolean {
+  return subject.articles.every((a) => {
+    const text = JSON.stringify(a.blocks)
+    return !text.includes("contenu d'exemple") && !text.includes("à remplacer")
+  })
+}
+
+test("app/docs/page.tsx's intro paragraph names every written subject", () => {
+  const source = readFileSync("app/docs/page.tsx", "utf8")
+  // The paragraph wraps across source lines and React forces HTML-entity
+  // escaping on "&" and "'" in JSX text (so "Comptes & identité" is literally
+  // "Comptes &amp; identité" in the source). Collapse whitespace and decode
+  // the entities this file actually uses before doing a plain substring
+  // match, instead of re-deriving JSX's escaping rules here.
+  const normalized = source
+    .replace(/\s+/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+
+  const written = DOC_SUBJECTS.filter(isWrittenSubject)
+  assert.ok(written.length > 0, "no subject in DOC_SUBJECTS is fully written — nothing to check this test against")
+
+  for (const subject of written) {
+    assert.ok(
+      normalized.includes(subject.title),
+      `app/docs/page.tsx's intro paragraph does not name "${subject.title}" — add it to the hand-written list of rédigés subjects in that paragraph (the « ... » sont rédigés sentence)`,
+    )
+  }
 })

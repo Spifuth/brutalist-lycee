@@ -33,7 +33,7 @@ const PREUVE_ARTICLE: DocArticle = {
       items: [
         {
           term: "Ce que tu sais",
-          desc: "Un mot de passe, un code PIN, une réponse secrète. Le problème, c'est que ça se copie, ça se devine, et ça se retape ailleurs — donc ça se réutilise, ce qui le rend volable sans même te toucher.",
+          desc: "Un mot de passe, un code PIN, une réponse secrète. Le problème, c'est que ça se copie, ça se devine, et ça se retape ailleurs — donc ça peut t'être volé sans qu'on te touche.",
         },
         {
           term: "Ce que tu as",
@@ -88,7 +88,7 @@ const MOT_DE_PASSE_ARTICLE: DocArticle = {
     {
       type: "para",
       text:
-        "Tr0ub4dor&3 a l'air redoutable avec ses chiffres et son caractère spécial, mais il ne fait que onze caractères, et il demande de réfléchir à chaque substitution pour s'en souvenir. Quatre mots ordinaires mis bout à bout, comme chameau-lampe-tiroir-nuage, dépassent vingt caractères sans effort et se retiennent comme une petite phrase. Ce qui coûte cher à un attaquant qui essaie toutes les combinaisons, ce n'est pas la présence d'un symbole ou d'une majuscule : c'est le nombre total de possibilités à tester, et ce nombre grimpe avec chaque caractère ajouté, pas avec chaque type de caractère utilisé. Un mot de passe plus long bat presque toujours un mot de passe plus tordu.",
+        "Tr0ub4dor&3 a l'air redoutable avec ses chiffres et son caractère spécial, mais il ne fait que onze caractères, et il demande de réfléchir à chaque substitution pour s'en souvenir. Quatre mots ordinaires mis bout à bout, comme chameau-lampe-tiroir-nuage, dépassent vingt caractères sans effort et se retiennent comme une petite phrase. Ce qui coûte cher à un attaquant qui essaie toutes les combinaisons, ce n'est pas la présence d'un symbole ou d'une majuscule : c'est le nombre total de possibilités à tester, et ce nombre grimpe bien plus vite avec chaque caractère ajouté qu'avec chaque type de caractère utilisé. Un mot de passe plus long bat presque toujours un mot de passe plus tordu.",
     },
     {
       type: "callout",
@@ -153,7 +153,7 @@ const DEUX_FACTEURS_ARTICLE: DocArticle = {
       type: "table",
       headers: ["Méthode", "Ce que ça arrête", "La faiblesse"],
       rows: [
-        ["SMS", "Un mot de passe volé puis rejoué", "Échange de carte SIM, interception réseau"],
+        ["SMS", "Un mot de passe volé, une fuite de base", "Échange de carte SIM, interception réseau"],
         [
           "Application TOTP (code à 6 chiffres)",
           "Un mot de passe volé, une fuite de base",
@@ -188,7 +188,7 @@ const DEUX_FACTEURS_ARTICLE: DocArticle = {
       tone: "warning",
       title: "Elle ne protège pas une session déjà ouverte",
       text:
-        "Il existe une manière d'entrer dans un compte qui ne passe jamais par cette porte — ni mot de passe, ni code, ni clé physique, parce qu'elle contourne la connexion elle-même. Le prochain article démonte ce cas précis à travers le jeton Discord, une preuve de session bien réelle : et ce que sa capture change pour la 2FA que tu viens de mettre en place, c'est rien.",
+        "Il existe une manière d'entrer dans un compte qui ne passe jamais par cette porte — ni mot de passe, ni code, ni clé physique, parce qu'elle contourne la connexion elle-même. Le prochain article démonte ce cas précis à travers le jeton Discord, une preuve de session bien réelle : et ce que ta 2FA toute neuve y change, c'est rien.",
     },
   ],
 }
@@ -302,9 +302,9 @@ const JETON_ARTICLE: DocArticle = {
         "Nettoyer la machine, avant tout le reste. Si ce qui a volé le premier jeton tourne encore, le suivant partira pareil : tu changeras ton mot de passe, tu te reconnecteras, et tu offriras au voleur un jeton tout neuf après avoir tout refait pour rien. Antivirus à jour, analyse complète, et on désinstalle l'extension ou le programme par lequel c'est arrivé.",
         "Changer le mot de passe. C'est ce geste, et lui seul, qui invalide les jetons déjà émis — la vraie révocation, pas une précaution de plus.",
         "Activer la double authentification si ce n'est pas déjà fait. Maintenant elle sert à quelque chose : les anciens jetons sont morts, la prochaine connexion repassera donc par la porte d'entrée, et c'est cette porte qu'elle garde.",
-        "Ranger les codes de secours ailleurs que sur la machine : dans le gestionnaire de mots de passe, ou sur un papier gardé hors de portée.",
+        "Ranger les codes de secours ailleurs que sur la machine : dans le gestionnaire de mots de passe, ou sur une feuille de papier rangée loin d'elle.",
         "Prévenir la classe et les serveurs où tu traînes. Pendant le vol, ton compte a peut-être envoyé des liens en ton nom, à des gens qui te font confiance — c'est comme ça que ça se propage.",
-        "Passer en revue les sessions actives et les applications autorisées dans les réglages de Discord, puis révoquer tout ce que tu ne reconnais pas.",
+        "Passer en revue les sessions actives et les applications autorisées dans les réglages de Discord. Une application autorisée par OAuth survit au changement de mot de passe : elle garde son accès même une fois les anciens jetons invalidés, c'est tout l'intérêt de cette étape. Et la session volée, elle, ne ressortira pas comme un appareil inconnu, puisque c'est la tienne : ne rien voir d'anormal dans la liste ne veut pas dire que tu es tranquille.",
       ],
     },
     {
@@ -325,7 +325,7 @@ const PASSKEYS_ARTICLE: DocArticle = {
     {
       type: "para",
       text:
-        "Depuis quelques années, certains sites te proposent de te connecter sans mot de passe, avec l'empreinte de ton doigt ou le code de déverrouillage de ton téléphone. Ce n'est pas un raccourci de confort qui contourne le mot de passe habituel : c'est un mécanisme entièrement différent, appelé passkey. Discord les prend en charge.",
+        "Après tout ça, la question devient presque évidente : est-ce qu'on peut supprimer le mot de passe ? Depuis quelques années, certains sites te proposent justement de te connecter sans lui, avec l'empreinte de ton doigt ou le code de déverrouillage de ton téléphone. Ce n'est pas un raccourci de confort qui contourne le mot de passe habituel : c'est un mécanisme entièrement différent, appelé passkey. Discord les prend en charge.",
     },
     { type: "section", id: "le-principe", text: "Le principe" },
     {
@@ -344,7 +344,7 @@ const PASSKEYS_ARTICLE: DocArticle = {
     {
       type: "para",
       text:
-        "La signature que ton appareil produit est liée à l'origine du site qui a envoyé le défi. Un faux discord-nitro.xyz, aussi bien imité soit-il, ne peut pas obtenir une signature valable pour discord.com : l'appareil refuse de signer pour la mauvaise origine, même si l'élève, lui, est complètement tombé dans le piège et pense sincèrement être sur le vrai site. C'est la première défense de cet article qui ne dépend plus de ta vigilance.",
+        "La signature que ton appareil produit est liée à l'origine du site qui a envoyé le défi. Un faux discord-nitro.xyz, aussi bien imité soit-il, ne peut pas obtenir une signature valable pour discord.com : l'appareil refuse de signer pour la mauvaise origine, même si l'élève, lui, est complètement tombé dans le piège et pense sincèrement être sur le vrai site. C'est la première défense de toute la matière qui ne dépend plus de ta vigilance.",
     },
     { type: "section", id: "ce-que-ca-remplace", text: "Ce que ça remplace" },
     {
@@ -362,6 +362,11 @@ const PASSKEYS_ARTICLE: DocArticle = {
       type: "para",
       text:
         "La dernière ligne du tableau est la dernière ligne de la matière. La passkey protège la connexion, pas la session. Un jeton volé sur ta machine marche toujours, passkey ou pas : il a été émis après une connexion parfaitement valide, exactement comme dans l'article sur le jeton Discord.",
+    },
+    {
+      type: "para",
+      text:
+        "Il y a une seconde limite, moins visible mais tout aussi réelle sur Discord : ajouter une passkey ajoute une façon de te connecter, elle n'en retire aucune. Le mot de passe reste actif à côté — Discord ne permet pas de le supprimer — donc un faux site n'a qu'à ne pas proposer de passkey et t'afficher, comme avant, la case mot de passe et code.",
     },
     {
       type: "para",

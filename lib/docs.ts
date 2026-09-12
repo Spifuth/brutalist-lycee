@@ -120,9 +120,10 @@ export const DOC_SUBJECTS: DocSubject[] = [
     command: "man security",
     description: "Se protéger et comprendre les menaces.",
     articles: [
-      // Written content, not lorem. The two lorem placeholders that used to
-      // frame it ("mots-de-passe", "2fa") moved to the comptes subject, where
-      // they are actually written.
+      // Written content, not lorem — unlike every other article in this
+      // subject below, still makeArticle() placeholders. "mots-de-passe" and
+      // "2fa" used to sit in this list too; both are retired, written for
+      // real in the comptes subject instead.
       PASSWORD_MANAGERS_ARTICLE,
       makeArticle("phishing", "Le phishing", "Reconnaître et éviter les messages piégés.", ["Les signes", "Les réflexes", "Que faire"]),
       makeArticle("malwares", "Virus et malwares", "Panorama des logiciels malveillants.", ["Types", "Contamination", "Protection"]),
