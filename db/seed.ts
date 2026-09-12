@@ -1,6 +1,8 @@
 // Re-runnable seed. Upserts the starting content (docs, quizzes, badges,
 // secrets) and ensures a default admin exists. Safe to run repeatedly — every
-// insert is an upsert keyed on a natural key (slug/code/pseudo).
+// insert is an upsert keyed on a natural key (slug/code/pseudo). Docs are
+// additionally pruned: an article removed from lib/docs.ts is removed from the
+// database, otherwise it would keep rendering forever.
 //
 //   pnpm db:seed
 //
@@ -96,6 +98,32 @@ async function seedDocs() {
       articleCount++
     }
   }
+
+  // The loop above only upserts. Removing an article from lib/docs.ts would
+  // otherwise leave it published in the database forever — a retired lorem
+  // placeholder that keeps rendering. Prune what the code no longer declares.
+  //
+  // Safe: doc_articles.subject_id is the only foreign key in this area
+  // (ON DELETE CASCADE from doc_subjects), and no other table references
+  // doc_articles — there is no reading progress or bookmark to take down.
+  const subjectSlugs = DOC_SUBJECTS.map((s) => s.slug)
+  const articleKeys = DOC_SUBJECTS.flatMap((s) => s.articles.map((a) => `${s.slug}/${a.slug}`))
+
+  const pruned = await db.query(
+    `DELETE FROM doc_articles a
+       USING doc_subjects s
+      WHERE a.subject_id = s.id
+        AND (s.slug || '/' || a.slug) <> ALL($1::text[])`,
+    [articleKeys],
+  )
+  const prunedSubjects = await db.query(
+    "DELETE FROM doc_subjects WHERE slug <> ALL($1::text[])",
+    [subjectSlugs],
+  )
+  if (pruned.rowCount || prunedSubjects.rowCount) {
+    console.log(`[seed] docs: pruned ${pruned.rowCount} article(s), ${prunedSubjects.rowCount} subject(s)`)
+  }
+
   console.log(`[seed] docs: ${DOC_SUBJECTS.length} subjects, ${articleCount} articles`)
 }
 
