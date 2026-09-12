@@ -317,10 +317,71 @@ const JETON_ARTICLE: DocArticle = {
   ],
 }
 
+const PASSKEYS_ARTICLE: DocArticle = {
+  slug: "passkeys",
+  title: "Les passkeys",
+  summary: "Ce qui remplace le mot de passe — et ce que ça ne répare pas.",
+  blocks: [
+    {
+      type: "para",
+      text:
+        "Depuis quelques années, certains sites te proposent de te connecter sans mot de passe, avec l'empreinte de ton doigt ou le code de déverrouillage de ton téléphone. Ce n'est pas un raccourci de confort qui contourne le mot de passe habituel : c'est un mécanisme entièrement différent, appelé passkey. Discord les prend en charge.",
+    },
+    { type: "section", id: "le-principe", text: "Le principe" },
+    {
+      type: "para",
+      text:
+        "Une passkey repose sur une paire de clés : une clé privée, qui ne quitte jamais l'appareil qui l'a créée, et une clé publique, que le site conserve de son côté. Pour te connecter, le site envoie un défi — une valeur aléatoire, différente à chaque fois — et ton appareil le signe avec la clé privée. Le site ne reçoit jamais que cette signature ; il vérifie qu'elle correspond à la clé publique qu'il a en base, et t'ouvre la porte.",
+    },
+    {
+      type: "callout",
+      tone: "info",
+      title: "Il n'y a plus rien à voler côté site",
+      text:
+        "Le site ne détient aucun secret partagé avec toi : pas de mot de passe, même haché, qui pourrait être cassé. Une fuite de sa base ne livre que des clés publiques, qui ne servent strictement à rien sans la clé privée restée sur ton appareil.",
+    },
+    { type: "section", id: "pourquoi-le-phishing-ne-marche-plus", text: "Pourquoi le hameçonnage ne marche plus" },
+    {
+      type: "para",
+      text:
+        "La signature que ton appareil produit est liée à l'origine du site qui a envoyé le défi. Un faux discord-nitro.xyz, aussi bien imité soit-il, ne peut pas obtenir une signature valable pour discord.com : l'appareil refuse de signer pour la mauvaise origine, même si l'élève, lui, est complètement tombé dans le piège et pense sincèrement être sur le vrai site. C'est la première défense de cet article qui ne dépend plus de ta vigilance.",
+    },
+    { type: "section", id: "ce-que-ca-remplace", text: "Ce que ça remplace" },
+    {
+      type: "table",
+      headers: ["Attaque", "Mot de passe", "TOTP", "Passkey"],
+      rows: [
+        ["Fuite de la base du site", "Compromis", "Protégé", "Protégé"],
+        ["Bourrage d'identifiants", "Compromis", "Protégé", "Protégé"],
+        ["Hameçonnage", "Compromis", "Compromis", "Protégé"],
+        ["Vol du jeton de session", "Compromis", "Compromis", "Compromis"],
+      ],
+    },
+    { type: "section", id: "la-limite-honnete", text: "La limite honnête" },
+    {
+      type: "para",
+      text:
+        "La dernière ligne du tableau est la dernière ligne de la matière. La passkey protège la connexion, pas la session. Un jeton volé sur ta machine marche toujours, passkey ou pas : il a été émis après une connexion parfaitement valide, exactement comme dans l'article sur le jeton Discord.",
+    },
+    {
+      type: "para",
+      text:
+        "Ce que ça déplace : il n'y a plus rien à hameçonner, plus rien à deviner, plus rien à rejouer au moment de la connexion. Le maillon faible n'est plus ta mémoire ni ta vigilance — c'est ton appareil. Toute la sécurité de ton compte tient désormais à la propreté de la machine sur laquelle tu es connecté.",
+    },
+    {
+      type: "callout",
+      tone: "success",
+      title: "La boucle est bouclée",
+      text:
+        "Le tout premier article de cette matière posait une question simple : qu'est-ce qui prouve que c'est bien toi ? Une passkey rend cet instant-là presque inattaquable — plus rien à voler avant la connexion, plus rien à hameçonner pendant. Mais la preuve d'identité n'a jamais été le problème le plus dur ; c'est la session qui dure après elle qui reste, encore et toujours, ta responsabilité.",
+    },
+  ],
+}
+
 export const COMPTES_SUBJECT: DocSubject = {
   slug: "comptes",
   title: "Comptes & identité",
   command: "man identity",
   description: "Ce qui prouve que c'est bien toi — et ce qui peut le voler.",
-  articles: [PREUVE_ARTICLE, MOT_DE_PASSE_ARTICLE, DEUX_FACTEURS_ARTICLE, JETON_ARTICLE],
+  articles: [PREUVE_ARTICLE, MOT_DE_PASSE_ARTICLE, DEUX_FACTEURS_ARTICLE, JETON_ARTICLE, PASSKEYS_ARTICLE],
 }

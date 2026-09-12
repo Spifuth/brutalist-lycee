@@ -264,3 +264,17 @@ test("no credential-shaped string is committed in the docs", () => {
     }
   }
 })
+
+test("the comptes subject covers the whole identity chain", () => {
+  // The subject is one argument in five steps: you prove once (preuve), the
+  // password is not enough (mot-de-passe), 2FA guards the door (deux-facteurs),
+  // the token walks past the door (jeton-discord), passkeys fix the door but
+  // not the room (passkeys). Drop one and the argument stops landing.
+  const comptes = getSubject("comptes")!
+  const expected = ["preuve", "mot-de-passe", "deux-facteurs", "jeton-discord", "passkeys"]
+  assert.deepEqual(
+    comptes.articles.map((a) => a.slug),
+    expected,
+    "the comptes articles are missing, renamed or out of order — the chain only reads in this sequence",
+  )
+})
