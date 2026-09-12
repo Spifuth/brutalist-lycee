@@ -74,10 +74,68 @@ const PREUVE_ARTICLE: DocArticle = {
   ],
 }
 
+const MOT_DE_PASSE_ARTICLE: DocArticle = {
+  slug: "mot-de-passe",
+  title: "Le mot de passe, et pourquoi il ne suffit plus",
+  summary: "Longueur, unicité, fuites : ce qui fait vraiment tomber un compte n'est pas ce qu'on croit.",
+  blocks: [
+    {
+      type: "para",
+      text:
+        "Le mot de passe est de loin le plus vieux des trois facteurs : bien avant l'informatique, les armées romaines s'en servaient déjà comme mot de passe de nuit, pour reconnaître leurs propres soldats dans le noir. C'est aussi, aujourd'hui, le seul des trois que la quasi-totalité des comptes en ligne acceptent seul, sans rien d'autre derrière lui. Toute la sécurité d'un compte Discord, d'une boîte mail ou de l'ENT repose donc, la plupart du temps, sur cette unique preuve. Le problème n'est pas qu'elle ait mal vieilli ; c'est qu'on l'utilise mal.",
+    },
+    { type: "section", id: "longueur-avant-complexite", text: "La longueur bat la complexité" },
+    {
+      type: "para",
+      text:
+        "Tr0ub4dor&3 a l'air redoutable avec ses chiffres et son caractère spécial, mais il ne fait que douze caractères, et il demande de réfléchir à chaque substitution pour s'en souvenir. Quatre mots ordinaires mis bout à bout, comme chameau-lampe-tiroir-nuage, dépassent vingt caractères sans effort et se retiennent comme une petite phrase. Ce qui coûte cher à un attaquant qui essaie toutes les combinaisons, ce n'est pas la présence d'un symbole ou d'une majuscule : c'est le nombre total de possibilités à tester, et ce nombre grimpe avec chaque caractère ajouté, pas avec chaque type de caractère utilisé. Un mot de passe plus long bat presque toujours un mot de passe plus tordu.",
+    },
+    {
+      type: "callout",
+      tone: "tip",
+      title: "Va le mesurer toi-même",
+      text:
+        "La page /force-brute de ce site, « Casser un mot de passe », calcule tout dans ton navigateur : rien n'est envoyé nulle part, ni le mot de passe que tu tapes ni le résultat. Tape un mot de passe court avec des majuscules et des caractères spéciaux, note le temps affiché, puis tape quatre mots ordinaires à la suite et compare les deux résultats. La différence te convaincra plus vite que n'importe quelle explication.",
+    },
+    { type: "section", id: "la-reutilisation", text: "La réutilisation" },
+    {
+      type: "para",
+      text:
+        "Voici le vrai tueur de comptes, loin devant la complexité. Quand un site se fait pirater, les couples identifiant/mot de passe volés ne restent pas sagement rangés : ils sont rejoués automatiquement, par milliers à la seconde, sur des centaines d'autres services. C'est ce qu'on appelle le bourrage d'identifiants. Une fuite chez un forum que tu as oublié depuis longtemps peut ainsi ouvrir ta boîte mail, ton Discord et tes comptes d'achat en ligne le même jour, sans que personne n'ait eu besoin de deviner quoi que ce soit.",
+    },
+    {
+      type: "callout",
+      tone: "warning",
+      title: "C'est la première cause",
+      text:
+        "La réutilisation est, de loin, la première cause de comptes piratés — bien avant le mot de passe jugé « pas assez compliqué ». Un mot de passe de trente caractères, avec majuscules, chiffres et symboles, ne vaut plus rien s'il est copié-collé sur dix sites différents : il suffit qu'un seul de ces dix sites se fasse pirater pour que les neuf autres tombent avec lui. Un excellent mot de passe réutilisé partout est, en pratique, un mot de passe faible.",
+    },
+    { type: "section", id: "les-fuites", text: "Les fuites" },
+    {
+      type: "para",
+      text:
+        "Un dump, c'est une base d'identifiants volée lors d'un piratage, d'abord vendue sur des forums spécialisés, puis, tôt ou tard, diffusée gratuitement à tout le monde. Il en circule des dizaines de milliards de lignes, cumulées fuite après fuite depuis plus de dix ans. Une fois qu'un mot de passe atterrit dans un dump, il n'en ressort jamais : il ne redevient pas sûr avec le temps, même des années plus tard, même si le site qui l'a laissé fuiter a fermé depuis longtemps. La seule chose qui répare une fuite, c'est de changer le mot de passe concerné — partout où tu l'as réutilisé.",
+    },
+    { type: "section", id: "ou-les-ranger", text: "Où les ranger" },
+    {
+      type: "para",
+      text:
+        "La règle qui découle de tout ça tient en une phrase : un mot de passe différent, long, et imprévisible pour chaque compte. Dit comme ça, elle a l'air raisonnable — jusqu'à ce que tu comptes le nombre de comptes que tu as réellement, et que tu réalises qu'il est impossible de tous les retenir de tête. Ce n'est pas un défaut de la règle : c'est l'aveu qu'elle n'a jamais été conçue pour être suivie à la main. Il faut un endroit pour les ranger, pas une meilleure mémoire.",
+    },
+    {
+      type: "callout",
+      tone: "tip",
+      title: "L'article d'à côté",
+      text:
+        "L'article Gestionnaires de mots de passe, dans Sécurité, à l'adresse /docs/securite/gestionnaires, compare en détail les outils qui font exactement ça — NordPass, Bitwarden et 1Password — et t'aide à choisir lequel installer.",
+    },
+  ],
+}
+
 export const COMPTES_SUBJECT: DocSubject = {
   slug: "comptes",
   title: "Comptes & identité",
   command: "man identity",
   description: "Ce qui prouve que c'est bien toi — et ce qui peut le voler.",
-  articles: [PREUVE_ARTICLE],
+  articles: [PREUVE_ARTICLE, MOT_DE_PASSE_ARTICLE],
 }
