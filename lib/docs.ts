@@ -11,6 +11,7 @@
 // `node --test --experimental-strip-types`, which resolves ESM specifiers
 // literally and cannot find an extensionless one.
 import { CE_SITE_SUBJECT } from "./docs-ce-site.ts"
+import { COMPTES_SUBJECT } from "./docs-comptes.ts"
 import { GIT_SUBJECT } from "./docs-git.ts"
 import { PASSWORD_MANAGERS_ARTICLE } from "./docs-gestionnaires-mdp.ts"
 import { RESEAUX_SUBJECT } from "./docs-reseaux.ts"
@@ -119,17 +120,21 @@ export const DOC_SUBJECTS: DocSubject[] = [
     command: "man security",
     description: "Se protéger et comprendre les menaces.",
     articles: [
-      makeArticle("mots-de-passe", "Mots de passe solides", "Longueur, unicité et gestionnaires.", ["Phrase de passe", "Gestionnaire", "Fuites"]),
-      // Written content, not lorem — it follows the placeholder it extends.
+      // Written content, not lorem — unlike every other article in this
+      // subject below, still makeArticle() placeholders. "mots-de-passe" and
+      // "2fa" used to sit in this list too; both are retired, written for
+      // real in the comptes subject instead.
       PASSWORD_MANAGERS_ARTICLE,
       makeArticle("phishing", "Le phishing", "Reconnaître et éviter les messages piégés.", ["Les signes", "Les réflexes", "Que faire"]),
-      makeArticle("2fa", "Double authentification", "Ajouter une seconde barrière.", ["Principe", "Les méthodes", "Limites"]),
       makeArticle("malwares", "Virus et malwares", "Panorama des logiciels malveillants.", ["Types", "Contamination", "Protection"]),
       makeArticle("ransomware", "Les rançongiciels", "Quand tes fichiers sont pris en otage.", ["Fonctionnement", "Prévention", "Réaction"]),
       makeArticle("ingenierie-sociale", "Ingénierie sociale", "Manipuler l'humain plutôt que la machine.", ["Techniques", "Exemples", "Défense"]),
       makeArticle("hygiene", "Hygiène numérique", "Les bonnes habitudes du quotidien.", ["Mises à jour", "Sauvegardes", "Vigilance"]),
     ],
   },
+  // Right after "Sécurité": the same reader, one level deeper — what a login
+  // actually is, and why a stolen session survives every barrier in front of it.
+  COMPTES_SUBJECT,
   RESEAUX_SUBJECT,
   {
     slug: "ia",

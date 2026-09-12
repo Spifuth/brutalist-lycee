@@ -29,9 +29,9 @@ export default async function DocsIndexPage() {
       </div>
       <h1 className="font-pixel text-4xl lg:text-5xl tracking-tight mb-3">Documentation</h1>
       <p className="text-sm text-muted-foreground max-w-2xl mb-8 leading-relaxed">
-        Une base de connaissances organisée par sujet. « Git &amp; GitHub », « Réseaux » et « Ce
-        site, sous le capot » sont rédigés ; les autres sujets sont encore des trames
-        d&apos;exemple, en attente du cours définitif.
+        Une base de connaissances organisée par sujet. « Comptes &amp; identité », « Git &amp;
+        GitHub », « Réseaux » et « Ce site, sous le capot » sont rédigés ; les autres sujets
+        sont encore des trames d&apos;exemple, en attente du cours définitif.
         {codes["zero-width"] && <span aria-hidden="true">{encodeZeroWidth(codes["zero-width"])}</span>}
       </p>
 

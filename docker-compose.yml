@@ -32,7 +32,11 @@ services:
       retries: 10
 
   # Runs migrate + seed against the DB, then exits. Idempotent — safe on every
-  # `up` (schema uses IF NOT EXISTS, seed upserts). Seeds/ensures the admin.
+  # `up` (schema uses IF NOT EXISTS, content upserts key on slug). Seeds/
+  # ensures the admin. The seed also PRUNES: any doc_subjects/doc_articles row
+  # not declared in lib/docs.ts is deleted on every run — but only rows the
+  # seed itself planted (see the `managed` column, db/schema.sql), so content
+  # a teacher creates from /admin survives every `up`.
   init:
     build: .
     depends_on:

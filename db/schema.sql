@@ -99,6 +99,22 @@ CREATE TABLE IF NOT EXISTS doc_articles (
   UNIQUE (subject_id, slug)
 );
 
+-- doc_subjects / doc_articles have two writers: the seed (from lib/docs.ts)
+-- and the admin CMS (app/actions/admin.ts). `managed` records which one
+-- planted a row, so the seed's prune can remove only its own work.
+--
+-- The column lands with DEFAULT TRUE so that rows already in the database
+-- when this migration first runs are marked as seed-planted — true of every
+-- row at the time it was written — then the default flips to FALSE so that
+-- everything inserted afterwards is unmanaged unless the seed says otherwise.
+-- Both statements are idempotent: the ADD is a no-op once the column exists,
+-- and SET DEFAULT is unconditional. Never add an UPDATE here — schema.sql is
+-- re-applied on every container start and would re-mark admin rows.
+ALTER TABLE doc_subjects ADD COLUMN IF NOT EXISTS managed BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE doc_subjects ALTER COLUMN managed SET DEFAULT FALSE;
+ALTER TABLE doc_articles ADD COLUMN IF NOT EXISTS managed BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE doc_articles ALTER COLUMN managed SET DEFAULT FALSE;
+
 -- ---------------------------------------------------------------------
 -- QUIZZES  (quiz -> questions; attempts per user)
 -- ---------------------------------------------------------------------
