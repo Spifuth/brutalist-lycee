@@ -10,6 +10,12 @@
 // new UUID — and, for an article, a reset created_at (doc_subjects has no
 // such column).
 //
+// doc_subjects / doc_articles have a second writer: the admin CMS
+// (app/actions/admin.ts), which lets a teacher create subjects/articles the
+// code has never heard of. The prune must never touch that content, so every
+// row this seed plants is marked `managed = TRUE` (db/schema.sql), and both
+// DELETEs below are scoped to `managed` rows only.
+//
 //   pnpm db:seed
 //
 // Env:
@@ -20,6 +26,7 @@ import { BADGE_SEEDS } from "./seeds/badges"
 import { QUIZ_SEEDS } from "./seeds/quizzes"
 import { SECRET_SEEDS } from "./seeds/secrets"
 import { DOC_SUBJECTS } from "../lib/docs"
+import { buildPruneKeys } from "../lib/docs-prune-keys"
 import { hashPassphrase, generatePassphrase } from "../lib/crypto"
 import { FINAL_MILESTONE_CODE } from "../lib/milestones"
 
@@ -83,10 +90,11 @@ async function seedDocs() {
   for (let i = 0; i < DOC_SUBJECTS.length; i++) {
     const s = DOC_SUBJECTS[i]
     const { rows } = await db.query<{ id: string }>(
-      `INSERT INTO doc_subjects (slug, title, description, icon, position)
-       VALUES ($1,$2,$3,$4,$5)
+      `INSERT INTO doc_subjects (slug, title, description, icon, position, managed)
+       VALUES ($1,$2,$3,$4,$5,TRUE)
        ON CONFLICT (slug) DO UPDATE SET
-         title=EXCLUDED.title, description=EXCLUDED.description, position=EXCLUDED.position
+         title=EXCLUDED.title, description=EXCLUDED.description, position=EXCLUDED.position,
+         managed=TRUE
        RETURNING id`,
       [s.slug, s.title, s.description, "book", i],
     )
@@ -94,16 +102,19 @@ async function seedDocs() {
     for (let j = 0; j < s.articles.length; j++) {
       const a = s.articles[j]
       await db.query(
-        `INSERT INTO doc_articles (subject_id, slug, title, summary, blocks, position, published)
-         VALUES ($1,$2,$3,$4,$5,$6,TRUE)
+        `INSERT INTO doc_articles (subject_id, slug, title, summary, blocks, position, published, managed)
+         VALUES ($1,$2,$3,$4,$5,$6,TRUE,TRUE)
          ON CONFLICT (subject_id, slug) DO UPDATE SET
            title=EXCLUDED.title, summary=EXCLUDED.summary, blocks=EXCLUDED.blocks,
-           position=EXCLUDED.position, updated_at=now()`,
+           position=EXCLUDED.position, updated_at=now(), managed=TRUE`,
         [subjectId, a.slug, a.title, a.summary, JSON.stringify(a.blocks), j],
       )
       articleCount++
     }
   }
+  // A row the admin created and the code later declares (same slug) becomes
+  // managed here — deliberate: the code is now the source of truth for it,
+  // so from this point on the seed owns and can prune it like any other.
 
   // The loop above only upserts. Removing an article from lib/docs.ts would
   // otherwise leave it published in the database forever — a retired lorem
@@ -112,38 +123,39 @@ async function seedDocs() {
   // Safe: doc_articles.subject_id is the only foreign key in this area
   // (ON DELETE CASCADE from doc_subjects), and no other table references
   // doc_articles — there is no reading progress or bookmark to take down.
-  const subjectSlugs = DOC_SUBJECTS.map((s) => s.slug)
-  const articleKeys = DOC_SUBJECTS.flatMap((s) => s.articles.map((a) => `${s.slug}/${a.slug}`))
+  //
+  // Key building + the two "refuse to run on a broken catalogue" guards live
+  // in lib/docs-prune-keys.ts so they can be unit-tested without a database.
+  const { subjectSlugs, articleKeys } = buildPruneKeys(DOC_SUBJECTS)
 
-  // `<> ALL('{}'::text[])` is vacuously true for every row: an empty
-  // DOC_SUBJECTS (broken import, bad merge) would otherwise prune every
-  // article and every subject in one run. That is not what "authoritative
-  // seed" is meant to do — refuse outright instead of executing it.
-  // Both arrays are checked: a catalogue that still has its subjects but has
-  // lost every article ("articles: []" everywhere) leaves articleKeys empty
-  // on its own, and would prune all of doc_articles while the subjects look
-  // fine. Same bug, narrower trigger. A single subject with no articles is
-  // harmless — the other subjects keep articleKeys non-empty.
-  if (subjectSlugs.length === 0) {
-    throw new Error(
-      "[seed] DOC_SUBJECTS is empty — refusing to prune, this would delete every doc_article and doc_subject row",
-    )
-  }
-  if (articleKeys.length === 0) {
-    throw new Error(
-      "[seed] DOC_SUBJECTS declares no articles at all — refusing to prune, this would delete every doc_article row",
-    )
-  }
-
+  // Only prune rows this seed itself planted (`managed`). An admin-authored
+  // subject/article is never in DOC_SUBJECTS, so without this guard it would
+  // look exactly like retired content and be deleted on the next `docker
+  // compose up` — the data-loss bug this flag exists to close.
   const pruned = await db.query(
     `DELETE FROM doc_articles a
        USING doc_subjects s
       WHERE a.subject_id = s.id
+        AND a.managed
         AND (s.slug || '/' || a.slug) <> ALL($1::text[])`,
     [articleKeys],
   )
+  // Guarded with NOT EXISTS: a managed subject retired from DOC_SUBJECTS
+  // would otherwise CASCADE-delete (db/schema.sql, doc_articles.subject_id
+  // ON DELETE CASCADE) any unmanaged (admin-authored) article still filed
+  // under it — the article prune above deliberately never touches those, so
+  // they can still be sitting there. Skip the subject in that case. It will
+  // keep reappearing in this prune-skipped state on every future seed run
+  // until a human resolves it (move the article, delete it via /admin, or
+  // re-declare the subject in DOC_SUBJECTS) — that is the intended outcome,
+  // because the alternative is silently deleting a teacher's work.
   const prunedSubjects = await db.query(
-    "DELETE FROM doc_subjects WHERE slug <> ALL($1::text[])",
+    `DELETE FROM doc_subjects s
+      WHERE s.slug <> ALL($1::text[])
+        AND s.managed
+        AND NOT EXISTS (
+          SELECT 1 FROM doc_articles a WHERE a.subject_id = s.id AND NOT a.managed
+        )`,
     [subjectSlugs],
   )
   if ((pruned.rowCount ?? 0) || (prunedSubjects.rowCount ?? 0)) {

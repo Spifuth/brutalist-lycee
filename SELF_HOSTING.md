@@ -92,7 +92,7 @@ Scripts utiles :
 | Script            | Effet                                          |
 | ----------------- | ---------------------------------------------- |
 | `pnpm db:migrate` | applique `db/schema.sql`                       |
-| `pnpm db:seed`    | (re)remplit le contenu + garantit l'admin      |
+| `pnpm db:seed`    | (re)remplit le contenu, garantit l'admin, **et supprime** les sujets/articles de doc absents de `lib/docs.ts` — uniquement ceux plantés par le seed, jamais ceux créés depuis `/admin` |
 | `pnpm db:setup`   | migrate puis seed                              |
 | `pnpm dev`        | serveur de développement                       |
 | `pnpm build`      | build de production (sortie `standalone`)      |

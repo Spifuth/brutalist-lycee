@@ -1,6 +1,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { DOC_SUBJECTS, getSubject, type DocBlock } from "../lib/docs.ts"
+import { buildPruneKeys } from "../lib/docs-prune-keys.ts"
 
 const BLOCK_TYPES = new Set(["para", "section", "code", "callout", "keylist", "list", "table"])
 
@@ -294,6 +295,45 @@ test("the comptes subject covers the whole identity chain", () => {
     expected,
     "the comptes articles are missing, renamed or out of order — the chain only reads in this sequence",
   )
+})
+
+// db/seed.ts's prune is the most destructive code on this branch: it deletes
+// any doc_subjects/doc_articles row the seed doesn't recognise. buildPruneKeys
+// holds its key-building and its two refusals — guard them here, against a
+// database-free pure function, not against DOC_SUBJECTS (which never happens
+// to be empty or article-less, so a bug in the guards would never fail here
+// via the tests above).
+
+test("buildPruneKeys: normal input produces subject slugs and subject/article keys", () => {
+  const result = buildPruneKeys([
+    { slug: "a", articles: [{ slug: "one" }, { slug: "two" }] },
+    { slug: "b", articles: [{ slug: "three" }] },
+  ])
+  assert.deepEqual(result.subjectSlugs, ["a", "b"])
+  assert.deepEqual(result.articleKeys, ["a/one", "a/two", "b/three"])
+})
+
+test("buildPruneKeys: an empty subjects array throws", () => {
+  assert.throws(() => buildPruneKeys([]), /DOC_SUBJECTS is empty/)
+})
+
+test("buildPruneKeys: subjects present but every subject's articles are empty throws", () => {
+  assert.throws(
+    () => buildPruneKeys([
+      { slug: "a", articles: [] },
+      { slug: "b", articles: [] },
+    ]),
+    /declares no articles at all/,
+  )
+})
+
+test("buildPruneKeys: a single subject with zero articles alongside others does not throw", () => {
+  const result = buildPruneKeys([
+    { slug: "a", articles: [] },
+    { slug: "b", articles: [{ slug: "one" }] },
+  ])
+  assert.deepEqual(result.subjectSlugs, ["a", "b"])
+  assert.deepEqual(result.articleKeys, ["b/one"])
 })
 
 test("the retired securite placeholders are gone", () => {
