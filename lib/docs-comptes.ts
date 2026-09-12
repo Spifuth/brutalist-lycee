@@ -132,10 +132,71 @@ const MOT_DE_PASSE_ARTICLE: DocArticle = {
   ],
 }
 
+const DEUX_FACTEURS_ARTICLE: DocArticle = {
+  slug: "deux-facteurs",
+  title: "La double authentification",
+  summary: "La seconde barrière : ce qu'elle arrête vraiment, et ce qu'elle ne touche pas du tout.",
+  blocks: [
+    {
+      type: "para",
+      text:
+        "Un bon mot de passe, unique et bien rangé, réduit déjà énormément le risque — mais il reste une preuve unique, de la même famille : ce que tu sais. Si quelqu'un la connaît, la connexion est accordée, sans autre question. La double authentification ajoute une seconde preuve, tirée d'une famille différente, pour que voler la première ne suffise plus.",
+    },
+    { type: "section", id: "le-principe", text: "Le principe" },
+    {
+      type: "para",
+      text:
+        "Le principe tient dans une seule contrainte : les deux facteurs doivent venir de catégories différentes, parmi les trois posées dans l'article précédent — ce que tu sais, ce que tu as, ce que tu es. Deux mots de passe l'un après l'autre, aussi différents soient-ils, ne forment pas une double authentification : ce sont deux fois la même faiblesse, puisqu'un mot de passe se devine, se réutilise et se retrouve dans une fuite exactement comme l'autre. La vraie double authentification oblige un attaquant à voler un objet ou intercepter un flux en plus d'un secret — deux opérations distinctes, pas la même refaite deux fois.",
+    },
+    { type: "section", id: "les-trois-methodes", text: "Les trois méthodes" },
+    {
+      type: "table",
+      headers: ["Méthode", "Ce que ça arrête", "La faiblesse"],
+      rows: [
+        ["SMS", "Un mot de passe volé puis rejoué", "Échange de carte SIM, interception réseau"],
+        [
+          "Application TOTP (code à 6 chiffres)",
+          "Un mot de passe volé, une fuite de base",
+          "Hameçonnable en direct : le code se retape sur un faux site",
+        ],
+        [
+          "Clé physique ou passkey",
+          "Tout ce qui précède, plus l'hameçonnage",
+          "Rien, côté connexion — voir l'article sur les passkeys",
+        ],
+      ],
+    },
+    {
+      type: "para",
+      text:
+        "Les trois valent mieux que rien, et de loin : même la moins robuste bloque déjà les connexions automatisées, celles où un robot rejoue un mot de passe volé sans jamais toucher ton téléphone. L'écart qui compte le plus n'est donc pas celui entre le SMS et une clé physique, aussi réel soit-il : c'est celui qui sépare l'absence de 2FA du SMS. Passer de rien à un code par SMS ferme la porte à l'essentiel des attaques automatisées ; passer du SMS à une clé physique ferme une porte plus étroite, réservée à quelqu'un qui te vise toi en particulier et sait déjà hameçonner un code ou intercepter ta ligne.",
+    },
+    { type: "section", id: "les-codes-de-secours", text: "Les codes de secours" },
+    {
+      type: "para",
+      text:
+        "Les codes de secours existent pour le jour où le second facteur devient inaccessible : téléphone perdu, cassé, volé, ou simplement resté à la maison le matin d'un contrôle. Un service en génère une poignée à usage unique au moment où tu actives la 2FA, à mettre de côté avant d'en avoir besoin, pas après. Le piège classique consiste à les laisser dans un fichier nommé codes.txt, posé sur le bureau : quiconque ouvre une session sur cette machine récupère alors, dans la foulée, exactement ce que la 2FA était censée protéger. Ils se rangent là où se rangent les mots de passe — dans le gestionnaire, ou sur un papier gardé hors de portée — jamais en clair sur l'appareil qu'ils sont censés secourir.",
+    },
+    { type: "section", id: "ce-que-la-2fa-n-arrete-pas", text: "Ce que la 2FA n'arrête pas" },
+    {
+      type: "para",
+      text:
+        "La 2FA garde une porte, une seule : celle de la connexion, au moment précis où tu prouves qui tu es. Une fois cette porte franchie, elle ne voit plus rien — ni ce qui circule ensuite entre ton appareil et le service, ni ce qui tourne sur ta machine pendant que tu restes connecté. Un second facteur parfaitement respecté à l'authentification ne dit donc rien sur ce qui se passe une minute plus tard, dans la session qu'il vient d'ouvrir.",
+    },
+    {
+      type: "callout",
+      tone: "warning",
+      title: "Elle ne protège pas une session déjà ouverte",
+      text:
+        "Il existe une manière d'entrer dans un compte qui ne passe jamais par cette porte — ni mot de passe, ni code, ni clé physique, parce qu'elle contourne la connexion elle-même. Le prochain article démonte ce cas précis à travers le jeton Discord, une preuve de session bien réelle : et ce que sa capture change pour la 2FA que tu viens de mettre en place, c'est rien.",
+    },
+  ],
+}
+
 export const COMPTES_SUBJECT: DocSubject = {
   slug: "comptes",
   title: "Comptes & identité",
   command: "man identity",
   description: "Ce qui prouve que c'est bien toi — et ce qui peut le voler.",
-  articles: [PREUVE_ARTICLE, MOT_DE_PASSE_ARTICLE],
+  articles: [PREUVE_ARTICLE, MOT_DE_PASSE_ARTICLE, DEUX_FACTEURS_ARTICLE],
 }
