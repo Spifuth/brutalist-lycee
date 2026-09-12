@@ -88,7 +88,7 @@ const MOT_DE_PASSE_ARTICLE: DocArticle = {
     {
       type: "para",
       text:
-        "Tr0ub4dor&3 a l'air redoutable avec ses chiffres et son caractère spécial, mais il ne fait que douze caractères, et il demande de réfléchir à chaque substitution pour s'en souvenir. Quatre mots ordinaires mis bout à bout, comme chameau-lampe-tiroir-nuage, dépassent vingt caractères sans effort et se retiennent comme une petite phrase. Ce qui coûte cher à un attaquant qui essaie toutes les combinaisons, ce n'est pas la présence d'un symbole ou d'une majuscule : c'est le nombre total de possibilités à tester, et ce nombre grimpe avec chaque caractère ajouté, pas avec chaque type de caractère utilisé. Un mot de passe plus long bat presque toujours un mot de passe plus tordu.",
+        "Tr0ub4dor&3 a l'air redoutable avec ses chiffres et son caractère spécial, mais il ne fait que onze caractères, et il demande de réfléchir à chaque substitution pour s'en souvenir. Quatre mots ordinaires mis bout à bout, comme chameau-lampe-tiroir-nuage, dépassent vingt caractères sans effort et se retiennent comme une petite phrase. Ce qui coûte cher à un attaquant qui essaie toutes les combinaisons, ce n'est pas la présence d'un symbole ou d'une majuscule : c'est le nombre total de possibilités à tester, et ce nombre grimpe avec chaque caractère ajouté, pas avec chaque type de caractère utilisé. Un mot de passe plus long bat presque toujours un mot de passe plus tordu.",
     },
     {
       type: "callout",
