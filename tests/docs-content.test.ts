@@ -278,3 +278,21 @@ test("the comptes subject covers the whole identity chain", () => {
     "the comptes articles are missing, renamed or out of order — the chain only reads in this sequence",
   )
 })
+
+test("the retired securite placeholders are gone", () => {
+  // "Mots de passe solides" and "Double authentification" were lorem. Their
+  // subject is now written in the comptes course; leaving the placeholders in
+  // Sécurité sends a student to fake content while the real one exists.
+  const securite = getSubject("securite")!
+  const slugs = securite.articles.map((a) => a.slug)
+  for (const retired of ["mots-de-passe", "2fa"]) {
+    assert.ok(
+      !slugs.includes(retired),
+      `securite/${retired} is back — that topic is written in the comptes subject, this placeholder duplicates it`,
+    )
+  }
+  assert.ok(
+    slugs.includes("gestionnaires"),
+    "securite/gestionnaires was removed — it is written content and its URL is live; it stays where it is",
+  )
+})
