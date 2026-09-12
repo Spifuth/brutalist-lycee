@@ -164,28 +164,33 @@ test("every comptes article opens with prose, not a bare heading", () => {
 // — the form issued to accounts that have 2FA enabled. Committing a real one
 // would leak an account; committing a realistic-looking one teaches readers
 // to treat the shape as harmless. Examples must stay obviously fake.
+
+// The previous version of this guard excused a match by stripping redaction
+// markers (EXEMPLE, FACTICE, XXXX) out of it and re-testing the remainder
+// against the shape, treating the match as "redacted enough" once stripping
+// broke the shape. That rule was holed twice: dropping a marker into the
+// short middle segment (the timestamp — the part nobody actually cares
+// about) is enough to break the shape on its own, while the account id and
+// the signature on either side of it — the two segments that actually
+// matter — sit there completely real and untouched. Every patch to that rule
+// (require the marker span a whole segment, require every segment carry one,
+// ...) only relocates the hole, because "is this specific match redacted
+// enough to be safe?" is not a question a shape-based heuristic can answer.
 //
-// "..." is deliberately not in the marker list: the segment character class
-// below excludes ".", so a match can never contain three consecutive dots —
-// it could never be reached, and stripping markers (below) doesn't add dots.
+// So: no heuristic. Every deliberate example token used in the course is
+// listed here, byte-for-byte. Adding a new fake token to the course now
+// requires deliberately adding it to this set — that human checkpoint is the
+// feature, not friction: a person looking at one specific new string and
+// deciding "yes, this one is genuinely fake" is a judgment call a regex can
+// never make correctly.
+const KNOWN_FAKE_TOKENS = new Set([
+  "MTE0NTE0MTkxOTgxMDAwMDAw.XXXXXX.EXEMPLE-FACTICE-NE-FONCTIONNE-PAS",
+])
+
 function looksLikeRealToken(s: string): boolean {
-  const REDACTION_MARKERS = ["EXEMPLE", "FACTICE", "XXXX"]
-  const SHAPE_SOURCE = "mfa\\.[A-Za-z0-9_-]{20,}|[A-Za-z0-9_-]{20,}\\.[A-Za-z0-9_-]{5,}\\.[A-Za-z0-9_-]{20,}"
-  const SHAPE = new RegExp(SHAPE_SOURCE, "g")
-  const SHAPE_ONCE = new RegExp(SHAPE_SOURCE)
+  const SHAPE = /mfa\.[A-Za-z0-9_-]{20,}|[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{20,}/g
   for (const m of s.matchAll(SHAPE)) {
-    // A marker only excuses what it actually redacts. Strip every marker out
-    // of this specific match, then re-test the remainder against the same
-    // shape. If a marker only covers part of a segment, the untouched
-    // characters around it are still enough to re-match the credential
-    // shape, so the match stays unexcused. Only when stripping the marker(s)
-    // breaks the shape entirely — no segment left long enough to look real —
-    // is the match considered genuinely redacted.
-    let stripped = m[0]
-    for (const marker of REDACTION_MARKERS) {
-      stripped = stripped.replace(new RegExp(marker, "gi"), "")
-    }
-    if (SHAPE_ONCE.test(stripped)) return true
+    if (!KNOWN_FAKE_TOKENS.has(m[0])) return true
   }
   return false
 }
@@ -195,12 +200,17 @@ test("the token guard recognises a credential-shaped string", () => {
   assert.equal(
     looksLikeRealToken("MTE0NTE0MTkxOTgxMDAwMDAw.Gh3kQz.9pLmNxQwErTyUiOpAsDfGhJkLzXcVb"),
     true,
-    "the guard does not recognise a credential-shaped string — it would never fire",
+    "the guard does not recognise a plain three-segment credential shape — it would never fire",
   )
   assert.equal(
-    looksLikeRealToken("MTE0NTE0MTkxOTgxMDAwMDAw.XXXXXX.EXEMPLE-FACTICE-NE-FONCTIONNE-PAS"),
-    false,
-    "the guard rejects the redacted example — it would block legitimate teaching material",
+    looksLikeRealToken("MTE0NTE0MTkxOTgxMDAwMDAw.Gh3kQz.9pLmNxQwXXXXUiOpAsDfGhJkLzXcVb"),
+    true,
+    "a marker sprinkled into an otherwise real signature is not a known fake token — the allowlist correctly refuses to excuse anything but an exact match",
+  )
+  assert.equal(
+    looksLikeRealToken("MTE0NTE0MTkxOTgxMDAwMDAw.XXXXX.9pLmNxQwErTyUiOpAsDfGhJkLzXcVb"),
+    true,
+    "this is the hole the old marker-stripping rule left open: redacting only the middle (timestamp) segment leaves the account id and the signature — the two segments that actually matter — completely real and unmodified; an allowlist that only excuses an exact known string correctly still flags this",
   )
   assert.equal(
     looksLikeRealToken("mfa.9pLmNxQwErTyUiOpAsDfGhJkLzXcVbQwErTyUiOpAsDfGh"),
@@ -208,14 +218,16 @@ test("the token guard recognises a credential-shaped string", () => {
     "the guard misses the mfa.-prefixed token format issued to 2FA-enabled accounts",
   )
   assert.equal(
-    looksLikeRealToken("MTE0NTE0MTkxOTgxMDAwMDAw.Gh3kQz.9pLmNxQwXXXXUiOpAsDfGhJkLzXcVb"),
+    looksLikeRealToken(
+      "Voici mon jeton, ne le partage à personne : MTE0NTE0MTkxOTgxMDAwMDAw.Gh3kQz.9pLmNxQwErTyUiOpAsDfGhJkLzXcVb — merci.",
+    ),
     true,
-    "a partially-redacted signature (four X's dropped into an otherwise real segment) excuses the whole match — the marker check runs across the wrong scope",
+    "a credential-shaped string embedded in surrounding prose must still be caught — the walk over para/callout text depends on matching inside a larger string, not just testing the whole string against the shape",
   )
   assert.equal(
     looksLikeRealToken("MTE0NTE0MTkxOTgxMDAwMDAw.XXXXXX.EXEMPLE-FACTICE-NE-FONCTIONNE-PAS"),
     false,
-    "the pinned example token must stay excused after the guard is reworked",
+    "the pinned example token from lib/docs-comptes.ts must stay excused — it is the article's deliberate teaching example, and the article cannot ship if the guard blocks it",
   )
 })
 
