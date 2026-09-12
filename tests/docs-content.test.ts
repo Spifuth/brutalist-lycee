@@ -132,3 +132,29 @@ test("every reseaux article opens with prose, not a bare heading", () => {
     assert.equal(first.type, "para", `reseaux/${a.slug} starts with a "${first.type}" block — articles open with a paragraph`)
   }
 })
+
+test("the comptes subject is written, not placeholder", () => {
+  const comptes = getSubject("comptes")
+  assert.ok(comptes, 'no "comptes" subject — the accounts & identity course is missing')
+
+  for (const a of comptes.articles) {
+    const text = JSON.stringify(a.blocks)
+    assert.ok(
+      !text.includes("contenu d'exemple"),
+      `comptes/${a.slug} still contains placeholder lorem`,
+    )
+    assert.ok(
+      !text.includes("à remplacer"),
+      `comptes/${a.slug} still contains a "à remplacer" placeholder`,
+    )
+    assert.ok(a.summary.length > 0, `comptes/${a.slug} has no summary — it is shown on the subject index`)
+  }
+})
+
+test("every comptes article opens with prose, not a bare heading", () => {
+  const comptes = getSubject("comptes")!
+  for (const a of comptes.articles) {
+    const first = (a.blocks as DocBlock[])[0]
+    assert.equal(first.type, "para", `comptes/${a.slug} starts with a "${first.type}" block — articles open with a paragraph`)
+  }
+})

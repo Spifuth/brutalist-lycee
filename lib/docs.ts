@@ -11,6 +11,7 @@
 // `node --test --experimental-strip-types`, which resolves ESM specifiers
 // literally and cannot find an extensionless one.
 import { CE_SITE_SUBJECT } from "./docs-ce-site.ts"
+import { COMPTES_SUBJECT } from "./docs-comptes.ts"
 import { GIT_SUBJECT } from "./docs-git.ts"
 import { PASSWORD_MANAGERS_ARTICLE } from "./docs-gestionnaires-mdp.ts"
 import { RESEAUX_SUBJECT } from "./docs-reseaux.ts"
@@ -130,6 +131,9 @@ export const DOC_SUBJECTS: DocSubject[] = [
       makeArticle("hygiene", "Hygiène numérique", "Les bonnes habitudes du quotidien.", ["Mises à jour", "Sauvegardes", "Vigilance"]),
     ],
   },
+  // Right after "Sécurité": the same reader, one level deeper — what a login
+  // actually is, and why a stolen session survives every barrier in front of it.
+  COMPTES_SUBJECT,
   RESEAUX_SUBJECT,
   {
     slug: "ia",
