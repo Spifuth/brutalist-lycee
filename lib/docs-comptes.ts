@@ -331,14 +331,14 @@ const PASSKEYS_ARTICLE: DocArticle = {
     {
       type: "para",
       text:
-        "Une passkey repose sur une paire de clés : une clé privée, qui ne quitte jamais l'appareil qui l'a créée, et une clé publique, que le site conserve de son côté. Pour te connecter, le site envoie un défi — une valeur aléatoire, différente à chaque fois — et ton appareil le signe avec la clé privée. Le site ne reçoit jamais que cette signature ; il vérifie qu'elle correspond à la clé publique qu'il a en base, et t'ouvre la porte.",
+        "Une passkey repose sur une paire de clés : une clé privée — jamais envoyée au site, et qui, si elle se synchronise avec tes autres appareils, ne voyage que chiffrée — et une clé publique, que le site conserve de son côté. Pour te connecter, le site envoie un défi — une valeur aléatoire, différente à chaque fois — et ton appareil le signe avec la clé privée. Le site ne reçoit jamais que cette signature ; il vérifie qu'elle correspond à la clé publique qu'il a en base, et t'ouvre la porte.",
     },
     {
       type: "callout",
       tone: "info",
       title: "Il n'y a plus rien à voler côté site",
       text:
-        "Le site ne détient aucun secret partagé avec toi : pas de mot de passe, même haché, qui pourrait être cassé. Une fuite de sa base ne livre que des clés publiques, qui ne servent strictement à rien sans la clé privée restée sur ton appareil.",
+        "Le site ne détient aucun secret partagé avec toi : pas de mot de passe, même haché, qui pourrait être cassé. Une fuite de sa base ne livre que des clés publiques, qui ne servent strictement à rien sans la clé privée, jamais transmise au site.",
     },
     { type: "section", id: "pourquoi-le-phishing-ne-marche-plus", text: "Pourquoi le hameçonnage ne marche plus" },
     {
