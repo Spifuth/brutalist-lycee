@@ -224,11 +224,11 @@ const JETON_ARTICLE: DocArticle = {
         },
         {
           term: "Entre les deux points",
-          desc: "Le moment où le jeton a été émis. C'est ce qui fait que deux connexions successives ne produisent pas la même chaîne, même sur le même compte et depuis le même appareil.",
+          desc: "Le moment où le jeton a été émis. C'est ce qui date le jeton, à la seconde près.",
         },
         {
           term: "Après le second point",
-          desc: "La signature, calculée par Discord avec une clé que lui seul connaît. C'est elle qui prouve que le jeton vient bien de Discord, et c'est la seule des trois parties qu'on ne peut pas fabriquer : on recopie les deux premières en une seconde, mais sans une signature valable le serveur refuse tout. C'est aussi pourquoi personne n'invente un jeton — on ne peut que voler un jeton qui existe déjà.",
+          desc: "La signature, calculée par Discord. C'est elle qui prouve que le jeton vient bien de Discord, et c'est la seule des trois parties qu'on ne peut pas fabriquer : on recopie les deux premières en une seconde, mais sans une signature valable le serveur refuse tout. C'est aussi pourquoi personne n'invente un jeton — on ne peut que voler un jeton qui existe déjà.",
         },
       ],
     },
@@ -241,7 +241,6 @@ const JETON_ARTICLE: DocArticle = {
     {
       type: "code",
       label: "ce que voit le serveur de Discord",
-      prompt: true,
       code: 'curl -H "Authorization: MTE0NTE0MTkxOTgxMDAwMDAw.XXXXXX.EXEMPLE-FACTICE-NE-FONCTIONNE-PAS" \\\n     https://discord.com/api/v10/users/@me',
     },
     {

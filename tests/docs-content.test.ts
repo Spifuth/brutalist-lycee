@@ -159,14 +159,33 @@ test("every comptes article opens with prose, not a bare heading", () => {
   }
 })
 
-// A Discord token is three base64url segments separated by dots. Committing a
-// real one would leak an account; committing a realistic-looking one teaches
-// readers to treat the shape as harmless. Examples must stay obviously fake.
+// A Discord token is either three base64url segments separated by dots
+// (id.timestamp.signature), or an "mfa." prefix followed by one long segment
+// — the form issued to accounts that have 2FA enabled. Committing a real one
+// would leak an account; committing a realistic-looking one teaches readers
+// to treat the shape as harmless. Examples must stay obviously fake.
+//
+// "..." is deliberately not in the marker list: the segment character class
+// below excludes ".", so a match can never contain three consecutive dots —
+// it could never be reached, and stripping markers (below) doesn't add dots.
 function looksLikeRealToken(s: string): boolean {
-  const REDACTION_MARKERS = ["EXEMPLE", "FACTICE", "XXXX", "..."]
-  const SHAPE = /[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{20,}/g
+  const REDACTION_MARKERS = ["EXEMPLE", "FACTICE", "XXXX"]
+  const SHAPE_SOURCE = "mfa\\.[A-Za-z0-9_-]{20,}|[A-Za-z0-9_-]{20,}\\.[A-Za-z0-9_-]{5,}\\.[A-Za-z0-9_-]{20,}"
+  const SHAPE = new RegExp(SHAPE_SOURCE, "g")
+  const SHAPE_ONCE = new RegExp(SHAPE_SOURCE)
   for (const m of s.matchAll(SHAPE)) {
-    if (!REDACTION_MARKERS.some((marker) => m[0].toUpperCase().includes(marker))) return true
+    // A marker only excuses what it actually redacts. Strip every marker out
+    // of this specific match, then re-test the remainder against the same
+    // shape. If a marker only covers part of a segment, the untouched
+    // characters around it are still enough to re-match the credential
+    // shape, so the match stays unexcused. Only when stripping the marker(s)
+    // breaks the shape entirely — no segment left long enough to look real —
+    // is the match considered genuinely redacted.
+    let stripped = m[0]
+    for (const marker of REDACTION_MARKERS) {
+      stripped = stripped.replace(new RegExp(marker, "gi"), "")
+    }
+    if (SHAPE_ONCE.test(stripped)) return true
   }
   return false
 }
@@ -183,18 +202,52 @@ test("the token guard recognises a credential-shaped string", () => {
     false,
     "the guard rejects the redacted example — it would block legitimate teaching material",
   )
+  assert.equal(
+    looksLikeRealToken("mfa.9pLmNxQwErTyUiOpAsDfGhJkLzXcVbQwErTyUiOpAsDfGh"),
+    true,
+    "the guard misses the mfa.-prefixed token format issued to 2FA-enabled accounts",
+  )
+  assert.equal(
+    looksLikeRealToken("MTE0NTE0MTkxOTgxMDAwMDAw.Gh3kQz.9pLmNxQwXXXXUiOpAsDfGhJkLzXcVb"),
+    true,
+    "a partially-redacted signature (four X's dropped into an otherwise real segment) excuses the whole match — the marker check runs across the wrong scope",
+  )
+  assert.equal(
+    looksLikeRealToken("MTE0NTE0MTkxOTgxMDAwMDAw.XXXXXX.EXEMPLE-FACTICE-NE-FONCTIONNE-PAS"),
+    false,
+    "the pinned example token must stay excused after the guard is reworked",
+  )
 })
+
+// Recursively collects every string value nested inside a block, instead of
+// enumerating each block type's string fields by hand (para.text, section.text,
+// code.code/label, callout.text/title, keylist.items[].term/desc, list.items[],
+// table.caption/headers/rows...). A generic walk is more brittle-proof than a
+// field list: it keeps covering new block types, and new string fields on
+// existing ones, without this test needing an update when lib/docs.ts grows.
+function collectStrings(value: unknown, out: string[]): void {
+  if (typeof value === "string") {
+    out.push(value)
+  } else if (Array.isArray(value)) {
+    for (const item of value) collectStrings(item, out)
+  } else if (value && typeof value === "object") {
+    for (const v of Object.values(value)) collectStrings(v, out)
+  }
+}
 
 test("no credential-shaped string is committed in the docs", () => {
   for (const s of DOC_SUBJECTS) {
     for (const a of s.articles) {
       for (const b of a.blocks as DocBlock[]) {
-        if (b.type !== "code") continue
-        assert.equal(
-          looksLikeRealToken(b.code),
-          false,
-          `${s.slug}/${a.slug}: a code block contains a string shaped like a real token, with no redaction marker — never commit a credential, even an expired one`,
-        )
+        const strings: string[] = []
+        collectStrings(b, strings)
+        for (const str of strings) {
+          assert.equal(
+            looksLikeRealToken(str),
+            false,
+            `${s.slug}/${a.slug}: a block contains a string shaped like a real token, with no redaction marker — never commit a credential, even an expired one`,
+          )
+        }
       }
     }
   }
