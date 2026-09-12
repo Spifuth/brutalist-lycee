@@ -6,8 +6,9 @@
 // rendering forever. Because both upserts key on slug (`ON CONFLICT (slug)`
 // / `ON CONFLICT (subject_id, slug)`), renaming a slug is not an in-place
 // rename — the old slug is undeclared and gets pruned while the new slug is
-// inserted fresh, so a rename is observably a delete-and-recreate: a new
-// UUID and a reset created_at.
+// inserted fresh, so a rename is observably a delete-and-recreate, with a
+// new UUID — and, for an article, a reset created_at (doc_subjects has no
+// such column).
 //
 //   pnpm db:seed
 //
@@ -118,9 +119,19 @@ async function seedDocs() {
   // DOC_SUBJECTS (broken import, bad merge) would otherwise prune every
   // article and every subject in one run. That is not what "authoritative
   // seed" is meant to do — refuse outright instead of executing it.
+  // Both arrays are checked: a catalogue that still has its subjects but has
+  // lost every article ("articles: []" everywhere) leaves articleKeys empty
+  // on its own, and would prune all of doc_articles while the subjects look
+  // fine. Same bug, narrower trigger. A single subject with no articles is
+  // harmless — the other subjects keep articleKeys non-empty.
   if (subjectSlugs.length === 0) {
     throw new Error(
       "[seed] DOC_SUBJECTS is empty — refusing to prune, this would delete every doc_article and doc_subject row",
+    )
+  }
+  if (articleKeys.length === 0) {
+    throw new Error(
+      "[seed] DOC_SUBJECTS declares no articles at all — refusing to prune, this would delete every doc_article row",
     )
   }
 
