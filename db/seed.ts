@@ -1,8 +1,13 @@
 // Re-runnable seed. Upserts the starting content (docs, quizzes, badges,
 // secrets) and ensures a default admin exists. Safe to run repeatedly — every
 // insert is an upsert keyed on a natural key (slug/code/pseudo). Docs are
-// additionally pruned: an article removed from lib/docs.ts is removed from the
-// database, otherwise it would keep rendering forever.
+// additionally pruned: an article or subject removed from lib/docs.ts is
+// removed from the database (two separate DELETEs), otherwise it would keep
+// rendering forever. Because both upserts key on slug (`ON CONFLICT (slug)`
+// / `ON CONFLICT (subject_id, slug)`), renaming a slug is not an in-place
+// rename — the old slug is undeclared and gets pruned while the new slug is
+// inserted fresh, so a rename is observably a delete-and-recreate: a new
+// UUID and a reset created_at.
 //
 //   pnpm db:seed
 //
@@ -109,6 +114,16 @@ async function seedDocs() {
   const subjectSlugs = DOC_SUBJECTS.map((s) => s.slug)
   const articleKeys = DOC_SUBJECTS.flatMap((s) => s.articles.map((a) => `${s.slug}/${a.slug}`))
 
+  // `<> ALL('{}'::text[])` is vacuously true for every row: an empty
+  // DOC_SUBJECTS (broken import, bad merge) would otherwise prune every
+  // article and every subject in one run. That is not what "authoritative
+  // seed" is meant to do — refuse outright instead of executing it.
+  if (subjectSlugs.length === 0) {
+    throw new Error(
+      "[seed] DOC_SUBJECTS is empty — refusing to prune, this would delete every doc_article and doc_subject row",
+    )
+  }
+
   const pruned = await db.query(
     `DELETE FROM doc_articles a
        USING doc_subjects s
@@ -120,8 +135,8 @@ async function seedDocs() {
     "DELETE FROM doc_subjects WHERE slug <> ALL($1::text[])",
     [subjectSlugs],
   )
-  if (pruned.rowCount || prunedSubjects.rowCount) {
-    console.log(`[seed] docs: pruned ${pruned.rowCount} article(s), ${prunedSubjects.rowCount} subject(s)`)
+  if ((pruned.rowCount ?? 0) || (prunedSubjects.rowCount ?? 0)) {
+    console.log(`[seed] docs: pruned ${pruned.rowCount ?? 0} article(s), ${prunedSubjects.rowCount ?? 0} subject(s)`)
   }
 
   console.log(`[seed] docs: ${DOC_SUBJECTS.length} subjects, ${articleCount} articles`)

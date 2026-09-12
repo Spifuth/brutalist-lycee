@@ -76,6 +76,23 @@ test("section ids are unique inside an article", () => {
   }
 })
 
+test("subject and article slugs are clean URL segments", () => {
+  // Slugs are literal Next.js route segments (app/docs/[subject]/[article])
+  // and the prune's composite key in db/seed.ts is `s.slug + "/" + a.slug`. A
+  // slug containing a "/" would make subject "a/b" + article "c" collide with
+  // subject "a" + article "b/c" — an ambiguous prune key on top of a broken URL.
+  for (const s of DOC_SUBJECTS) {
+    assert.match(s.slug, /^[a-z0-9-]+$/, `subject "${s.slug}" is not a clean URL segment — it would break its route and could collide with another subject/article pair in the seed's prune key`)
+    for (const a of s.articles) {
+      assert.match(
+        a.slug,
+        /^[a-z0-9-]+$/,
+        `${s.slug}/${a.slug}: article slug is not a clean URL segment — it would break its route and could collide with another subject/article pair in the seed's prune key`,
+      )
+    }
+  }
+})
+
 test("the git subject is written, not placeholder", () => {
   const git = getSubject("git")
   assert.ok(git, 'no "git" subject — the Git & GitHub course is missing')
