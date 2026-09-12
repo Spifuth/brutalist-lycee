@@ -193,10 +193,135 @@ const DEUX_FACTEURS_ARTICLE: DocArticle = {
   ],
 }
 
+const JETON_ARTICLE: DocArticle = {
+  slug: "jeton-discord",
+  title: "Le jeton Discord",
+  summary: "Une ligne de texte qui vaut ton compte entier — mot de passe et double authentification compris.",
+  blocks: [
+    {
+      type: "para",
+      text:
+        "Le Discord de la classe, c'est là que tu postes tes rapports de bug, que traîne le lien du cours et que quelqu'un demande toujours les devoirs à vingt-deux heures. Ton compte là-dessus ne tient pas à ton mot de passe : il tient à une chaîne de caractères que ton application renvoie toute seule, sans rien te demander, à chaque fois qu'elle parle à Discord. Cette chaîne s'appelle un jeton, et l'article précédent vient de t'annoncer qu'elle se moque complètement de la double authentification. Voici pourquoi.",
+    },
+    { type: "section", id: "c-est-quoi-un-jeton", text: "C'est quoi un jeton" },
+    {
+      type: "para",
+      text:
+        "Un jeton n'est pas une deuxième version de ton mot de passe : c'est ce que Discord te remet une fois que tu as fini de prouver ton identité. Il est émis après le mot de passe, et après le code de double authentification — il n'existe donc qu'au bout du parcours de connexion, jamais avant. Il ne contient pas ton mot de passe : il contient la preuve que tu l'as déjà donné, signée par Discord. Ton application le renvoie ensuite à chaque requête, pour ouvrir un salon, envoyer un message, charger une image : des centaines de fois par session, sans jamais te le montrer.",
+    },
+    { type: "section", id: "a-quoi-ca-ressemble", text: "À quoi ça ressemble" },
+    {
+      type: "code",
+      label: "un jeton — faux, caviardé",
+      code: "MTE0NTE0MTkxOTgxMDAwMDAw.XXXXXX.EXEMPLE-FACTICE-NE-FONCTIONNE-PAS",
+    },
+    {
+      type: "keylist",
+      items: [
+        {
+          term: "Avant le premier point",
+          desc: "Ton identifiant de compte, simplement encodé pour tenir sur une ligne. N'importe qui peut le décoder, et ça n'apprend rien à personne : cet identifiant n'a jamais été un secret, c'est le numéro public avec lequel Discord désigne ton compte. Cette partie ne protège rien, elle dit seulement de quel compte on parle.",
+        },
+        {
+          term: "Entre les deux points",
+          desc: "Le moment où le jeton a été émis. C'est ce qui fait que deux connexions successives ne produisent pas la même chaîne, même sur le même compte et depuis le même appareil.",
+        },
+        {
+          term: "Après le second point",
+          desc: "La signature, calculée par Discord avec une clé que lui seul connaît. C'est elle qui prouve que le jeton vient bien de Discord, et c'est la seule des trois parties qu'on ne peut pas fabriquer : on recopie les deux premières en une seconde, mais sans une signature valable le serveur refuse tout. C'est aussi pourquoi personne n'invente un jeton — on ne peut que voler un jeton qui existe déjà.",
+        },
+      ],
+    },
+    {
+      type: "para",
+      text:
+        "Regarde cette ligne : elle n'a pas l'air d'un secret. Un mot de passe, on sait qu'on ne le montre pas ; cette suite de caractères, elle ressemble à une référence technique sans importance, le genre de chose qu'on copie-colle sans réfléchir pour demander de l'aide. C'est exactement le problème : ça part dans un partage d'écran, dans une vidéo, dans un fichier de log qu'on envoie à quelqu'un pour qu'il y jette un œil. Personne ne poste son mot de passe par accident ; un jeton, si.",
+    },
+    { type: "section", id: "la-requete-qui-fait-tout", text: "La requête qui fait tout" },
+    {
+      type: "code",
+      label: "ce que voit le serveur de Discord",
+      prompt: true,
+      code: 'curl -H "Authorization: MTE0NTE0MTkxOTgxMDAwMDAw.XXXXXX.EXEMPLE-FACTICE-NE-FONCTIONNE-PAS" \\\n     https://discord.com/api/v10/users/@me',
+    },
+    {
+      type: "para",
+      text:
+        "L'important n'est pas ce qu'il y a dans cette requête, c'est ce qui n'y est pas. Pas de mot de passe. Pas de code à six chiffres. Pas de « nouvel appareil détecté, est-ce bien toi ? ». Une seule ligne d'en-tête, et le serveur renvoie tranquillement les informations du compte, comme il le ferait pour toi : de son point de vue la question est déjà réglée, quelqu'un a prouvé son identité tout à l'heure et voici la preuve qu'il l'a fait.",
+    },
+    { type: "section", id: "pourquoi-la-2fa-ne-sert-a-rien-ici", text: "Pourquoi la 2FA ne sert à rien ici" },
+    {
+      type: "para",
+      text:
+        "La double authentification surveille un moment précis : celui où quelqu'un se connecte. Une requête comme celle du dessus ne se connecte pas — elle arrive avec une session déjà ouverte, donc elle ne croise jamais la porte que la 2FA garde. Il faut en tirer la conséquence, même si elle est désagréable : activer la double authentification après le vol d'un jeton ne change rien, le jeton volé continue de fonctionner exactement comme avant. Ajouter une serrure à la porte d'entrée ne fait pas sortir celui qui est déjà dans la maison.",
+    },
+    { type: "section", id: "comment-un-jeton-se-fait-voler", text: "Comment un jeton se fait voler" },
+    {
+      type: "para",
+      text:
+        "Aucune des voies qui suivent n'est un exploit technique contre Discord : les serveurs ne sont pas percés, la signature n'est pas contournée, il n'y a pas de faille à corriger quelque part. Toutes passent par toi — par ta machine, par ton navigateur, par un programme que tu as lancé toi-même. C'est plutôt une bonne nouvelle, parce que ça veut dire que la protection est de ton côté. Tu n'as pas besoin de savoir comment chacune fonctionne : il faut juste savoir les reconnaître quand elles se présentent.",
+    },
+    {
+      type: "keylist",
+      items: [
+        {
+          term: "Le script à coller dans la console",
+          desc: "« Colle ça pour avoir Nitro gratuit », « colle ça pour voir qui a supprimé un message ». Le script ne fait jamais ce qu'il promet : il fait autre chose, avec tes droits, dans ta session déjà ouverte. Discord et les navigateurs affichent eux-mêmes un gros avertissement dans cette console, et ce n'est pas de la décoration : cet avertissement existe précisément parce que cette arnaque-là fonctionne.",
+        },
+        {
+          term: "L'extension de navigateur",
+          desc: "Une extension a le droit de lire ce que la page garde pour elle, et ce droit, c'est toi qui le lui donnes à l'installation. Un « thème Discord », un compteur de messages, un outil aperçu dans une vidéo : installé sans réfléchir, il voit tout ce que ton onglet Discord voit. Le nombre d'étoiles ne prouve rien non plus, une extension honnête pouvant changer de propriétaire puis se mettre à jour toute seule.",
+        },
+        {
+          term: "L'infostealer",
+          desc: "Un programme dont c'est tout le métier : ramasser ce qui traîne sur une machine — jetons de session, mots de passe enregistrés dans le navigateur, cookies. Il arrive par un crack, un cheat, un « mod menu », un installeur envoyé en message privé, souvent accompagné de la consigne de désactiver l'antivirus le temps de l'installation. Il ne casse rien et ne se fait pas remarquer : il ramasse, il envoie, il s'en va, et tu n'apprends son passage que bien plus tard.",
+        },
+        {
+          term: "La dépendance piégée",
+          desc: "Pour ceux qui codent : un paquet installé depuis npm ou pip s'exécute avec tes droits, sur ta machine, comme n'importe quel programme que tu lances. Un paquet malveillant — ou un paquet honnête dont le compte du mainteneur a été volé — a donc exactement les mêmes accès que toi. Relis le nom avant d'installer : une lettre en trop, et ce n'est plus le même paquet.",
+        },
+      ],
+    },
+    {
+      type: "callout",
+      tone: "warning",
+      title: "Ne colle jamais rien dans cette console",
+      text:
+        "Quoi qu'on te promette — Nitro gratuit, un badge, un outil « réservé aux modérateurs » — et quel que soit celui qui te l'envoie, y compris un ami dont le compte vient justement d'être volé et qui ne le sait pas encore. Quelqu'un qui a une raison légitime de te faire manipuler quelque chose ne te demandera jamais de coller du code là-dedans.",
+    },
+    { type: "section", id: "revoquer", text: "Révoquer" },
+    {
+      type: "para",
+      text:
+        "Une seule action met vraiment fin à une session volée : changer le mot de passe. Chez Discord, ça invalide d'un coup les jetons existants, partout, sur tous les appareils — celui du voleur comme le tien, qui devra se reconnecter. Activer la double authentification ne le fait pas, et se déconnecter de l'appareil sur lequel tu es en train de lire ne le fait pas davantage : ces deux gestes ne touchent pas le jeton d'en face. C'est la seule révocation qui marche, et c'est ce qui rend l'ordre des étapes suivantes si important.",
+    },
+    { type: "section", id: "mon-compte-est-compromis", text: "Mon compte est compromis" },
+    {
+      type: "list",
+      ordered: true,
+      items: [
+        "Nettoyer la machine, avant tout le reste. Si ce qui a volé le premier jeton tourne encore, le suivant partira pareil : tu changeras ton mot de passe, tu te reconnecteras, et tu offriras au voleur un jeton tout neuf après avoir tout refait pour rien. Antivirus à jour, analyse complète, et on désinstalle l'extension ou le programme par lequel c'est arrivé.",
+        "Changer le mot de passe. C'est ce geste, et lui seul, qui invalide les jetons déjà émis — la vraie révocation, pas une précaution de plus.",
+        "Activer la double authentification si ce n'est pas déjà fait. Maintenant elle sert à quelque chose : les anciens jetons sont morts, la prochaine connexion repassera donc par la porte d'entrée, et c'est cette porte qu'elle garde.",
+        "Ranger les codes de secours ailleurs que sur la machine : dans le gestionnaire de mots de passe, ou sur un papier gardé hors de portée.",
+        "Prévenir la classe et les serveurs où tu traînes. Pendant le vol, ton compte a peut-être envoyé des liens en ton nom, à des gens qui te font confiance — c'est comme ça que ça se propage.",
+        "Passer en revue les sessions actives et les applications autorisées dans les réglages de Discord, puis révoquer tout ce que tu ne reconnais pas.",
+      ],
+    },
+    {
+      type: "callout",
+      tone: "tip",
+      title: "À retenir",
+      text:
+        "Un jeton n'est pas un mot de passe, c'est une session. On ne le protège donc pas en renforçant la connexion — mot de passe plus long, second facteur, tout ce que tu veux : la connexion a déjà eu lieu. On le protège en gardant propre la machine sur laquelle la session est ouverte.",
+    },
+  ],
+}
+
 export const COMPTES_SUBJECT: DocSubject = {
   slug: "comptes",
   title: "Comptes & identité",
   command: "man identity",
   description: "Ce qui prouve que c'est bien toi — et ce qui peut le voler.",
-  articles: [PREUVE_ARTICLE, MOT_DE_PASSE_ARTICLE, DEUX_FACTEURS_ARTICLE],
+  articles: [PREUVE_ARTICLE, MOT_DE_PASSE_ARTICLE, DEUX_FACTEURS_ARTICLE, JETON_ARTICLE],
 }

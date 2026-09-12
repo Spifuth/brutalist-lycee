@@ -158,3 +158,44 @@ test("every comptes article opens with prose, not a bare heading", () => {
     assert.equal(first.type, "para", `comptes/${a.slug} starts with a "${first.type}" block — articles open with a paragraph`)
   }
 })
+
+// A Discord token is three base64url segments separated by dots. Committing a
+// real one would leak an account; committing a realistic-looking one teaches
+// readers to treat the shape as harmless. Examples must stay obviously fake.
+function looksLikeRealToken(s: string): boolean {
+  const REDACTION_MARKERS = ["EXEMPLE", "FACTICE", "XXXX", "..."]
+  const SHAPE = /[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{20,}/g
+  for (const m of s.matchAll(SHAPE)) {
+    if (!REDACTION_MARKERS.some((marker) => m[0].toUpperCase().includes(marker))) return true
+  }
+  return false
+}
+
+test("the token guard recognises a credential-shaped string", () => {
+  // Prove the guard can fail before trusting it on real content.
+  assert.equal(
+    looksLikeRealToken("MTE0NTE0MTkxOTgxMDAwMDAw.Gh3kQz.9pLmNxQwErTyUiOpAsDfGhJkLzXcVb"),
+    true,
+    "the guard does not recognise a credential-shaped string — it would never fire",
+  )
+  assert.equal(
+    looksLikeRealToken("MTE0NTE0MTkxOTgxMDAwMDAw.XXXXXX.EXEMPLE-FACTICE-NE-FONCTIONNE-PAS"),
+    false,
+    "the guard rejects the redacted example — it would block legitimate teaching material",
+  )
+})
+
+test("no credential-shaped string is committed in the docs", () => {
+  for (const s of DOC_SUBJECTS) {
+    for (const a of s.articles) {
+      for (const b of a.blocks as DocBlock[]) {
+        if (b.type !== "code") continue
+        assert.equal(
+          looksLikeRealToken(b.code),
+          false,
+          `${s.slug}/${a.slug}: a code block contains a string shaped like a real token, with no redaction marker — never commit a credential, even an expired one`,
+        )
+      }
+    }
+  }
+})
