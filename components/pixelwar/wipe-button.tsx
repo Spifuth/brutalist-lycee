@@ -7,6 +7,14 @@ import { clearCanvas } from "@/app/actions/pixelwar"
 /**
  * The operator's escape hatch. Two clicks on purpose: it deletes every pixel
  * the class placed, and there is no undo.
+ *
+ * The arming pattern -- a button that turns into "are you sure?" instead of
+ * calling `window.confirm()` -- is written out on ConfirmBtn in
+ * components/admin/ui.tsx. What is worth adding here is that none of it is a
+ * safeguard. Two clicks protect the operator from their own hand; the board
+ * is protected from everyone else by the first line of `clearCanvas()`
+ * (app/actions/pixelwar.ts), `await requireAdmin()`. Confirm in the browser
+ * for the human, authorise on the server for the truth.
  */
 export function WipeButton() {
   const [arming, setArming] = useState(false)

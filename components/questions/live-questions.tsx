@@ -1,5 +1,20 @@
 "use client"
 
+// The live question wall: the questions an admin has approved, with a reaction
+// button and a Pause.
+//
+// The detail worth carrying out of this file is `pausedRef`. The subscription
+// below is created once, by an effect with an empty dependency array, so the
+// callback it hands over captures the values that existed at that instant --
+// read `paused` directly in there and it stays `false` forever, however often
+// the button is clicked. That is the *stale closure*, the most common React
+// bug that produces no error at all: everything runs, the value is simply old.
+// A ref is the standard way out, because the ref object itself never changes
+// identity: `pausedRef.current` read inside a long-lived callback is the
+// present, and a one-line effect keeps it in step with the state that drives
+// rendering. Reach for it whenever something outliving a render -- an
+// interval, a listener, a socket -- has to see current state.
+
 import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Pause, Play, Radio, ThumbsUp } from "lucide-react"

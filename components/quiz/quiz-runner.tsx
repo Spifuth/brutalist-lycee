@@ -1,5 +1,24 @@
 "use client"
 
+// The quiz player: one question at a time, answer -> reveal -> next.
+//
+// Six pieces of React state and nothing else. Four of them are the loop
+// worth stealing: an index into the questions (`step`), the option the
+// student has pointed at (`selected`), whether they have committed to it yet
+// (`revealed`), and the running `score`. The other two (`done`, `earned`)
+// only drive the end screen. That is all a multi-step form is -- an index
+// into an array plus a flag for "has the user committed to this step yet".
+// No router, no state library, no server round trip until the end.
+//
+// The score is counted here, in the browser, and sent once at the end.
+// `submitQuizAttempt` (app/actions/engage.ts) inserts the number it is
+// handed and never recomputes it from the answers, so a finished score is
+// something this component asserts rather than something the server
+// establishes. A fair trade for a classroom quiz, a bad one for anything
+// that matters -- the rule it is bending is the callout in
+// /docs/ce-site/pixelwar-deux-chemins: a server should never believe a claim
+// it could check itself.
+
 import { useState } from "react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"

@@ -1,5 +1,25 @@
 "use client"
 
+// The student's side of a teacher-driven live quiz: three screens -- waiting
+// room, question, final ranking -- picked by a `state` the server owns.
+//
+// Two ideas here outlive the file. First, every frame carries the *whole*
+// snapshot rather than a list of changes, so a tab that missed three frames
+// or opened halfway through is correct again on the next one. Deltas are
+// smaller and buy you a catch-up path to write, an order to preserve and a
+// way to drift; full state costs bandwidth and cannot drift. Second, what is
+// left *out* of a payload is a decision of its own: the correct answer is
+// `null` on the wire until the teacher reveals it (see `LiveQuestionView` in
+// lib/live-broadcast.ts), because anything sent to a browser is readable
+// there whether or not the page renders it. components/hunt/hunt-board.tsx is
+// the counter-example, and says so in its own header.
+//
+// components/vote/vote-board.tsx and components/questions/live-questions.tsx
+// read the same route and the same snapshot type. The fan-out happens on the
+// server (lib/live-broadcast.ts): one database poll per second for the whole
+// class instead of one per student, with the arithmetic written out in
+// /docs/ce-site/quiz-direct-une-requete.
+
 import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Radio, Users, Clock, Trophy, Check, X } from "lucide-react"

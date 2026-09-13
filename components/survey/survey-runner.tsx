@@ -1,5 +1,26 @@
 "use client"
 
+// The questionnaire player: one question per screen, a recap, then a save.
+//
+// The loop itself is the index-plus-flag of components/quiz/quiz-runner.tsx
+// and is explained there. What is specific here is how an answer is
+// addressed: it is stored under its question's `key` -- lib/surveys.ts holds
+// one shared bank of questions and each survey names the keys it uses --
+// never under its position in the list. That one decision is what lets the
+// short survey pre-fill the long one, and what lets a question be reordered
+// or dropped without rewriting stored data. Address data by a stable
+// identity, not by where it happens to sit today; an array indexed by step
+// would have made all of it impossible.
+//
+// `QuestionInput` at the bottom is the same idea for widgets: the data says
+// `scale` / `single` / `multi` and the component picks the input. A new
+// question type is a branch here plus an entry in the bank, not a new form.
+//
+// One thing to notice rather than copy: `confirm()` writes the local copy,
+// then fires `saveSurvey(...)` with `void` and never looks at the result. A
+// save that fails is invisible -- the recap closes and the local copy makes
+// it look stored.
+
 import { useMemo, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ArrowLeft, ArrowRight, Check, RotateCcw } from "lucide-react"

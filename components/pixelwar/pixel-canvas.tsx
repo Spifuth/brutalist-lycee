@@ -1,5 +1,19 @@
 "use client"
 
+// The shared PixelWar board: 90 000 cells, one colour each, everyone painting
+// at once.
+//
+// Two paths carry a pixel and they are worth separating in your head. Your own
+// click is drawn immediately, before the server has agreed -- that is
+// *optimistic UI*, and it is why the board feels instant on a school wifi.
+// Everybody else's pixels arrive over an *SSE* stream (server-sent events: one
+// HTTP response the server never closes, see lib/sse-client.ts), which is the
+// cheap half of "real time" -- server to browser only, no socket, no protocol
+// upgrade.
+//
+// /docs/ce-site/pixelwar-deux-chemins walks the same two paths in prose, with
+// real frames captured off the running site.
+
 import { useCallback, useEffect, useRef, useState } from "react"
 import { ZoomIn, ZoomOut, Crosshair, WifiOff, Wifi } from "lucide-react"
 import {

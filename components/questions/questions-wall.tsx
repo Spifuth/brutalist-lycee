@@ -1,5 +1,26 @@
 "use client"
 
+// The asynchronous question wall: write a question, sort by votes or by date,
+// upvote.
+//
+// `sorted` is derived from `list` through a copy -- `[...list]` -- and the
+// copy is the whole point: `Array.prototype.sort` sorts in place, so sorting
+// `list` itself would mutate a value React is holding and do it without
+// producing a new reference. Nothing re-renders, and what you see stops
+// matching what you have. Copy before sorting anything you did not just
+// create. The comparator is worth a second read too: `b.upvotes - a.upvotes
+// || <date>` is the idiom for "by votes, ties broken by recency" -- each
+// comparator returns 0 for a tie, and `||` moves on to the next one.
+//
+// The upvote is optimistic, and unlike the reaction in
+// components/questions/live-questions.tsx it is never taken back if the call
+// fails. The accounting underneath is thin in the same direction:
+// `upvoteQuestion` (app/actions/engage.ts) increments the row for any
+// signed-in caller and records nobody, so the `voted` set that greys the
+// button out lives in this tab alone. Reload the page and the same question
+// takes another vote from the same student. Worth knowing before copying the
+// pattern: "one vote per person" is a claim only the server can keep.
+
 import { useEffect, useMemo, useState } from "react"
 import { ChevronUp, Send } from "lucide-react"
 import { getQuestions, submitQuestion, upvoteQuestion, type QuestionRow } from "@/app/actions/engage"

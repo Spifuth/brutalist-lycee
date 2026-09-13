@@ -1,5 +1,23 @@
 "use client"
 
+// The /bug-report form: pick a kind, fill in its fields, get a message to
+// paste and an issue to open.
+//
+// Everything that decides anything is a pure function in lib/bug-report.ts,
+// which is what lets tests/bug-report.test.ts check the wording, the
+// truncation and the issue URL without rendering a single component. Read
+// that file first.
+//
+// What this one is really about is not losing what a student typed. The
+// fields are kept per kind, so switching tabs cannot wipe an entry; the
+// pseudo is pre-filled once per mount and never again, so clearing it stays
+// cleared; and the clipboard write can fail -- `navigator.clipboard` does not
+// exist outside a secure context, and permission can be refused -- so the
+// failure is displayed instead of swallowed. The first and the last of those
+// are repairs rather than foresight: `git log -- components/report/` has them
+// under "le bouton copier ne ment plus, la saisie survit au changement
+// d'onglet".
+
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Copy, Check, ExternalLink } from "lucide-react"
 import { useAuth } from "@/components/auth/auth-provider"
@@ -12,12 +30,13 @@ import {
   type ReportKind,
 } from "@/lib/bug-report"
 
-// Le formulaire ne décide de rien : il collecte des champs et affiche ce que
-// lib/bug-report.ts en fait. Les deux sorties sont montrées en même temps —
-// on colle le message ET on ouvre l'issue, ce n'est pas un choix à faire.
+// The form decides nothing: it collects fields and shows what
+// lib/bug-report.ts makes of them. Both outputs are on screen at the same
+// time on purpose -- you paste the message AND you open the issue, it is not
+// a choice to make.
 
-// Un jeu de réponses par type : changer d'onglet ne doit pas effacer ce que
-// l'élève a déjà tapé dans un autre onglet.
+// One set of answers per kind: switching tabs must not erase what the student
+// has already typed in another one.
 const emptyFieldsByKind: Record<ReportKind, Record<string, string>> = {
   bug: {},
   contenu: {},
@@ -32,10 +51,10 @@ export function ReportForm() {
   const [pseudo, setPseudo] = useState("")
   const [agent, setAgent] = useState("")
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle")
-  // Le pseudo est le seul champ « vie privée » du formulaire : une fois que
-  // l'élève l'a effacé volontairement, il ne doit pas revenir tout seul au
-  // prochain rendu déclenché par un `refresh()` de la session. On ne le
-  // pré-remplit donc qu'une fois par montage, jamais après.
+  // The pseudo is the one "privacy" field in this form: once the student has
+  // deliberately cleared it, it must not come back on its own at the next
+  // render triggered by a session `refresh()`. So it is pre-filled once per
+  // mount, never after.
   const pseudoFilledRef = useRef(false)
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -47,15 +66,16 @@ export function ReportForm() {
   }, [user])
 
   useEffect(() => {
-    // Le timeout de « copié » ne doit pas retomber sur un composant démonté.
+    // The "copied" timeout must not land on an unmounted component.
     return () => {
       if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current)
     }
   }, [])
 
   useEffect(() => {
-    // Le navigateur et l'OS expliquent la moitié des bugs d'affichage. C'est
-    // affiché en clair et effaçable : rien n'est envoyé sans que l'élève le voie.
+    // The browser and the OS explain half the display bugs. It is shown in
+    // plain text and can be erased: nothing leaves without the student seeing
+    // it first.
     setAgent(navigator.userAgent)
   }, [])
 
@@ -76,8 +96,8 @@ export function ReportForm() {
       await navigator.clipboard.writeText(message)
       setCopyState("copied")
     } catch {
-      // Contexte non sécurisé (pas de navigator.clipboard) ou permission
-      // refusée : rien n'est parti, on le dit à l'élève plutôt que de mentir.
+      // Insecure context (no navigator.clipboard) or permission refused:
+      // nothing was copied, so say so rather than lie about it.
       setCopyState("failed")
     }
     if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current)
@@ -127,9 +147,9 @@ export function ReportForm() {
             ) : field.input === "textarea" ? (
               <textarea
                 rows={4}
-                // Sans limite, un log entier collé ici ne se découvre tronqué
-                // qu'à la prévisualisation — et fait tourner la boucle de
-                // rognage de buildIssueUrl à chaque frappe pour rien.
+                // With no limit, a whole log pasted in here is only found to
+                // be truncated at preview time -- and runs buildIssueUrl's
+                // trimming loop on every keystroke for nothing.
                 maxLength={4000}
                 className={inputClass}
                 placeholder={field.placeholder}
