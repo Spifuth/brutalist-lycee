@@ -1,3 +1,5 @@
+// Vendored shadcn/ui primitive -- overwritten on the next shadcn update.
+// Do not restyle here; colour and shape live in globals.css, see STYLE.md §5.
 import * as React from 'react'
 import { Slot } from '@radix-ui/react-slot'
 import { ChevronRight, MoreHorizontal } from 'lucide-react'

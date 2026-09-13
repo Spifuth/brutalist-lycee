@@ -1,3 +1,5 @@
+// Vendored shadcn/ui hook -- overwritten on the next shadcn update.
+// See STYLE.md §5 before changing anything here.
 import * as React from 'react'
 
 const MOBILE_BREAKPOINT = 768
