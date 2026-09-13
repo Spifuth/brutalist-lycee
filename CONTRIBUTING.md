@@ -17,7 +17,7 @@ minutes. C'est la section 1.
 | Tu veux… | Va à |
 |---|---|
 | corriger une faute, ajouter une question de quiz | **§1** — dans le navigateur, rien à installer |
-| signaler un truc cassé, une faute, du code bizarre | **§13** — un formulaire, deux canaux |
+| signaler un truc cassé, une faute, du code bizarre | **§14** — un formulaire, deux canaux |
 | comprendre les mots que tout le monde utilise | **§2** — le vocabulaire |
 | lancer le site sur ton ordi | **§4** — l'installation |
 | coder une vraie fonctionnalité | **§4** puis **§5** à **§8** |
@@ -47,7 +47,7 @@ question de quiz, c'est tout ce dont tu as besoin.
 6. Clique **Propose changes**, puis **Create pull request** sur l'écran suivant.
 
 C'est fini. Ta proposition part vers la branche `dev` automatiquement — tu n'as
-rien à choisir. Va lire **§11** pour savoir ce qui se passe ensuite.
+rien à choisir. Va lire **§12** pour savoir ce qui se passe ensuite.
 
 > [!TIP]
 > **Tu ne peux rien casser en faisant ça.** Une pull request est une
@@ -255,7 +255,7 @@ la cible doit être **`Spifuth/brutalist-lycee`, branche `dev`**.
 > `git add -A` prend **tout** ce que tu as modifié, y compris des fichiers que
 > tu ne voulais pas envoyer. `git status` juste avant te montre la liste — un
 > coup d'œil, une seconde. Ton `.env` n'y apparaîtra pas : il est ignoré exprès
-> (voir §12), et un test du dépôt vérifie qu'il le reste.
+> (voir §13), et un test du dépôt vérifie qu'il le reste.
 
 ### Nommer sa branche
 
@@ -510,7 +510,112 @@ tu corriges.
 
 ---
 
-## 11. Après avoir ouvert ta PR
+## 11. Commenter son code
+
+Le site tourne pour des élèves, mais le dépôt est lu par des élèves aussi. Un
+commentaire ici ne sert pas seulement à faire gagner du temps au prochain
+mainteneur : il sert à ce que quelqu'un qui lit ce fichier **apprenne quelque
+chose qu'il pourra refaire ailleurs**.
+
+C'est le test à se poser avant d'écrire une ligne de commentaire :
+
+> Est-ce que celui qui me lit pourrait refaire ça dans un projet qui n'est pas
+> celui-ci ?
+
+Un commentaire qui n'est vrai que dans ce dépôt informe. Un commentaire qui
+généralise enseigne.
+
+### Les commentaires s'écrivent en anglais
+
+Le contenu reste en français — les textes du site, les questions de quiz, les
+articles de cours, tout ce que l'élève voit. Mais les **commentaires** et la
+documentation technique sont en anglais, parce que c'est la langue dans
+laquelle tu liras du code toute ta vie : la doc de React, les messages
+d'erreur, les réponses sur Stack Overflow. Autant commencer ici, où quelqu'un
+relit.
+
+### L'en-tête de fichier
+
+Tout fichier de 80 lignes ou plus commence par un commentaire. La CI le
+vérifie (`pnpm check:headers`) — elle vérifie qu'il **existe**, pas qu'il est
+bon ; ça, c'est la revue.
+
+```ts
+// <ce que ce fichier fabrique, en une ligne>
+//
+// <l'idée qu'il illustre, et ce qu'un lecteur pourrait en reconstruire>
+// <le piège, le contrat avec les appelants, ou ce que ce fichier n'est PAS>
+```
+
+Le premier bloc oriente, le second enseigne. Si le fichier n'illustre aucune
+idée transférable, il n'a droit qu'à la première ligne — **un en-tête court
+vaut mieux qu'un paragraphe inventé**.
+
+⚠️ Si le fichier commence par `"use client"` ou `"use server"`, cette ligne
+reste en première position et l'en-tête se met **juste en dessous**. La
+directive doit être la première instruction du fichier, sinon elle n'est plus
+reconnue.
+
+### Les six règles
+
+1. **On explique le pourquoi, pas le quoi.** Le code dit déjà ce qu'il fait.
+   `// on incrémente i` fait refuser la PR.
+2. **On nomme la technique avec son vrai nom** — *optimistic UI*,
+   *server-sent events*, *server action*, *debounce*, *machine à états*. Un nom
+   exact est une porte de sortie : le lecteur peut le chercher. Une périphrase
+   ne mène nulle part.
+3. **Ce qui généralise passe avant ce qui décrit.** « c'est X, et X sert chaque
+   fois que Y » vaut mieux que « ici on fait X ».
+4. **On n'invente jamais d'historique.** Tu ne cites un bug passé que s'il est
+   dans `git log` ou dans un test qui porte son nom. Sinon, décris le contrat.
+   ⚠️ C'est la règle la plus importante : un faux « on a eu un bug ici » se
+   transmet à tous ceux qui liront le fichier après toi.
+5. **On nomme le garde-fou quand il existe** : « `tests/secret-seeds.test.ts`
+   échoue si tu fais ça ». Le lecteur apprend en même temps que le test existe.
+6. **On renvoie au cours quand l'article existe.** `/docs/ce-site` explique
+   déjà en prose, mesures à l'appui, ce que fait ce site.
+
+### Un exemple
+
+`components/quiz/quiz-runner.tsx` fait jouer un quiz. Ce qu'il ne faut pas
+écrire :
+
+```ts
+// State for the current step
+const [step, setStep] = useState(0)
+```
+
+Ça ne dit rien que la ligne d'en dessous ne dise déjà. Ce qu'on écrit :
+
+```ts
+// The quiz player: one question at a time, answer -> reveal -> next.
+//
+// The entire quiz is four pieces of React state (`step`, `selected`,
+// `revealed`, `score`) and nothing else. That is the pattern worth stealing:
+// a multi-step form is an index into an array plus a flag for "has the user
+// committed to this step yet". No router, no state library, no server round
+// trip until the end.
+```
+
+Le lecteur repart avec une idée réutilisable : un formulaire multi-étapes,
+c'est un index et un drapeau.
+
+### Le modèle à lire
+
+`lib/quizzes.ts`. Il fait dix lignes de commentaire et il raconte une vraie
+panne : deux sources de vérité satisfaisaient le même type TypeScript, donc une
+session de quiz en direct jouait 3 questions sur 8 **sans que rien n'échoue**.
+Il nomme aussi le test qui empêche que ça recommence. C'est le niveau visé.
+
+### Les fichiers qu'on ne commente pas
+
+`components/ui/` et `hooks/` viennent de shadcn/ui. Ils seront écrasés à la
+prochaine mise à jour : les commenter serait du travail perdu. Ils portent une
+seule ligne qui dit exactement ça, et on n'y touche pas.
+
+---
+
+## 12. Après avoir ouvert ta PR
 
 **1. Les vérifications tournent** (2–3 minutes). En bas de la page de ta PR
 tu verras des ✅ ou des ❌.
@@ -549,7 +654,7 @@ supprimée automatiquement. Ton travail sera en ligne au prochain déploiement.
 
 ---
 
-## 12. Ce qu'il ne faut jamais faire
+## 13. Ce qu'il ne faut jamais faire
 
 - **Enregistrer un `.env`, un mot de passe, une clé ou un jeton.** Le dépôt est
   public. `.env` et ses variantes sont ignorés par git (`.gitignore`), et
@@ -572,7 +677,7 @@ supprimée automatiquement. Ton travail sera en ligne au prochain déploiement.
 
 ---
 
-## 13. Signaler quelque chose
+## 14. Signaler quelque chose
 
 Tu n'as pas besoin de savoir corriger un problème pour le signaler. Un bon
 rapport vaut souvent plus qu'un correctif approximatif.
@@ -603,10 +708,10 @@ d'un camarade : le dépôt est public.
 
 ---
 
-## 14. Bloqué ?
+## 15. Bloqué ?
 
 - Une erreur que tu ne comprends pas → passe par [`/bug-report`](https://lycee-next.nebulahost.tech/bug-report)
-  (§13) et colle le message **en entier, en texte** — pas une capture d'écran illisible.
+  (§14) et colle le message **en entier, en texte** — pas une capture d'écran illisible.
 - Une question sur le fonctionnement du site → la page `/comment-ca-marche`, puis
   [SELF_HOSTING.md](./SELF_HOSTING.md).
 - Git t'embrouille → le cours **Git & GitHub** du site, `/docs`.
