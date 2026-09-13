@@ -1,3 +1,16 @@
+// Guards the isolation between broadcasters -- that two of them are two, and
+// not one shared by accident.
+//
+// lib/broadcast.ts is a factory precisely because its predecessor was not:
+// lib/live-broadcast.ts held its subscriber set, its poller and its interval
+// handle at module scope. That is the shape to learn to recognise. State at
+// module scope is a singleton whether you meant one or not; it is correct for
+// exactly one consumer and silently wrong from the second one on, and the bug
+// is in neither consumer -- it is in there only ever having been one set of
+// state to consume.
+//
+// Deleted, a regression back to shared state throws nothing anywhere: the
+// pixel canvas would simply start receiving the live quiz's snapshots.
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { createBroadcaster } from "../lib/broadcast.ts"

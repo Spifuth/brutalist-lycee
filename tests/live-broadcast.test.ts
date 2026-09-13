@@ -1,3 +1,22 @@
+// Guards the live quiz's broadcaster instance, and the two states that are
+// easiest to get wrong at its edges: nobody subscribed, and no poller set.
+//
+// lib/live-broadcast.ts is now a single named instance of the factory in
+// lib/broadcast.ts, so most of what is asserted below is also asserted in
+// tests/broadcast.test.ts against the factory itself. That overlap is worth
+// knowing about before editing either file; what is only pinned here is that
+// this module's exports really are bound to one broadcaster.
+//
+// Two cases are genuinely specific to it. A publish with nobody listening must
+// not poll the database, because the result would go nowhere. And a publish
+// before setPoller() has ever run must not throw -- which is not hypothetical:
+// server actions call publishNow() after a mutation, and they can run in a
+// process where /api/live/stream has never been loaded, so the factory's
+// default poller (which throws on purpose) is still installed. A rejected
+// promise there is a 500 on a mutation that actually succeeded.
+//
+// Deleted, the live quiz keeps working. What goes is the guarantee that a
+// classroom of thirty students still costs one database read per tick.
 import { test, beforeEach } from "node:test"
 import assert from "node:assert/strict"
 import {

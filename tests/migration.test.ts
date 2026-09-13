@@ -1,3 +1,17 @@
+// Guards a one-shot script rather than the running site: db/migrate-from-sqlite.ts,
+// the `pnpm db:migrate-legacy` import from the previous version of this site.
+//
+// It pins two decisions that only get one chance to be right. BADGE_MAP has to
+// be *total* over the old badge ids -- a missing entry drops historical unlocks
+// on the floor with no error, and there is no second run to fix it.
+// resolveCollisions decides which of two accounts differing only in case
+// survives (the earlier one), and the second test checks that rule is applied
+// generally rather than hardcoded to the one account that prompted it, which
+// is the difference between a fix and a patch.
+//
+// Deleted, nothing on the live site changes: no page imports either module.
+// The risk it covers exists only the next time someone runs that script -- and
+// a data import is exactly the kind of code that gets no second attempt.
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { BADGE_MAP, ORPHAN_BADGES } from "../lib/migration/badge-map.ts"

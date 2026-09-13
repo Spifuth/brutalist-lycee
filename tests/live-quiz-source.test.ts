@@ -1,14 +1,23 @@
-import { test } from "node:test"
-import assert from "node:assert/strict"
-import { readFileSync } from "node:fs"
-import { buildQuestionOrder } from "../lib/live-session.ts"
-
+// Guards the live quiz's single source of truth: Postgres, and nothing else.
+//
 // The live quiz used to resolve its questions from the hardcoded QUIZZES array
 // in lib/quizzes.ts while /quiz and /admin read Postgres. Nothing failed: both
 // modules export a working Quiz shape, so a live session on `reseaux` quietly
 // played 3 of its 8 real questions, and the 8 DB-only quizzes could not be
-// opened at all. These tests pin the source of truth so a future edit cannot
-// silently reintroduce a second one.
+// opened at all. Two sources of truth that satisfy the same TypeScript type is
+// the shape to learn to recognise -- the compiler is happy by construction, so
+// a test is the only possible detector.
+//
+// Notice what the first two tests assert: not behaviour, but the *absence of
+// an import*. They read the source of three files and fail if the static data
+// is imported at all. That is what a guard looks like when the rule is
+// architectural and cannot be expressed in the type system.
+//
+// Deleted, the regression comes back exactly as quietly as it arrived.
+import { test } from "node:test"
+import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+import { buildQuestionOrder } from "../lib/live-session.ts"
 
 const LIVE_PATH_MODULES = [
   "app/actions/live.ts",

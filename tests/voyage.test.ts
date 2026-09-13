@@ -1,3 +1,20 @@
+// Guards the claim a teaching page is built to make, not just its shape.
+//
+// The data-journey page walks a request from a browser to a site and shows,
+// step by step, what each observer -- your network, your provider, the DNS
+// resolver, the site -- can actually see. Two of these tests are structural:
+// unique step ids, and every observer accounted for at every step, because a
+// missing row does not throw -- the table just renders one line short and the
+// reader concludes that observer sees nothing at that moment.
+//
+// The other two are the point. After the TLS handshake nobody but the
+// destination may be shown reading the content, and the provider must still be
+// shown knowing the domain. Those are opposite failures of the same page: the
+// first teaches that HTTPS does not work, the second oversells it and removes
+// the reason a VPN exists. Either would be one word in one table cell.
+//
+// Deleted, the page renders either way. A wrong lesson is a rendering success,
+// which is why content that load-bearing gets assertions instead of a proofread.
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { STEPS, OBSERVERS, type ObserverKey } from "../lib/voyage.ts"

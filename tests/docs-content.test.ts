@@ -1,3 +1,32 @@
+// Guards the course content, which is the part of this site nothing else can
+// check.
+//
+// Everything under lib/docs*.ts is data, and data has no compiler. A block
+// with an unknown `type` is not a crash -- DocBlocks ends in `default: return
+// null`, so the block silently disappears from the page. A table row one cell
+// short does not crash either: the browser shifts the remaining cells left and
+// the comparison quietly says something false. Those are the failures this
+// file turns into a red CI, and they are the reason a content repository needs
+// tests at all.
+//
+// Three groups here earn their keep for different reasons, and each is worth
+// reading for itself:
+//
+//  - the token guard is an allowlist of exact strings, not a "is this redacted
+//    enough?" heuristic. Two successive heuristics were holed (commit 3d1ad67);
+//    the comment above KNOWN_FAKE_TOKENS explains why a shape-based rule can
+//    never answer that question, whatever you patch into it.
+//  - the buildPruneKeys cases test db/seed.ts's most destructive code -- it
+//    DELETEs every doc row the seed does not recognise -- against a
+//    database-free pure function. DOC_SUBJECTS never happens to be empty, so
+//    those refusals would never be exercised by the content tests above.
+//  - the last test reads app/docs/page.tsx and checks that its hand-written
+//    intro sentence still names every written subject. That sentence has
+//    already fallen behind once (commit 7cbcd39). Prose that goes stale never
+//    fails a build.
+//
+// Deleted, the site keeps rendering, which is the whole problem: every failure
+// listed above is silent by construction.
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
@@ -391,7 +420,7 @@ test("the retired securite placeholders are gone", () => {
 })
 
 // app/docs/page.tsx hand-writes, in its intro paragraph, the list of subjects
-// that are actually rédigés. Nothing ties that sentence to DOC_SUBJECTS: this
+// that are actually written. Nothing ties that sentence to DOC_SUBJECTS: this
 // branch had to update it by hand (commit 7cbcd39, which fixed the exact same
 // sentence after it fell behind once already), and the next written subject
 // will need the same manual edit. Forget it, and the page keeps rendering a

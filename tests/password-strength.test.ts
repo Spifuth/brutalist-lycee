@@ -1,3 +1,21 @@
+// Guards a teaching page against teaching the opposite of what is true.
+//
+// The password lab exists to land one comparison: a four-word passphrase beats
+// a short complicated password, by a margin nobody guesses correctly. The
+// attacker profiles, the animated counter and the weakness chips are all
+// decoration around that claim.
+//
+// Which is exactly why it needs assertions. An estimator that misprices
+// leetspeak or dictionary words still renders beautifully, still animates, and
+// still prints a confident number -- the wrong one, to a class with no way to
+// check. The test named THE LESSON is what catches that. The one below it
+// guards the opposite mistake: pricing a passphrase against our own few
+// hundred French words would invent a weakness that is an artefact of this
+// repository being small, so the estimate is pinned to an assumed real
+// dictionary instead.
+//
+// Deleted, the page never fails. It just starts being quietly wrong, which for
+// a page whose entire product is a number is the same thing as broken.
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import {

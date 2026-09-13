@@ -1,3 +1,17 @@
+// A small guard, and a good example of the smallest kind worth writing.
+//
+// /vie renders a secret code. /chasse validates what a student types against
+// db/seeds/secrets.ts. The page imports the constant, the seeds hold a row
+// that happens to carry the same string, and nothing checks that those two are
+// still the same string -- no type, no foreign key, no import between them. So
+// renaming the code on either side leaves a student typing something that is
+// simply rejected, with no way to tell it was our bug and not their mistake.
+//
+// Two files that must agree and have no reason to be compared is a shape worth
+// spotting: it is where four lines of test buy the most.
+//
+// Deleted, the page still renders a code and the hunt still accepts codes.
+// They just stop being the same code.
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { SECRET_SEEDS } from "../db/seeds/secrets.ts"

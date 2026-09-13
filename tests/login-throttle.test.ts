@@ -1,3 +1,22 @@
+// Guards the brute-force limit on login, and the two decisions inside it that
+// are not obvious from reading the module.
+//
+// The counter is keyed on the pseudo, not on the IP. A per-IP limit is a
+// perfectly correct rate limit and the wrong one here: thirty students in a
+// classroom share one public address, so one of them fat-fingering a
+// passphrase would lock out the room mid-session. And because the key is
+// attacker-controlled, the map holding it is capped -- an unbounded map keyed
+// on user input is a memory-exhaustion vector that the defence would have
+// introduced by itself.
+//
+// The last test is the one that justifies the constants instead of describing
+// them: MAX_FAILURES per WINDOW_MS works out to 960 guesses a day per account,
+// against a passphrase space of 2.7e12. Written as an assertion so an edit
+// that loosens either constant has to face the arithmetic rather than a
+// reviewer's mood.
+//
+// Deleted, logins keep working and the throttle keeps throttling. What goes is
+// the thing that notices someone widening it "just for testing".
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import {

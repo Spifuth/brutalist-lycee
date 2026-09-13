@@ -1,3 +1,14 @@
+// A narrow guard, and worth being plain about it: this checks one quiz seed
+// out of the fourteen in db/seeds/quizzes.ts.
+//
+// Both tests read like general rules -- every question has an explanation,
+// every `correct` index lands inside its own `options` -- but both are scoped
+// to `linux-bases`, the last quiz in the array. The other thirteen are not
+// checked here by anything.
+//
+// Deleted, nothing breaks. Seeding would still succeed with a quiz whose
+// correct index points past the end of its options, which reaches a student as
+// a question nobody can get right.
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { QUIZ_SEEDS } from "../db/seeds/quizzes.ts"

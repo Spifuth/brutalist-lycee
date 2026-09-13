@@ -70,11 +70,10 @@ test("l'URL vise le bon template pour chaque type", () => {
   }
 })
 
-// GitHub exige toujours un titre. Sans lui, l'issue "déjà remplie" que promet
-// la page /bug-report s'ouvre avec un titre vide et obligatoire — la toute
-// première case que voit l'élève est une erreur. Ce test échoue si
-// buildIssueUrl arrête d'envoyer `title`, ou si le tag ne correspond plus au
-// type demandé.
+// GitHub always requires a title. Without one, the "already filled in" issue
+// that /bug-report promises opens with an empty, mandatory title — the very
+// first box the student sees is an error. This test fails if buildIssueUrl
+// stops sending `title`, or if the tag no longer matches the type requested.
 test("chaque URL porte un titre non vide qui commence par le tag du type", () => {
   for (const spec of KINDS) {
     const firstRequired = spec.fields.find((f) => f.required) ?? spec.fields[0]
@@ -91,28 +90,27 @@ test("chaque URL porte un titre non vide qui commence par le tag du type", () =>
 test("le résumé du titre est coupé, pas l'URL entière", () => {
   const url = buildIssueUrl({ kind: "bug", fields: { quoi: "x".repeat(500) } })
   const title = new URL(url).searchParams.get("title")!
-  // Tag + espace + résumé coupé à ~60 caractères : large marge sous 500.
+  // Tag + space + summary cut to ~60 characters: plenty of room under 500.
   assert.ok(title.length < 100, `titre de ${title.length} caractères — le résumé ne semble pas coupé`)
   assert.ok(title.startsWith(titleTagFor("bug")))
 })
 
-// Texte accentué : é, à, œ, —, « » pèsent jusqu'à 3 octets — donc jusqu'à 9
-// caractères une fois encodés en % — contrairement à un champ pur ASCII qui
-// ne met pas vraiment la garantie à l'épreuve.
+// Accented text: é, à, œ, —, « » weigh up to 3 bytes — so up to 9 characters
+// once percent-encoded — unlike a pure-ASCII field, which never really puts
+// the guarantee to the test.
 const accents =
   "Erreur détectée à l'école : « le résultat n'est pas correct » — on réessaye, mais l'œuvre reste bloquée. ".repeat(
     200,
   )
 
 test("l'URL respecte un budget minuscule, ou échoue fort — jamais un dépassement silencieux", () => {
-  // À budget de production (6000) et avec les champs actuels de KINDS, aucun
-  // test boîte noire ne peut distinguer la boucle de rognage corrigée de
-  // l'ancienne, bogué : même l'ancienne version (qui sortait de boucle sur la
-  // longueur du champ restant, pas sur celle de l'URL réellement rendue) ne
-  // dépasse jamais 6000 caractères avec les champs d'aujourd'hui — mesuré à
-  // 5952/6000. Un budget minuscule force la boucle à réellement rogner et
-  // met sa condition de sortie à l'épreuve : c'est le seul moyen boîte noire
-  // de faire la différence entre les deux implémentations.
+  // At the production budget (6000) and with the current KINDS fields, no
+  // black-box test can tell the fixed trimming loop from the old, broken one:
+  // even the old version (which left the loop on the length of the remaining
+  // field, not on the length of the URL actually rendered) never goes past
+  // 6000 characters with today's fields — measured at 5952/6000. A tiny budget
+  // forces the loop to actually trim and puts its exit condition to the test:
+  // it is the only black-box way to tell the two implementations apart.
   const bugSpec = specFor("bug")
   const fields = Object.fromEntries(bugSpec.fields.map((field) => [field.id, accents]))
   const smallBudget = 400
@@ -139,17 +137,17 @@ test("l'URL reste sous le budget de production, en tronquant le plus long champ"
   const fields = Object.fromEntries(bugSpec.fields.map((field) => [field.id, accents]))
   fields.quoi = "court"
 
-  // Pas de deuxième argument : vérifie que le paramètre `budget` reste
-  // optionnel et que l'appel à un seul argument (celui de la page
-  // /bug-report) continue de fonctionner sans changement.
+  // No second argument: checks that the `budget` parameter stays optional and
+  // that the one-argument call (the one the /bug-report page makes) keeps
+  // working unchanged.
   const url = buildIssueUrl({ kind: "bug", fields })
   assert.ok(url.length <= URL_BUDGET, `${url.length} caractères — au-delà, le navigateur ou GitHub coupe`)
   assert.ok(url.includes("quoi=court"), "le champ court ne doit pas être sacrifié")
 
-  // Un champ rogné ici l'est *dans l'URL de l'issue* : il doit porter
-  // URL_TRUNCATION_MARK, jamais TRUNCATION_MARK — celui-ci promet que « la
-  // suite est dans l'issue », or ici l'issue est justement ce qui est en
-  // train d'être construit, il n'y a nulle part où la suite existerait.
+  // A field trimmed here is trimmed *inside the issue URL*: it must carry
+  // URL_TRUNCATION_MARK, never TRUNCATION_MARK — that one promises that « la
+  // suite est dans l'issue », and here the issue is precisely what is being
+  // built, so there is nowhere for the rest to exist.
   const truncatedFields = [...new URL(url).searchParams.entries()].filter(([, v]) =>
     v.includes(URL_TRUNCATION_MARK),
   )
@@ -167,17 +165,16 @@ test("l'URL reste sous le budget de production, en tronquant le plus long champ"
 })
 
 test("un type inconnu échoue fort", () => {
-  // @ts-expect-error — on teste précisément le cas que TypeScript interdit
+  // @ts-expect-error — testing exactly the case TypeScript forbids
   assert.throws(() => specFor("chaussette"), /chaussette/)
 })
 
-// Extrait les id de champ que le template YAML marque `validations: required:
-// true`. Découpe sur chaque item de liste top-level (`  - type: `) plutôt que
-// d'utiliser un parseur YAML : même approche regex que les tests ci-dessus,
-// pas de nouvelle dépendance. Les checkboxes (ex. `verifs` dans contenu.yml)
-// n'ont pas de bloc `validations:` — leurs `required: true` à eux vivent sous
-// `options:`, par item — donc ils ne matchent jamais ici, ce qui est voulu :
-// ce ne sont pas des champs pré-remplissables.
+// Extracts the field ids the YAML template marks `validations: required:
+// true`. Splits on each top-level list item (`  - type: `) rather than pulling
+// in a YAML parser: same regex approach as the tests above, no new dependency.
+// Checkboxes (e.g. `verifs` in contenu.yml) carry no `validations:` block —
+// their own `required: true` lives under `options:`, per item — so they never
+// match here, which is intended: they are not prefillable fields.
 function requiredFieldIds(raw: string): Set<string> {
   const ids = new Set<string>()
   for (const block of raw.split(/\n(?=  - type: )/)) {
@@ -188,11 +185,11 @@ function requiredFieldIds(raw: string): Set<string> {
   return ids
 }
 
-// Le jour où un template gagne un champ obligatoire, la page continuera
-// d'afficher « (facultatif) » si KINDS n'est pas mis à jour : l'élève saute
-// le champ, et GitHub bloque la soumission sur une case qu'on lui a dit
-// d'ignorer. Ce test pin les deux sens : si un template devient la source de
-// vérité et que ce test casse, corrige KINDS — pas les templates.
+// The day a template gains a required field, the page goes on displaying
+// « (facultatif) » unless KINDS is updated: the student skips the field, and
+// GitHub blocks the submission on a box they were told to ignore. This test
+// pins both directions — if a template becomes the source of truth and this
+// test breaks, fix KINDS, not the templates.
 test("le statut requis d'un champ est identique dans le template et dans KINDS", () => {
   for (const spec of KINDS) {
     const raw = templateText(spec.template)

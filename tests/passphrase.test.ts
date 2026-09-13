@@ -1,3 +1,21 @@
+// Guards the only credential this site issues.
+//
+// Students never choose a password: signup mints a four-word passphrase and
+// that is the entire account security. Two properties carry it, and neither is
+// visible in the output. The wordlist has to be long enough -- the list is
+// public in this repository, so its length *is* the entropy, and the comment
+// in the first test records what happened when it was 40 words. And the draw
+// has to come from a CSPRNG, not Math.random, which is seeded per context and
+// predictable from enough observed output.
+//
+// That is why this file exists instead of a careful reviewer: both failures
+// produce output indistinguishable from correct output. Four French words
+// joined by hyphens, every single time, whichever way they were drawn. The
+// Math.random test is worth reading as a technique -- it swaps the global out
+// and restores it in a `finally`, which is how you assert that something was
+// *not* called.
+//
+// Deleted, signup keeps working, and every account it creates stays guessable.
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { generatePassphrase, PASSPHRASE_WORDS, passphraseBits } from "../lib/crypto.ts"

@@ -1,3 +1,25 @@
+// Guards the secret hunt's data: 153 hand-written rows, and no compiler.
+//
+// One assertion earns the file on its own. The final milestone's `unlockAt` is
+// an *absolute count*, so adding one ordinary secret without bumping it makes
+// the "you found everything" reward fire while a secret is still missing --
+// silently, and only for the first student to get that far. Its neighbour pins
+// the hint text, because the hint spells that number out in prose and prose
+// does not fail a build.
+//
+// The rest is a catalogue of ways a data file breaks without breaking
+// anything: a lower-case code that can never be redeemed (redeemSecret
+// compares upper(code)), a badge slug no badge seed defines (awardBadge logs
+// and returns false, so the student redeems and silently gets nothing else), a
+// category nobody mapped (it lands in AUTRE, a bucket nobody clicks).
+//
+// The last two tests are editorial rather than technical, and they are the
+// unusual ones here: a secret whose name contains its own answer is not
+// broken, it simply has nothing left to find. That is still a defect, and it
+// is cheaper to catch here than in a classroom.
+//
+// Deleted, the seed keeps loading. Every failure above reaches a student
+// before it reaches anyone who could fix it.
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { SECRET_SEEDS } from "../db/seeds/secrets.ts"
@@ -149,16 +171,15 @@ test("no hint promises a vulnerability the site does not have", () => {
 })
 
 test("un secret encore à cacher dit quoi cacher et où", () => {
-  // Ce plancher n'a jamais fait que descendre, et seulement quand un secret
-  // était réellement posé quelque part : 12 → 11 le 2026-09-07 quand
-  // SIN-DEBUG-PARAM est devenu vrai derrière /vie?debug=true, puis **11 → 0**
-  // le 2026-09-08 quand les onze derniers ont été posés pour de bon
-  // (lib/secret-placements.ts). Le compte est donc tombé à zéro, et
-  // tests/secret-placements.test.ts garde désormais l'invariant fort : plus
-  // aucun secret ne promet une cachette qui n'existe pas.
+  // This floor has only ever gone down, and only when a secret was genuinely
+  // placed somewhere: 12 → 11 on 2026-09-07 when SIN-DEBUG-PARAM became real
+  // behind /vie?debug=true, then **11 → 0** on 2026-09-08 when the last eleven
+  // were placed for good (lib/secret-placements.ts). The count is therefore at
+  // zero, and tests/secret-placements.test.ts now holds the strong invariant:
+  // no secret promises a hiding place that does not exist.
   //
-  // Ce qui reste vérifié ici vaut pour le prochain : si quelqu'un remet un
-  // marqueur, il doit dire quoi cacher et où, pas seulement « à faire ».
+  // What is still checked here is for the next one: if someone puts a marker
+  // back, it has to say what to hide and where, not just "to do".
   const todo = SECRET_SEEDS.filter((s) => s.location.startsWith("À IMPLÉMENTER"))
   for (const s of todo) {
     assert.ok(s.location.includes("—"), `${s.code} dit À IMPLÉMENTER sans dire quoi cacher ni où`)
@@ -170,16 +191,17 @@ test("the whole set is the size the design settled on", () => {
   assert.equal(ordinary.length, 149)
 })
 
-// Mesuré le 2026-09-08 sur la base de prod : 37 secrets sur 160 avaient la
-// réponse écrite dans leur propre nom, donc il n'y avait rien à chercher — on
-// recopiait le titre. Les 26 secrets de culture concernés ont été réécrits ;
-// ce test empêche le suivant de revenir. `lib/secrets-yaml.ts` applique la même
-// règle au fichier privé, pour que les deux sources de secrets se tiennent.
+// Measured on 2026-09-08 against the production database: 37 secrets out of
+// 160 had the answer written into their own name, so there was nothing to look
+// for — you just copied the title back. The 26 general-knowledge secrets
+// concerned were rewritten; this test stops the next one coming back.
+// `lib/secrets-yaml.ts` applies the same rule to the private file, so the two
+// sources of secrets hold to it alike.
 //
-// Les `SIN-*` en sont exemptés à dessein : leur nom décrit *où chercher dans le
-// site* (« Message dans la console », « Vue sur la source »), ce qui est
-// précisément son rôle. Ce qui les trahit, c'est la régularité du préfixe, pas
-// leur nom.
+// The `SIN-*` codes are exempt on purpose: their name describes *where to look
+// in the site* (« Message dans la console », « Vue sur la source »), which is
+// precisely its job. What gives those away is the regularity of the prefix,
+// not their name.
 test("le nom d'un secret ne contient pas sa propre réponse", () => {
   const words = (text: string) =>
     text
@@ -205,9 +227,9 @@ test("le nom d'un secret ne contient pas sa propre réponse", () => {
   )
 })
 
-// Le barème a été ramené à quatre valeurs le 2026-09-08 (il en comptait 14).
-// Deux exceptions sont des blagues assumées et documentées ici plutôt que
-// tolérées en silence.
+// The scale was cut down to four values on 2026-09-08 (it had fourteen). Two
+// exceptions are deliberate jokes, documented here rather than tolerated in
+// silence.
 test("les points d'un secret ordinaire découlent de sa difficulté", () => {
   const SCALE: Record<string, number> = { easy: 10, medium: 20, hard: 30, insane: 50 }
   const JOKES = new Set(["NICE-NUMBER", "CHICKEN-JOKE"])

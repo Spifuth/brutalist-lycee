@@ -1,3 +1,21 @@
+// Guards the reward gates of the secret hunt: which ones a given count has
+// earned, and what counts as a gate at all.
+//
+// milestonesReached() returns every gate at or below the count, not just the
+// one just crossed, which is what lets app/actions/engage.ts stay correct when
+// a count jumps (an import, an admin edit) instead of owing the student future
+// redemptions. Cumulative-by-default is the safer shape whenever the trigger
+// is a threshold rather than an event.
+//
+// isMilestone() is the half with a trap in it. `unlock_at` is a nullable
+// INTEGER, so pg hands back `null` while the seed type uses `undefined`; both
+// mean "an ordinary secret" and both have to be treated alike. Get it wrong in
+// that direction and redeemSecret refuses every ordinary code, since it
+// refuses anything a milestone -- loud, immediate, and every student at once.
+// Any value crossing a database boundary has two spellings of absent.
+//
+// Deleted, nothing throws at seed or build time; the gates simply start firing
+// at the wrong counts.
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { milestonesReached, isMilestone } from "../lib/milestones.ts"

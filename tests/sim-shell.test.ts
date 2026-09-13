@@ -1,3 +1,18 @@
+// Guards a puzzle -- which sounds like an odd thing to test, until you look at
+// how it fails.
+//
+// The terminal page simulates a shell so a student can find a hidden file. The
+// whole discovery chain is four facts that only work together: `help` has to
+// mention the `-a` flag (or `ls -a` is unguessable), a plain `ls` must not list
+// `.vie` (or nothing is hidden), `ls -a` must (or the trail is broken), and
+// `help` must not mention `life` (or the secret command is just a menu entry).
+//
+// Break any one of them and nothing errors. The terminal still works, the page
+// still renders, and the failure mode is a student who looks for a while and
+// gives up -- which nobody reports, because it is indistinguishable from not
+// having solved it yet.
+//
+// Deleted, that is exactly what happens, and nothing anywhere would say so.
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { SimShell, GOTO_PREFIX } from "../lib/sim-shell.ts"
