@@ -14,17 +14,17 @@ import { query } from "./db.ts"
 
 /** The placements the site knows how to plant. One secret per placement. */
 export const PLACEMENT_SLUGS = [
-  "hidden-css",     // texte masqué en CSS, ressort à la sélection
-  "zero-width",     // caractères de largeur nulle dans un paragraphe
-  "timing",         // affiché seulement quelques minutes après minuit
-  "local-storage",  // clé leurre écrite par le navigateur
-  "network",        // réponse d'une requête visible dans l'onglet Réseau
-  "header",         // en-tête de réponse HTTP
-  "backup-file",    // fichier de sauvegarde oublié à la racine
-  "admin-path",     // chemin d'URL prévisible
-  "base64",         // chaîne encodée, pas chiffrée
-  "jwt",            // jeton dont la charge utile se lit sans clé
-  "api-key",        // fausse clé laissée dans une configuration côté client
+  "hidden-css",     // text hidden with CSS, resurfaces when selected
+  "zero-width",     // zero-width characters inside a paragraph
+  "timing",         // shown only for a few minutes after midnight
+  "local-storage",  // decoy key written to the browser's storage
+  "network",        // a request's response, visible in the Network tab
+  "header",         // an HTTP response header
+  "backup-file",    // backup file forgotten at the site root
+  "admin-path",     // predictable URL path
+  "base64",         // encoded string, not encrypted
+  "jwt",            // token whose payload reads without a key
+  "api-key",        // fake key left in a client-side config
 ] as const
 
 export type PlacementSlug = (typeof PLACEMENT_SLUGS)[number]
