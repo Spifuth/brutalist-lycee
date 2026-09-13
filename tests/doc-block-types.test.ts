@@ -67,6 +67,15 @@ test("the on-screen help lists block types the renderer handles", () => {
   }
 })
 
+test("the on-screen help names every block type the renderer handles", () => {
+  for (const type of DOC_BLOCK_TYPES) {
+    assert.ok(
+      hintedTypes().includes(type),
+      `the renderer handles "${type}", but the hint never mentions it — an article writer reading the hint would never know it exists`,
+    )
+  }
+})
+
 test("DOC_BLOCK_TYPES matches the switch that renders the blocks", () => {
   assert.deepEqual(
     [...DOC_BLOCK_TYPES].sort(),
