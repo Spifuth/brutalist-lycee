@@ -1,3 +1,18 @@
+// Serves a student's avatar: user id -> database row -> file on disk -> bytes.
+//
+// Note what the URL is keyed on -- the *user id*, never the stored filename.
+// That indirection is the design. The filename never appears in a URL, so
+// the disk layout stays private (lib/avatar-storage.ts generates it as a
+// random UUID), and, more usefully, every request goes through code that
+// re-reads the database row first. Serve user-uploaded content through an
+// identifier you control rather than the path it happens to sit at, and a
+// photo stops being reachable the moment the row says so.
+//
+// Everything after that is the consequence, and the comments below argue it
+// out: two separate 404s (no row, no file) and a cache header that gives up
+// caching an image entirely, because here a cached copy is a copy the
+// moderator can no longer take down.
+
 import { queryOne } from "@/lib/db"
 import { readAvatarFile } from "@/lib/avatar-storage"
 

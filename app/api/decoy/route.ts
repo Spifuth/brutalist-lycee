@@ -1,12 +1,13 @@
-// Requête leurre : elle n'existe que pour être vue.
+// A decoy request: it exists only to be seen.
 //
-// Deux secrets de la chasse tiennent ici. `SIN-NETWORK-SPY` s'apprend en
-// ouvrant l'onglet Réseau des outils de développement — la page /chasse
-// déclenche cette requête au chargement, et sa réponse porte le code.
-// `SIN-HEADER-CUSTOM` s'apprend en dépliant les en-têtes de cette même
-// réponse : une réponse HTTP ne transporte pas que la page.
+// Two of the hunt's secrets live here. `SIN-NETWORK-SPY` is learned by
+// opening the Network tab of the developer tools -- the /chasse page fires
+// this request on load, and its body carries the code. `SIN-HEADER-CUSTOM`
+// is learned by unfolding the headers of that same response: an HTTP
+// response does not carry only the page.
 //
-// Les codes viennent de la base, jamais du dépôt (voir lib/secret-placements).
+// The codes come from the database, never from the repository (see
+// lib/secret-placements).
 import { getPlacedCodes } from "@/lib/secret-placements"
 
 export const dynamic = "force-dynamic"
@@ -28,9 +29,9 @@ export async function GET() {
       headers: {
         "content-type": "application/json; charset=utf-8",
         "cache-control": "no-store",
-        // Le deuxième secret. Un en-tête maison n'a rien d'exotique : c'est
-        // exactement comme ça qu'une application transporte des informations
-        // que la page n'affiche pas.
+        // The second secret. A custom header is nothing exotic: it is
+        // exactly how an application carries information that the page
+        // does not display.
         ...(codes.header ? { "x-custom-secret": codes.header } : {}),
       },
     },
