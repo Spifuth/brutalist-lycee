@@ -17,7 +17,7 @@ minutes. C'est la section 1.
 | Tu veux… | Va à |
 |---|---|
 | corriger une faute, ajouter une question de quiz | **§1** — dans le navigateur, rien à installer |
-| signaler un truc cassé, une faute, du code bizarre | **§14** — un formulaire, deux canaux |
+| signaler un truc cassé, une faute, du code bizarre | **§15** — un formulaire, deux canaux |
 | comprendre les mots que tout le monde utilise | **§2** — le vocabulaire |
 | lancer le site sur ton ordi | **§4** — l'installation |
 | coder une vraie fonctionnalité | **§4** puis **§5** à **§8** |
@@ -255,7 +255,7 @@ la cible doit être **`Spifuth/brutalist-lycee`, branche `dev`**.
 > `git add -A` prend **tout** ce que tu as modifié, y compris des fichiers que
 > tu ne voulais pas envoyer. `git status` juste avant te montre la liste — un
 > coup d'œil, une seconde. Ton `.env` n'y apparaîtra pas : il est ignoré exprès
-> (voir §13), et un test du dépôt vérifie qu'il le reste.
+> (voir §14), et un test du dépôt vérifie qu'il le reste.
 
 ### Nommer sa branche
 
@@ -711,7 +711,7 @@ d'un camarade : le dépôt est public.
 ## 15. Bloqué ?
 
 - Une erreur que tu ne comprends pas → passe par [`/bug-report`](https://lycee-next.nebulahost.tech/bug-report)
-  (§14) et colle le message **en entier, en texte** — pas une capture d'écran illisible.
+  (§15) et colle le message **en entier, en texte** — pas une capture d'écran illisible.
 - Une question sur le fonctionnement du site → la page `/comment-ca-marche`, puis
   [SELF_HOSTING.md](./SELF_HOSTING.md).
 - Git t'embrouille → le cours **Git & GitHub** du site, `/docs`.
