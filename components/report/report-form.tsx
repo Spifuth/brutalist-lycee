@@ -211,10 +211,10 @@ export function ReportForm() {
             {copyState === "copied" ? <Check size={13} /> : <Copy size={13} />}
             {copyState === "copied" ? "copié" : `copier pour ${DISCORD_CHANNEL}`}
           </button>
-          {/* Bouton, pas <a> sans href : un lien sans href n'est pas focusable
-              et disparaît de la navigation au clavier. Même sémantique
-              disabled que le bouton copier, donc même comportement pour un
-              clavier ou un lecteur d'écran dans les deux états. */}
+          {/* Button, not <a> without href: a link without href is not focusable
+              and disappears from keyboard navigation. Same disabled semantics
+              as the copy button, therefore same behavior for a keyboard or
+              screen reader in both states. */}
           <button
             type="button"
             onClick={() => window.open(issueUrl, "_blank", "noopener,noreferrer")}
