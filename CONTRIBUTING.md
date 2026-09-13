@@ -509,6 +509,29 @@ Deux pièges :
 - **Les `slug` d'articles et les `id` de sections doivent être uniques.** Un
   doublon écrase l'autre sans prévenir. `tests/docs-content.test.ts` le détecte.
 
+### Après la fusion : comment ton contenu arrive sur le site
+
+Ta PR fusionnée part dans `dev`, et **`dev` est la branche qui tourne sur le
+site public** ([lycee-next.nebulahost.tech](https://lycee-next.nebulahost.tech)).
+Il reste une étape, et c'est le prof qui la lance :
+
+1. il récupère `dev` sur le serveur ;
+2. il recrée les conteneurs ;
+3. au démarrage, le service `init` applique les migrations puis rejoue le seed
+   — c'est lui qui relit `db/seeds/` et `lib/docs.ts` ;
+4. ton quiz est en ligne.
+
+**Ce n'est pas automatique.** Ça arrive quand le prof déploie, pas trente
+secondes après le clic sur *Merge*. Si ton contenu n'est pas encore là le
+lendemain, le site n'est pas cassé : il n'a pas encore été déployé. Demande,
+plutôt que d'ouvrir une issue « bug ».
+
+**Et tu as déjà vu ce mécanisme en entier.** `pnpm db:setup` lance exactement
+les deux mêmes commandes que le serveur — `db/migrate.mjs` puis `db/seed.ts`.
+Ton test en local, c'est le déploiement en miniature. Si ton quiz est apparu
+chez toi après un `pnpm db:setup`, il apparaîtra en ligne au prochain
+déploiement.
+
 ---
 
 ## 10. Écrire un test
@@ -678,7 +701,9 @@ demande de l'aide dans la PR, c'est une manipulation qu'on fait à deux la
 première fois.
 
 **5. Fusion.** Une fois approuvée, ta PR est intégrée à `dev` et ta branche est
-supprimée automatiquement. Ton travail sera en ligne au prochain déploiement.
+supprimée automatiquement. Ton travail sera en ligne au prochain déploiement —
+ce que ça veut dire, et pourquoi ce n'est pas immédiat : **§9**, « Après la
+fusion ».
 
 ---
 
