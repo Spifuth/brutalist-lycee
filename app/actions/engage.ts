@@ -171,6 +171,21 @@ export async function getMySurveys(): Promise<string[]> {
 
 // ---------------- Quiz attempts ----------------
 
+// Records a finished quiz and awards whatever badges it unlocks.
+//
+// This trusts the browser: `score` and `total` are stored exactly as they
+// arrive, and `quiz-perfect` is awarded from them. Anyone who opens devtools
+// can call this action with a perfect score, and the leaderboard will believe
+// it. That is a deliberate trade for now -- the stake is a badge on a
+// classroom site, not a grade and not personal data -- but it is the wrong
+// model, and it is worth knowing that the right one is fifty lines away:
+// `submitAnswer` in ./live.ts re-reads the question from the database,
+// re-checks the chosen index and computes the score itself, so the client
+// sends a *choice*, never a *result*.
+//
+// The rule the two files are an example of: a server may accept what the
+// client *did*, never what the client *earned*. Fixing this one is issue #30
+// -- exploit it first, it takes one line in the console.
 export async function submitQuizAttempt(
   quizSlug: string,
   score: number,
