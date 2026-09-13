@@ -105,9 +105,9 @@ test("un code non typable est refusé", () => {
   assert.throws(() => parseSecretsYaml(one.replace("STUXNET", "Stux net!")), /Stux net!/)
 })
 
-// The rule from the 2026-09-08 audit, enforced by the machine rather than by
-// good intentions: 38 of the first 160 secrets had the answer written into
-// their own name, so there was nothing left to look for.
+// The rule from the 2026-09-08 audit (bb9d250), enforced by the machine
+// rather than by good intentions: 37 of the first 160 secrets had the answer
+// written into their own name, so there was nothing left to look for.
 test("un nom qui contient la réponse est refusé", () => {
   assert.throws(
     () => parseSecretsYaml(`secrets:
