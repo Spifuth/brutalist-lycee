@@ -24,12 +24,18 @@ const MIN_LINES = 80
 // gate skips past.
 const DIRECTIVE = /^(["'])use (client|server|strict)\1;?$/
 
-/** True when the first thing that is not a blank line or a directive is a comment. */
+// A shebang has the same constraint for the same reason: the OS only honours
+// it as the very first line, so it sits above the header instead of under it.
+// Skip it the same way a directive is skipped.
+const SHEBANG = /^#!/
+
+/** True when the first thing that is not a blank line, a directive, or a shebang is a comment. */
 export function hasHeader(source) {
   for (const raw of source.split("\n")) {
     const line = raw.trim()
     if (line === "") continue
     if (DIRECTIVE.test(line)) continue
+    if (SHEBANG.test(line)) continue
     return line.startsWith("//") || line.startsWith("/*")
   }
   return false

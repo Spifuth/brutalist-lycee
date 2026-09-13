@@ -34,3 +34,11 @@ test("a directive on its own is not a header", () => {
 test("leading blank lines are skipped", () => {
   assert.equal(hasHeader("\n\n// what this file makes\n"), true)
 })
+
+test("a shebang is a prologue too, so the comment under it still counts", () => {
+  assert.equal(hasHeader("#!/usr/bin/env node\n// what this file makes\nimport { x } from \"y\"\n"), true)
+})
+
+test("a shebang on its own is not a header", () => {
+  assert.equal(hasHeader("#!/usr/bin/env node\nimport { x } from \"y\"\n"), false)
+})
