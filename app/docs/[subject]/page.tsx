@@ -1,3 +1,18 @@
+// One docs subject, with the list of its articles.
+//
+// The folder is named [subject], in square brackets; the file next door,
+// app/docs/[subject]/[article]/page.tsx, explains what that means.
+//
+// Two exports here, and the App Router calls both for the same request:
+// generateMetadata() to fill the <title> in the <head>, and the default export
+// to render the page. Each awaits `params` and each calls getDocSubject(), so
+// the same SQL query runs twice per visit. Nothing deduplicates it on its own:
+// the App Router memoises fetch(), never an arbitrary async function. React's
+// cache() is the tool that would -- it memoises a function for the duration of
+// one request, so the second call gets the first one's result. Worth knowing
+// it exists, and worth knowing that going without it is a choice rather than
+// a free lunch.
+
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import Link from "next/link"

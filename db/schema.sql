@@ -227,22 +227,23 @@ CREATE TABLE IF NOT EXISTS secret_redemptions (
 );
 CREATE INDEX IF NOT EXISTS secret_redemptions_user_idx ON secret_redemptions(user_id);
 
--- Un secret, plusieurs formulations acceptées.
+-- One secret, several accepted phrasings.
 --
--- Né d'une mesure : quatre secrets « en double » de la base de prod ont tous
--- été créés le 2026-09-07 à la même seconde, en pleine intervention, parce que
--- des élèves donnaient une réponse juste mais non prévue et que le jeu la
--- refusait. Le défaut n'était pas le contenu mais le modèle — un secret n'avait
--- qu'un seul code. Un alias crédite le secret canonique : une validation, un
--- lot de points, quelle que soit la formulation tapée.
--- L'endroit du site où un secret est posé (lib/secret-placements.ts).
--- Le nom d'emplacement est dans le dépôt, le code reste ici : une page demande
--- « le secret posé à tel endroit » et n'écrit jamais la réponse en clair.
+-- Born from a measurement: four "duplicate" secrets in the prod database
+-- were all created on 2026-09-07 at the same second, mid-lesson, because
+-- students were giving a right but unplanned answer and the game refused
+-- it. The flaw was not the content but the model — a secret only had one
+-- code. An alias credits the canonical secret: one validation, one batch
+-- of points, whatever phrasing was typed.
+-- Where on the site a secret is placed (lib/secret-placements.ts).
+-- The placement name lives in the repo, the code stays here: a page asks
+-- for "the secret placed at this spot" and never writes the answer in the
+-- clear.
 ALTER TABLE secrets ADD COLUMN IF NOT EXISTS placement TEXT;
 CREATE UNIQUE INDEX IF NOT EXISTS secrets_placement_key ON secrets(placement) WHERE placement IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS secret_aliases (
-  code       TEXT PRIMARY KEY,                 -- toujours stocké en majuscules
+  code       TEXT PRIMARY KEY,                 -- always stored uppercase
   secret_id  UUID NOT NULL REFERENCES secrets(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

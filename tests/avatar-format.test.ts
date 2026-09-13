@@ -1,3 +1,18 @@
+// Guards the one thing a filename can never be trusted to say: what a file is.
+//
+// app/actions/avatar.ts accepts an upload whose filename and whose
+// Content-Type both come from the client. Only the first few bytes actually
+// decide, and the second half of this file checks the privacy claim that
+// follows from re-encoding rather than re-saving: the GPS coordinates a phone
+// writes into EXIF do not survive the trip.
+//
+// The move worth stealing is inside that EXIF test. It asserts the *fixture*
+// carries EXIF before asserting the output does not. A "no X in the output"
+// test whose input never had X passes forever while proving nothing -- and it
+// passes loudest on the day someone breaks the stripping.
+//
+// Deleted, no upload stops working. What stops existing is the only check
+// that an avatar leaves this server without saying where it was taken.
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import sharp from "sharp"

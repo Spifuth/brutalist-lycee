@@ -1,3 +1,18 @@
+// What the terminal page is allowed to do right now, answered per request.
+//
+// Two different people can each veto this feature -- the operator decides
+// whether it is wired up at all, the teacher decides whether the class is
+// using it this hour -- and this endpoint is the one place their two answers
+// are combined into something a browser can act on.
+//
+// The generalisable part is the shape of the reply: it returns the result
+// *and* one of the inputs, because "you cannot connect" has more than one
+// cause and the page has to say different things about them. A toggle that
+// renders itself disabled for the wrong reason is a lie the user cannot
+// debug. When one outcome has several causes, return the cause too.
+//
+// Public, like the page it serves, and it carries no credential.
+
 import { isTerminalOpen } from "@/lib/settings"
 
 // Read at request time, not build time: NEXT_PUBLIC_* is inlined by

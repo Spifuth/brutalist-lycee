@@ -1,16 +1,16 @@
-// Verse un fichier de secrets privé (YAML) dans la base.
+// Loads a private secrets file (YAML) into the database.
 //
 //   pnpm secrets:import -- --file db/secrets.yml
 //   pnpm secrets:import -- --file db/secrets.yml --dry-run
 //   docker exec -i brutalist-web tsx db/import-secrets.ts --stdin < db/secrets.yml
 //
-// La dernière forme est celle de la prod : la base n'est joignable que depuis
-// le réseau Docker, et le fichier — gitignoré — n'est pas dans l'image. On le
-// pousse donc par l'entrée standard, sans jamais l'y copier.
+// The last form is the production one: the database is reachable only from
+// the Docker network, and the file — gitignored — is not in the image. So it
+// is pushed through standard input, without ever copying it in.
 //
-// Idempotent : chaque secret est un upsert sur son code, chaque alias est
-// réécrit à l'identique. Rien n'est jamais supprimé, sauf les alias d'un
-// secret qu'on réimporte sans eux.
+// Idempotent: every secret is an upsert on its code, every alias is
+// rewritten identically. Nothing is ever deleted, except the aliases of a
+// secret that gets re-imported without them.
 import pg from "pg"
 import { readFileSync } from "node:fs"
 import { parseSecretsYaml, type SecretEntry } from "../lib/secrets-yaml.ts"
@@ -20,7 +20,7 @@ const args = process.argv.slice(2)
 const dryRun = args.includes("--dry-run")
 const fileIndex = args.indexOf("--file")
 const useStdin = args.includes("--stdin")
-// Uniquement pour réimporter un export d'avant la règle « le nom ne dit pas la réponse ».
+// Only for re-importing an export made before the "name doesn't give away the answer" rule.
 const lenient = args.includes("--lenient")
 
 if (!useStdin && fileIndex === -1) {
@@ -41,8 +41,8 @@ let entries: SecretEntry[]
 try {
   entries = parseSecretsYaml(source, { lenientNames: lenient })
 } catch (err) {
-  // Le fichier est écrit à la main entre deux cours : l'erreur doit dire quoi
-  // corriger et où, pas seulement qu'il y a une erreur.
+  // The file is hand-edited between classes: an error must say what to fix
+  // and where, not just that something is wrong.
   console.error(`[import] fichier refusé — ${(err as Error).message}`)
   process.exit(1)
 }
@@ -89,9 +89,9 @@ async function main() {
     }
   }
 
-  // Le palier final vaut « tous les secrets ordinaires », et ce nombre vient de
-  // changer. Le laisser à sa valeur écrite en dur est exactement ce qui a fait
-  // tomber la récompense finale sept secrets trop tôt en prod.
+  // The final milestone means "all the ordinary secrets", and that count just
+  // changed. Leaving it at its hardcoded value is exactly what made the final
+  // reward fire seven secrets too early in production.
   const { rows: milestone } = await db.query<{ unlock_at: number }>(
     `UPDATE secrets
         SET unlock_at = (SELECT COUNT(*) FROM secrets WHERE active AND unlock_at IS NULL)

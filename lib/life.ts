@@ -21,14 +21,17 @@ export interface Pattern {
   cells: [number, number][]
 }
 
+/** An all-dead grid. `Uint8Array` zero-fills, so there is nothing else to initialise. */
 export function createGrid(width: number, height: number): Grid {
   return { width, height, cells: new Uint8Array(width * height) }
 }
 
+/** Out-of-range coordinates read as dead instead of throwing; `neighbours` is where the torus wrapping actually happens. */
 export function get(g: Grid, x: number, y: number): boolean {
   return g.cells[y * g.width + x] === 1
 }
 
+/** Live cell count, summed straight off the bytes since each is 0 or 1. */
 export function population(g: Grid): number {
   let n = 0
   for (let i = 0; i < g.cells.length; i++) n += g.cells[i]

@@ -1,3 +1,21 @@
+// The PixelWar stream: the same SSE fan-out as the live quiz, one canvas.
+//
+// Read app/api/live/stream/route.ts first for what SSE is and why it beats
+// polling and a WebSocket here, then lib/sse-client.ts for why the client end
+// of both routes is never a bare `EventSource`. What this file adds is the
+// problem every event stream eventually meets: a subscriber arrives at one
+// instant, the full state it needs is read at another, and the two are not
+// atomic.
+//
+// The fix here is not a lock or a sequence number but a deliberately
+// *overlapping* catch-up window (`CATCH_UP_MS` below), and the reasoning
+// generalises: re-sending an event the client already applied costs one
+// redundant write, missing one costs a wrong pixel that never heals itself.
+// When your events are idempotent, overlap is the cheap way to be correct --
+// so size the window by what a miss costs, not by what a tick costs.
+//
+// /docs/ce-site/pixelwar-deux-chemins walks both directions in prose.
+
 import { query, queryOne } from "@/lib/db"
 import { pixelBroadcast, type PixelSnapshot } from "@/lib/pixel-broadcast"
 import { encodePixels, PIXELWAR_CLEARED_KEY, type Pixel } from "@/lib/pixelwar"

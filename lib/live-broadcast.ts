@@ -1,3 +1,12 @@
+// The shape of one live-quiz frame, and the broadcaster that pushes it to
+// every connected student.
+//
+// The SWAP POINT note under the imports explains the single-poller design and
+// what it costs. The types below answer a different question: what a client is
+// allowed to know. `LiveQuestionView.correct` is withheld until the teacher
+// reveals, and `viewerAnswer` is the one field a shared broadcast structurally
+// cannot fill in — everything a single poller produces is, by construction,
+// identical for everybody watching. Read them as decisions, not as a DTO.
 import type { LiveState } from "@/lib/live-session"
 import { createBroadcaster } from "./broadcast.ts"
 

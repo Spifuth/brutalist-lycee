@@ -1,3 +1,6 @@
+// The "report something" page: the form, plus the house rules for writing a
+// report somebody can act on. A server shell around <ReportForm>.
+
 import type { Metadata } from "next"
 import { PageShell, PageHeader } from "@/components/site/page-shell"
 import { ReportForm } from "@/components/report/report-form"

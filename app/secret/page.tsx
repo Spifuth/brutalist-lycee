@@ -1,5 +1,32 @@
 "use client"
 
+// The hidden terminal at /secret: type `unlock <code>` and the page lets you
+// in. The only Client Component page in this folder.
+//
+// The directive above is not a note to the reader, it is an instruction to the
+// bundler: everything in this file is compiled to JavaScript, sent to the
+// browser and run there. Which means everything in this file is readable by
+// anyone who presses F12 -- including UNLOCK_CODE ("root-access") and the hunt
+// code redeemed below ("SIN-PROF"). That is measurable rather than
+// theoretical: after `pnpm build`, both strings are found by grepping
+// .next/static/chunks, the folder the browser downloads. Here it is fine and
+// even intended -- the riddle is meant to be solvable, and `cat indice.txt`
+// gives the answer away anyway.
+//
+// The contrast is app/vie/page.tsx, which also hides a hunt code but is a
+// Server Component: the same grep over .next/static finds nothing there,
+// because that code never left the server. The rule that follows is absolute
+// and has no clever workaround -- a value that must stay unknown cannot live
+// in a "use client" file, obfuscated or not. The check has to run on the
+// server, which is what redeemSecret() does: it re-reads the code from the
+// database and refuses anything it does not recognise, so knowing the string
+// early buys nothing the hint had not already given.
+//
+// Structurally the rest is a small command interpreter: a `lines` array that
+// only ever grows, a switch on the first word, and a form that appends to it.
+// That is a REPL in thirty lines, and the shape transfers to any console-like
+// UI.
+
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"

@@ -1,32 +1,32 @@
-// Deux fonctions pures derrière la page /bug-report : l'une rend le message
-// que l'élève colle dans #bug-report, l'autre construit l'URL d'une issue
-// GitHub déjà remplie.
+// Two pure functions behind the /bug-report page: one renders the message a
+// student pastes into #bug-report, the other builds the URL of an
+// already-filled-in GitHub issue.
 //
-// Les `id` ci-dessous ne sont pas décoratifs : ce sont les identifiants des
-// champs de .github/ISSUE_TEMPLATE/*.yml. GitHub pré-remplit un formulaire
-// d'issue à partir de paramètres de query portant ces noms, et ignore
-// silencieusement tout paramètre inconnu — d'où le test qui relit les vrais
-// templates.
+// The `id`s below are not decorative: they are the field identifiers of
+// .github/ISSUE_TEMPLATE/*.yml. GitHub prefills an issue form from query
+// parameters carrying exactly those names, and silently ignores any parameter
+// it does not recognise — which is why tests/bug-report.test.ts reads the real
+// template files back and matches them against KINDS.
 
 export const REPO_URL = "https://github.com/Spifuth/brutalist-lycee"
 export const DISCORD_CHANNEL = "#bug-report"
 
-/** Discord refuse un message au-delà de 2000 caractères. */
+/** Discord refuses any message past 2000 characters. */
 export const DISCORD_LIMIT = 2000
-/** Au-delà, une URL est tronquée ou refusée selon le navigateur. */
+/** Past this, a URL is truncated or refused depending on the browser. */
 export const URL_BUDGET = 6000
 /**
- * Utilisé quand c'est le message Discord qui est coupé : la suite existe
- * réellement ailleurs, dans l'issue.
+ * Used when it is the Discord message that gets cut: the rest really does
+ * exist somewhere else, in the issue.
  */
 export const TRUNCATION_MARK = "…(coupé — la suite est dans l'issue)"
 /**
- * Utilisé quand c'est un champ *dans l'URL de l'issue* qui est coupé. Là, il
- * n'y a pas d'« ailleurs » : la partie rognée n'existe nulle part. Reprendre
- * TRUNCATION_MARK ici promettrait une suite qui n'existe pas.
+ * Used when it is a field *inside the issue URL* that gets cut. There is no
+ * "somewhere else" here: the trimmed part exists nowhere at all. Reusing
+ * TRUNCATION_MARK would promise a continuation that does not exist.
  */
 export const URL_TRUNCATION_MARK = "…(texte trop long, coupé)"
-/** Longueur du résumé de titre d'issue, voir `issueTitle` ci-dessous. */
+/** Length of the issue-title summary; see `issueTitle` below. */
 const TITLE_SUMMARY_MAX = 60
 
 export type ReportKind = "bug" | "contenu" | "code" | "idee"
@@ -114,6 +114,7 @@ export const KINDS: KindSpec[] = [
   },
 ]
 
+/** Throws on an unknown kind rather than returning undefined — every caller builds a URL or a message straight from the result. */
 export function specFor(kind: ReportKind): KindSpec {
   const spec = KINDS.find((k) => k.kind === kind)
   if (!spec) throw new Error(`type de signalement inconnu : ${kind}`)
@@ -123,30 +124,29 @@ export function specFor(kind: ReportKind): KindSpec {
 function truncate(text: string, max: number, mark: string = TRUNCATION_MARK): string {
   if (text.length <= max) return text
   if (max <= 0) return ""
-  // Pas assez de place pour le repère de coupure lui-même : l'ajouter
-  // dépasserait `max`. On tronque net plutôt que de mentir sur la longueur.
+  // Not enough room for the truncation mark itself: adding it would push past
+  // `max`. Cut flush rather than lie about the length.
   if (max <= mark.length) return text.slice(0, max)
   const keep = max - mark.length - 1
   return `${text.slice(0, keep).trimEnd()}\n${mark}`
 }
 
 /**
- * Le tag court en tête du titre d'issue, un par type. Dérivé du label
- * plutôt que dupliqué dans une table à part : ajouter un type à KINDS n'a
- * rien de plus à tenir à jour ici.
+ * The short tag at the head of an issue title, one per kind. Derived from the
+ * label rather than duplicated into a separate table: adding a kind to KINDS
+ * leaves nothing extra to keep in sync here.
  */
 export function titleTagFor(kind: ReportKind): string {
   return `[${specFor(kind).label.toUpperCase()}]`
 }
 
 /**
- * Le titre d'une issue pré-remplie. GitHub exige toujours un titre — le
- * laisser vide, c'est promettre une issue « déjà remplie » et échouer dès la
- * première case que l'élève voit (voir buildIssueUrl). On construit un
- * résumé court à partir du premier champ obligatoire du type — celui que
- * l'élève a le plus de chances d'avoir rempli en premier — coupé à ~60
- * caractères : assez pour identifier le signalement dans la liste des
- * issues, jamais assez pour peser sur le budget d'URL.
+ * The title of a prefilled issue. GitHub always demands a title — leaving it
+ * empty means promising an "already filled in" issue and failing at the very
+ * first box the student sees (see buildIssueUrl). A short summary is built
+ * from the kind's first required field — the one the student is likeliest to
+ * have filled in first — cut at ~60 characters: enough to recognise the report
+ * in a list of issues, never enough to weigh on the URL budget.
  */
 function issueTitle(spec: KindSpec, fields: Record<string, string>): string {
   const tag = titleTagFor(spec.kind)
@@ -161,7 +161,7 @@ function issueTitle(spec: KindSpec, fields: Record<string, string>): string {
   return `${tag} ${summary}`
 }
 
-/** Le texte que l'élève colle dans #bug-report. */
+/** The text a student pastes into #bug-report. */
 export function buildDiscordMessage(report: Report): string {
   const spec = specFor(report.kind)
   const lines: string[] = [`**[${spec.label.toUpperCase()}]** \`brutalist-lycee\``]
@@ -179,19 +179,19 @@ export function buildDiscordMessage(report: Report): string {
 }
 
 /**
- * L'URL d'une issue GitHub dont le formulaire est déjà rempli.
+ * The URL of a GitHub issue whose form is already filled in.
  *
- * `budget` par défaut à `URL_BUDGET` : les appelants existants (la page
- * /bug-report) n'ont rien à changer. Le paramètre existe surtout pour les
- * tests — il permet de mettre la garantie « toujours ≤ budget » à l'épreuve
- * à une taille où la boucle de rognage est réellement sollicitée, sans avoir
- * à générer des mégaoctets de texte pour dépasser 6000 caractères.
+ * `budget` defaults to `URL_BUDGET`, so existing callers (the /bug-report
+ * page) have nothing to change. The parameter exists mainly for the tests: it
+ * lets the "always <= budget" guarantee be exercised at a size where the
+ * trimming loop actually runs, instead of having to generate megabytes of text
+ * just to get past 6000 characters.
  */
 export function buildIssueUrl(report: Report, budget: number = URL_BUDGET): string {
   const spec = specFor(report.kind)
-  // Calculé une fois, à partir des champs tels que l'élève les a tapés : le
-  // titre reste un court résumé quoi qu'il arrive au corps pendant le
-  // rognage ci-dessous, donc pas besoin de le recalculer à chaque itération.
+  // Computed once, from the fields as the student typed them: the title stays
+  // a short summary whatever happens to the body during the trimming below, so
+  // there is no reason to recompute it on every pass.
   const title = issueTitle(spec, report.fields)
   const values = new Map<string, string>()
   for (const field of spec.fields) {
@@ -205,38 +205,37 @@ export function buildIssueUrl(report: Report, budget: number = URL_BUDGET): stri
     return `${REPO_URL}/issues/new?${params.toString()}`
   }
 
-  // Un champ « message d'erreur » collé depuis la console — ou simplement du
-  // texte accentué, qui pèse jusqu'à 3 octets par caractère une fois encodé
-  // en % — peut dépasser largement le budget. On rogne le plus long d'abord,
-  // jamais les autres : tant qu'un champ plus long survit, un champ plus
-  // court n'est pas touché.
+  // An "error message" field pasted from the console — or simply accented
+  // text, which costs up to 3 bytes per character once percent-encoded — can
+  // run far past the budget. Trim the longest field first and never the
+  // others: as long as a longer field survives, a shorter one is left alone.
   //
-  // La condition d'arrêt originale se basait sur la longueur du champ
-  // restant, pas sur celle de l'URL réelle : elle pouvait sortir de boucle
-  // en pensant avoir fini alors que l'URL dépassait encore le budget. Ici on
-  // ne sort que dans deux cas : l'URL tient, ou il n'y a plus rien à rogner
-  // (tous les champs vides — auquel cas l'URL ne contient plus que le
-  // gabarit fixe, très en-dessous d'URL_BUDGET). La garantie est donc
-  // structurelle : elle tient même si on ajoute un champ à un KindSpec, si
-  // on baisse URL_BUDGET ou si on allonge URL_TRUNCATION_MARK.
+  // The original stop condition looked at the length of the remaining field
+  // rather than at the length of the real URL: it could leave the loop
+  // believing it was done while the URL was still over budget. There are only
+  // two ways out here: the URL fits, or there is nothing left to trim (every
+  // field empty — at which point the URL is only the fixed scaffolding, far
+  // below URL_BUDGET). The guarantee is structural rather than arithmetic: it
+  // holds even if a field is added to a KindSpec, if URL_BUDGET is lowered, or
+  // if URL_TRUNCATION_MARK gets longer.
   let url = render()
   while (url.length > budget) {
     const longest = [...values.entries()].sort((a, b) => b[1].length - a[1].length)[0]
     if (!longest || longest[1].length === 0) break
     const [id, value] = longest
     const next = Math.max(0, Math.min(value.length - 1, Math.floor(value.length * 0.6)))
-    // URL_TRUNCATION_MARK, pas TRUNCATION_MARK : ici il n'y a pas d'issue où
-    // « la suite » attendrait — c'est justement l'issue qu'on est en train
-    // de construire, et la partie rognée n'existe nulle part ailleurs.
+    // URL_TRUNCATION_MARK, not TRUNCATION_MARK: there is no issue here where
+    // "the rest" would be waiting — this *is* the issue being built, and the
+    // trimmed part exists nowhere else.
     values.set(id, truncate(value, next, URL_TRUNCATION_MARK))
     url = render()
   }
   if (url.length > budget) {
-    // Ne devrait jamais arriver : même tous champs vidés, il ne reste que le
-    // gabarit fixe (URL du dépôt + nom des champs), largement sous le
-    // budget — sauf si l'appelant demande un budget plus petit que ce
-    // gabarit lui-même (cas volontairement testé). On le signale fort
-    // plutôt que de renvoyer une URL trop longue en silence.
+    // Should never happen: even with every field emptied, all that is left is
+    // the fixed scaffolding (repo URL plus field names), far under budget —
+    // unless the caller asks for a budget smaller than that scaffolding
+    // itself, a case the tests exercise on purpose. Fail loudly rather than
+    // return an over-long URL in silence.
     throw new Error(
       `buildIssueUrl : impossible de tenir sous ${budget} caractères même en vidant tous les champs (${url.length})`,
     )

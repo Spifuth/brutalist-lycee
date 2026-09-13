@@ -1,3 +1,11 @@
+// The docs index: every subject, with its article count.
+//
+// Note what this file does not render: no nav, no footer, no sidebar. It
+// returns a bare <div> because app/docs/layout.tsx wraps everything under
+// /docs and supplies the frame. A page inside a layout only renders the part
+// that changes, which is why /docs looks like a full page and is written like
+// a fragment.
+
 import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
@@ -14,9 +22,9 @@ export const dynamic = "force-dynamic"
 export default async function DocsIndexPage() {
   const subjects = await getDocSubjects()
   const counts = await countDocs()
-  // SIN-ZERO-WIDTH : le paragraphe ci-dessous contient des caractères de
-  // largeur nulle. Invisibles à l'écran, ils survivent au copier-coller — et
-  // Unicode sert exactement à ça, pour le meilleur comme pour le pire.
+  // SIN-ZERO-WIDTH: the paragraph below contains zero-width characters.
+  // Invisible on screen, they survive a copy-paste -- and that is exactly what
+  // Unicode is for, for better and for worse.
   const codes = await getPlacedCodes(["zero-width"])
   return (
     <div>

@@ -25,6 +25,23 @@ export type DocBlock =
   | { type: "list"; ordered?: boolean; items: string[] }
   | { type: "table"; caption?: string; headers: string[]; rows: string[][] }
 
+/**
+ * The block types the renderer draws, as data.
+ *
+ * The union above is erased at build time, so nothing outside TypeScript can
+ * ask it what a valid block looks like. This list is the same knowledge at
+ * runtime, for the admin console's help text and for the tests that keep the
+ * union, the renderer's switch and the console's starter template spelling
+ * these words identically -- see tests/doc-block-types.test.ts, which fails
+ * if any of the three drifts.
+ *
+ * Typed `readonly string[]` rather than left as a literal tuple on purpose:
+ * callers ask it whether an arbitrary string is a known type, and a tuple of
+ * literals rejects that question at compile time. The test, not the type, is
+ * what keeps the contents honest.
+ */
+export const DOC_BLOCK_TYPES: readonly string[] = ["para", "section", "code", "callout", "keylist", "list", "table"]
+
 export interface DocArticle {
   slug: string
   title: string
@@ -201,10 +218,12 @@ export const DOC_SUBJECTS: DocSubject[] = [
 
 // --- Lookups ----------------------------------------------------------------
 
+/** Undefined for an unknown slug; callers are expected to turn that into a 404. */
 export function getSubject(slug: string): DocSubject | undefined {
   return DOC_SUBJECTS.find((s) => s.slug === slug)
 }
 
+/** Undefined when either the subject or the article slug misses. */
 export function getArticle(subjectSlug: string, articleSlug: string): DocArticle | undefined {
   return getSubject(subjectSlug)?.articles.find((a) => a.slug === articleSlug)
 }
@@ -223,6 +242,7 @@ export function flatArticles(): FlatArticle[] {
   return out
 }
 
+/** Both null for an unknown article. Navigation crosses subject boundaries — it does not restart at each subject. */
 export function adjacentArticles(subjectSlug: string, articleSlug: string): {
   prev: FlatArticle | null
   next: FlatArticle | null
@@ -235,6 +255,7 @@ export function adjacentArticles(subjectSlug: string, articleSlug: string): {
   }
 }
 
+/** Counts the placeholder lorem articles too: this is the size of DOC_SUBJECTS, not of the written course. */
 export function totalArticles(): number {
   return DOC_SUBJECTS.reduce((n, s) => n + s.articles.length, 0)
 }

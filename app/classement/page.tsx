@@ -1,3 +1,20 @@
+// The hunt leaderboard: fifty rows, queried and rendered on the server.
+//
+// /docs/ce-site/chargement uses this exact page as its worked example, with
+// measurements taken off the running site: the pseudos and the points are
+// written into the HTML before it leaves the server, which is why the table
+// still appears with JavaScript switched off. Compare /pixelwar, whose HTML
+// arrives with an empty <canvas> and nothing else.
+//
+// It calls getLeaderboard() from app/actions/engage.ts, a file marked
+// "use server", and that deserves a second look. Awaiting a server action
+// during a server render works fine, but every export of a "use server" file
+// is also published as an endpoint the browser may call. Harmless here -- a
+// public leaderboard is public -- yet the habit worth keeping is that a read
+// helper only server components need belongs in lib/, where lib/content.ts
+// imports "server-only" to turn leaking it into a build error rather than a
+// surprise.
+
 import type { Metadata } from "next"
 import { PageShell, PageHeader } from "@/components/site/page-shell"
 import { Leaderboard } from "@/components/hunt/leaderboard"

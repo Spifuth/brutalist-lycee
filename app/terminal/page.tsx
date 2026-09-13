@@ -1,3 +1,6 @@
+// The terminal route: a server shell around <TerminalPlayground>, which is
+// where the sandbox lives. Same shape as app/live/page.tsx.
+
 import type { Metadata } from "next"
 import { PageShell, PageHeader } from "@/components/site/page-shell"
 import { TerminalPlayground } from "@/components/terminal/terminal-playground"

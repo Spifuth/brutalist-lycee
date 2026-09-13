@@ -48,5 +48,5 @@ et laisse le reste — c'est très bien comme ça.
 <!--
 Les vérifications automatiques tournent toutes seules après l'ouverture de la
 PR. Une croix rouge n'est pas grave : clique sur « Details » pour voir quoi
-corriger, ou demande ici. Voir CONTRIBUTING.md §11.
+corriger, ou demande ici. Voir CONTRIBUTING.md §12.
 -->

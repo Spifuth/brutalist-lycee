@@ -1,5 +1,21 @@
 "use client"
 
+// The "journey of a piece of data" player: one hop at a time, from the phone
+// to the server, saying who can read what at each hop.
+//
+// Everything a reader sees lives in lib/voyage.ts -- the steps, the
+// observers, the bytes on the wire. This file only decides which step is
+// showing. That split is the part worth copying: when the content is data,
+// fixing a mistake in it is editing a list, and someone who does not read
+// React can do it.
+//
+// The auto-play is a `setTimeout` re-armed by the effect, not a
+// `setInterval`, and the difference is the lesson. The effect depends on the
+// current step, so jumping with the arrows tears the pending timeout down
+// (that is what the returned cleanup is for) and arms a fresh full-length
+// one. An interval keeps its own clock: press "next" one second before a tick
+// and the step you jumped to would get one second of screen time.
+
 import { useEffect, useState } from "react"
 import { Play, Pause, ChevronLeft, ChevronRight, Lock, Unlock } from "lucide-react"
 import { STEPS, OBSERVERS, VISIBILITY_LABEL } from "@/lib/voyage"

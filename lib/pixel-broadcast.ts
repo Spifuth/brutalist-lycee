@@ -1,3 +1,9 @@
+// One tick of the shared pixel canvas, and the broadcaster that ships it.
+//
+// Sibling of lib/live-broadcast.ts over the same lib/broadcast.ts machinery.
+// Two separate instances, never one shared module -- the reason is on
+// `pixelBroadcast` at the bottom, and it is worth reading before adding a
+// third consumer.
 import { createBroadcaster } from "./broadcast.ts"
 
 /**

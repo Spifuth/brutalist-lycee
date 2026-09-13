@@ -1,5 +1,22 @@
 "use server"
 
+// Sign up, log in, log out, edit your profile — the four actions that decide
+// whose session cookie gets written. lib/auth.ts owns the cookie itself.
+//
+// `login` is the one to read closely, and mostly for what it refuses to say.
+// An unknown pseudo and a wrong passphrase return the same message and both
+// count as a failed attempt, because anything that separates them answers
+// "does this account exist?" for free — the throttle included, which is why an
+// unknown pseudo is recorded as a failure too. That gate is checked before the
+// database lookup and before scrypt: scrypt is deliberately expensive
+// (lib/crypto.ts), so an unthrottled login endpoint is a CPU-exhaustion vector
+// as well as a guessing oracle, and refusing early closes both.
+//
+// The exception is deliberate and does cut the other way: a suspended account
+// is told so by name, so that one reply does confirm the account exists. It
+// was judged worth it — a suspension is a decision somebody made, and a
+// student who cannot log in deserves to know which of the two it is.
+
 import { query, queryOne } from "@/lib/db"
 import { hashPassphrase, verifyPassphrase, generatePassphrase } from "@/lib/crypto"
 import { checkLogin, recordFailure, clearFailures } from "@/lib/login-throttle"

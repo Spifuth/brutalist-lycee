@@ -1,5 +1,21 @@
 "use client"
 
+// Dead code: a scrolling "partners" band from the original template, never
+// rendered anywhere.
+//
+// Nothing imports it. Same origin as components/navbar.tsx and
+// components/footer.tsx -- commit 827d40e, "chore: import v0 brutalist bundle
+// unmodified" -- and untouched since. Read the list it scrolls before reusing
+// any of this: a school project has no partners, and a band of company logos
+// that never agreed to appear is a claim, not a decoration. Reported rather
+// than deleted.
+//
+// If you do want a marquee, the technique is here and it is two lines. The
+// row is rendered twice ([...PARTNERS, ...PARTNERS]) and the CSS in
+// app/globals.css slides it to translateX(-50%) before looping. At exactly
+// half the width, the frame it jumps back to is pixel-identical to the one it
+// left, so the seam is invisible. Any other percentage and you see the jump.
+
 import { motion } from "framer-motion"
 
 const ease = [0.22, 1, 0.36, 1] as const

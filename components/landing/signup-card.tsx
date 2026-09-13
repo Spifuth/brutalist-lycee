@@ -1,5 +1,34 @@
 "use client"
 
+// The card on the landing page that creates a student account, or signs an
+// existing one back in.
+//
+// Five screens in one component and no router involved: `phase` is a string
+// union ("form" | "login" | "passphrase" | "survey" | "done") and the JSX
+// below is a chain that renders exactly one of them. That is a *finite state
+// machine* small enough to hold in a single variable, and it is the right
+// tool when the steps are a sequence the user should not be able to bookmark,
+// share or refresh back into. The moment a step ought to survive a reload,
+// it needs a URL instead -- these deliberately should not.
+//
+// The inputs are *controlled components*: `value` comes from state and
+// `onChange` writes it back, so React state is the only copy of what was
+// typed and the submit handler never reads the DOM.
+//
+// `busy` is not decoration. On a slow phone a double-tapped button sends the
+// signup twice, so the flag is read at the top of each handler and also
+// disables the button. It is best-effort, not a rule: two taps can both enter
+// the handler before React has re-rendered, so the server still has to be
+// correct when the second request lands. Client-side guards improve the
+// experience; they never define it.
+//
+// None of the account rules are in this file, on purpose. How a passphrase is
+// made lives in lib/auth.ts, the limit on repeated attempts in
+// lib/login-throttle.ts, and both are enforced server-side in
+// app/actions/auth.ts. Restating any of it in a comment here would create a
+// second copy that drifts from the first -- and this repository is public.
+// Read the rules where they are enforced.
+
 import { useState } from "react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"

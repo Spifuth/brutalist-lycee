@@ -1,5 +1,25 @@
 "use server"
 
+// The live quiz's write side: every teacher control and every player answer
+// that turns into a row. The rules it enforces are in lib/live-session.ts and
+// the frames clients read are in lib/live-broadcast.ts.
+//
+// Two contracts hold the file together, and both generalise past this app.
+// Admin actions start with `requireAdmin()` before any query, for the reason
+// spelled out in app/actions/admin.ts. And the server never accepts a number
+// the client could have chosen: `submitAnswer` computes `elapsed_ms` from
+// `question_started_at` and its own clock, because scoring is speed-weighted
+// and a client-supplied elapsed time would just be a client-chosen score.
+//
+// ⚠️ Known defect, found 2026-09-13 and not fixed here: the `/** Joins the
+// current session's scoreboard… */` block sits above `clearVotes`, whose own
+// doc follows it, while the function it describes — `joinSession` — is further
+// down with no doc at all. The `// ---- Player actions ----` divider is
+// stranded the same way, above two admin-only functions. This is the same
+// accident as issue #38 (app/api/live/stream/route.ts): something was inserted
+// between a comment and its subject. Nothing breaks, nothing warns, and the
+// comment becomes false without anyone editing it.
+
 import { query, queryOne } from "@/lib/db"
 import { requireAdmin, requireUser, getSessionUser } from "@/lib/auth"
 import { publishNow } from "@/lib/live-broadcast"

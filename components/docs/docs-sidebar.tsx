@@ -1,5 +1,31 @@
 "use client"
 
+// The docs sidebar: subjects that fold open, articles inside them, the
+// current page highlighted.
+//
+// Two kinds of state sit side by side here and telling them apart is the
+// transferable idea. The highlight is *derived*: `active` is recomputed from
+// `usePathname()` on every render, so it cannot go stale. The fold is
+// *owned*: a group remembers that the reader opened it, and nothing in the
+// URL could know that. Derive what the app already knows; store only what the
+// user told you.
+//
+// Known bug, found while documenting this file and deliberately not fixed
+// here: `useState(defaultOpen)` reads its argument only on the first render
+// of the component. This sidebar is mounted by app/docs/layout.tsx, and the
+// App Router keeps a layout mounted while you navigate inside it, so a group
+// that was closed when the sidebar first appeared stays closed even once you
+// are reading an article inside it. The shortest way to see it: click
+// "Suivant" at the end of a subject's last article -- lib/content.ts
+// flattens every subject into one list, so that lands you in the next subject
+// -- and the group holding the article you are on is still shut, its
+// highlighted link not rendered at all.
+//
+// The general shape of the mistake is "a prop copied into state": the copy
+// stops tracking the prop the instant it is made. The two standard repairs
+// are a `key` that changes when the prop does, forcing a remount, or lifting
+// the open/closed set into the parent that already knows the pathname.
+
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"

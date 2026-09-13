@@ -1,3 +1,15 @@
+// The quiz index: every published quiz, read straight from Postgres.
+//
+// No "use client" here, so this component runs on the server only and its HTML
+// arrives already filled -- the browser never sees a loading state and never
+// makes a second request for the list. That is the default in the App Router,
+// and the rule that follows from it is the one worth remembering: this file
+// cannot use useState, useEffect, or an onClick. The moment a page needs one
+// of those, the interactive part moves into its own component and that
+// component is the one marked "use client", not the page.
+//
+// /docs/ce-site/chargement measures the difference on this very site.
+
 import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowRight, Radio } from "lucide-react"

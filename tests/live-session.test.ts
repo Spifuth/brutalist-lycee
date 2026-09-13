@@ -1,3 +1,19 @@
+// Guards the live quiz's scoring and its state machine.
+//
+// lib/live-session.ts is deliberately free of React, of Postgres and of any
+// notion of a request: it is the rules, as pure functions. That is what makes
+// these tests four lines each with no setup, and it is the transferable move
+// -- when the interesting part of a feature is a decision rather than an
+// effect, pull the decision into a function that takes values and returns a
+// value, and the test writes itself.
+//
+// The state-machine cases are the half that would be hard to test any other
+// way. Legal transitions are easy to check by playing a session; illegal ones
+// are exactly the transitions nobody thought of, which is why the table refuses
+// by default and why the test asserts a throw rather than a result.
+//
+// Deleted, nothing fails loudly: a scoring change would simply give every
+// student a different number, and the scoreboard would still render.
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { calcScore, shouldAutoReveal, nextState } from "../lib/live-session.ts"

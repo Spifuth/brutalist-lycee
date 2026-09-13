@@ -1,5 +1,18 @@
 "use client"
 
+// One global listener that turns a single framework error into a reload,
+// mounted once in app/layout.tsx.
+//
+// React error boundaries do not catch this, and the reason generalises: a
+// boundary catches what is thrown *during render*, while a promise rejected
+// inside an event handler never passes through render at all. It escapes to
+// the window instead. That is what `unhandledrejection` and `error` listeners
+// are for -- the last net under a client app, and the only place a
+// "something broke anywhere" handler can actually sit.
+//
+// Which error it recognises, and why reloading is the entire fix, are
+// explained in lib/stale-action.ts.
+
 import { useEffect, useState } from "react"
 import { isStaleActionError, STALE_ACTION_MESSAGE, reloadForStaleAction } from "@/lib/stale-action"
 

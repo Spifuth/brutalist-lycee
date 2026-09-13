@@ -1,7 +1,6 @@
-// Les onze secrets « À IMPLÉMENTER » sont désormais posés. Ce test tient les
-// deux bouts : que chaque emplacement déclaré par le site existe une fois et
-// une seule dans les seeds, et que les encodages qu'un élève devra défaire
-// sont réversibles.
+// The eleven « À IMPLÉMENTER » secrets are placed now. This test holds both
+// ends: that every placement the site declares is filled by exactly one secret
+// in the seeds, and that the encodings a student has to undo are reversible.
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { SECRET_SEEDS } from "../db/seeds/secrets.ts"
@@ -39,7 +38,7 @@ test("plus aucun secret seedé ne dit « À IMPLÉMENTER »", () => {
 test("les caractères de largeur nulle se relisent", () => {
   const hidden = encodeZeroWidth("SIN-ZERO-WIDTH")
   assert.equal(decodeZeroWidth(hidden), "SIN-ZERO-WIDTH")
-  // Invisible pour de vrai : rien de ce qui est écrit ne se voit à l'écran.
+  // Invisible for real: none of what is written shows up on screen.
   assert.match(hidden, /^[\u200B\u200C]+$/)
 })
 

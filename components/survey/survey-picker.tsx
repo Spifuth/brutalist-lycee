@@ -1,5 +1,21 @@
 "use client"
 
+// The survey chooser: three lengths of the same questionnaire, replaced by the
+// runner once one is picked.
+//
+// A single state variable (`active`) decides whether you are looking at the
+// menu or at the questionnaire. That is the route-free trade
+// components/admin/admin-console.tsx spells out, with the same bill: nothing
+// is linkable, reloading returns to the menu, and Back leaves the page
+// instead of stepping back one screen.
+//
+// The part to steal is the props. `onComplete` and `onSkip` mean this
+// component decides nothing about what finishing leads to -- which is why the
+// same file serves two unrelated screens, the signup flow
+// (components/landing/signup-card.tsx) and the profile page
+// (components/profile/profile-view.tsx). A component that renders its own
+// consequences can only ever be used once.
+
 import { useState } from "react"
 import { Clock, Check, ArrowRight } from "lucide-react"
 import { SURVEY_LEVELS, SURVEYS } from "@/lib/surveys"

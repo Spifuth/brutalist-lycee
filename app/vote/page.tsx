@@ -1,3 +1,7 @@
+// The vote route: a server shell around <VoteBoard>, which holds every piece
+// of interactivity. See app/live/page.tsx for why the pages here are shaped
+// this way.
+
 import type { Metadata } from "next"
 import { PageShell, PageHeader } from "@/components/site/page-shell"
 import { VoteBoard } from "@/components/vote/vote-board"

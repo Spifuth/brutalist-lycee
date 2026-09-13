@@ -1,3 +1,11 @@
+// The site footer: the whole sitemap, in three groups.
+//
+// The links are not written here; SITEMAP in lib/nav.ts holds them. Note that
+// module keeps two lists -- SITEMAP for this footer, NAV_ITEMS for the top
+// bar -- because the footer can show every page and the bar only has room for
+// the main ones. Two lists, deliberately, but in one file: adding a page
+// means opening a single file with both of them in front of you.
+
 import Link from "next/link"
 import { SITEMAP } from "@/lib/nav"
 

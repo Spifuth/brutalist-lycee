@@ -1,3 +1,17 @@
+// Everything this app does with secrets and randomness: hash a passphrase,
+// check one, mint a new one, mint a session token.
+//
+// The idea to carry away is that a password hash is meant to be *slow*. scrypt
+// is a key derivation function, deliberately expensive in both CPU and memory,
+// so that whoever steals the `users` table pays that cost again on every
+// guess. A general-purpose hash (SHA-256, MD5) is fast, which is a virtue
+// everywhere except here. The stored string carries its own random salt --
+// `scrypt$<salt>$<hash>` -- so two students who pick the same passphrase still
+// get different rows, and one cracked hash unlocks exactly one account.
+//
+// Comparison goes through `timingSafeEqual`, never `===`. `===` returns the
+// moment two bytes differ, and how long it took is itself information about
+// the secret.
 import { randomBytes, randomInt, scrypt as _scrypt, timingSafeEqual } from "crypto"
 import { WORDS_FR } from "./wordlist-fr.ts"
 import { promisify } from "util"
@@ -12,6 +26,7 @@ export async function hashPassphrase(passphrase: string): Promise<string> {
   return `scrypt$${salt.toString("hex")}$${derived.toString("hex")}`
 }
 
+/** False — never a throw — on a malformed stored value, so a corrupt row reads as a failed login rather than a 500. */
 export async function verifyPassphrase(passphrase: string, stored: string): Promise<boolean> {
   const parts = stored.split("$")
   if (parts.length !== 3 || parts[0] !== "scrypt") return false

@@ -60,6 +60,7 @@ export interface Pixel {
   color: number
 }
 
+/** False for non-integers as well as out-of-range values: a fractional coordinate indexes the grid nowhere. */
 export function isInBounds(x: number, y: number): boolean {
   return (
     Number.isInteger(x) &&
@@ -71,6 +72,7 @@ export function isInBounds(x: number, y: number): boolean {
   )
 }
 
+/** False for non-integers and for any index outside PALETTE. */
 export function isValidColor(color: number): boolean {
   return Number.isInteger(color) && color >= 0 && color < PALETTE.length
 }
@@ -102,6 +104,7 @@ export function encodePixels(pixels: Pixel[]): number[] {
   return out
 }
 
+/** Throws on a length that is not a multiple of 3, on an out-of-grid coordinate and on an unknown colour — see below for why rounding down would be worse. */
 export function decodePixels(flat: number[]): Pixel[] {
   if (flat.length % 3 !== 0) {
     // Refuse rather than round down. A truncated array does not look broken:

@@ -1,5 +1,32 @@
 "use client"
 
+// CRUD for the treasure hunt's secrets. The form idiom itself is explained in
+// badges-tab.tsx; what this tab is worth reading for is where the guard rails
+// stop.
+//
+// tests/secret-seeds.test.ts is a strict gate on the secret catalogue: every
+// difficulty must be one the hunt board can filter on, every category must
+// map to a family, every badge a secret references must exist, the points
+// must follow the difficulty. None of that applies to anything typed here.
+// Those tests import db/seeds/secrets.ts, a file in the repository; this form
+// writes straight into Postgres through a server action, so its rows are, by
+// construction, content no test will ever see. When a form is an escape hatch
+// around your validation, either the form carries the rules too, or you
+// accept the drift and had better know where it lands.
+//
+// Which this one half does, and the split is the transferable part:
+// *difficulty* is a <select> over four fixed values, because an unrecognised
+// difficulty would be a filter chip the board cannot draw, while *category*
+// is free text, because familyOf() in lib/secret-taxonomy.ts sends anything
+// it does not recognise to AUTRE. Constrain the input that would break
+// something; leave free the one that degrades.
+//
+// `unlockAt` is the field that changes what a secret *is*. Left empty, the
+// secret is found by typing its code. Filled in, it becomes a milestone:
+// redeemSecret() (app/actions/engage.ts) refuses the code at the keyboard and
+// grants the secret on count instead, so reading it over a shoulder is worth
+// nothing. tests/milestones.test.ts owns the arithmetic of when gates fire.
+
 import { useEffect, useState } from "react"
 import { Plus, Pencil, Trash2, KeyRound, Eye, EyeOff } from "lucide-react"
 import { listSecrets, upsertSecret, deleteSecret, type SecretRow } from "@/app/actions/admin"

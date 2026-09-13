@@ -1,3 +1,18 @@
+// The PixelWar route: the shared canvas, plus the prose explaining why it is
+// built the way it is.
+//
+// This page is the counterpart of /classement in /docs/ce-site/chargement.
+// That one's HTML arrives with the data already in it; this one's arrives with
+// an empty <canvas> that a stream then fills. Both are right, and the article
+// measures both rather than asserting either.
+//
+// The admin wipe button at the bottom renders only when `user.isAdmin`, and
+// that is presentation, not security: hiding a control stops nobody, since the
+// action can be called directly. What stops them is requireAdmin() at the top
+// of clearCanvas() in app/actions/pixelwar.ts. The visible gate exists only so
+// an ordinary student is not shown a button they cannot use -- it is never the
+// thing doing the work.
+
 import type { Metadata } from "next"
 import { PageShell, PageHeader } from "@/components/site/page-shell"
 import { Callout, P } from "@/components/primitives"

@@ -1,5 +1,28 @@
 "use client"
 
+// The user table: search, suspend, promote, reset a passphrase, grant badges,
+// delete. The most dangerous screen in the app, and worth reading for how a
+// privileged action is written rather than for the table.
+//
+// Watch what `isSelf` does and does not do. It disables Suspendre and hides
+// Supprimer, so an admin cannot lock themselves out of their own console with
+// a mis-click -- but the admin toggle stays clickable, and that is not an
+// oversight to go and fix here: setUserStatus, setUserAdmin and deleteUser
+// each re-check the same rule server-side and throw instead of writing. The
+// client guard is a courtesy, spending nothing to stop an obvious mistake;
+// the server guard is the rule, because it is the only one an attacker cannot
+// delete from their own copy of the page. Write both, and never let the
+// client one be the only one.
+//
+// The passphrase flow is the other idea to carry away. resetUserPassphrase()
+// generates a new phrase, stores only its hash, deletes every session row for
+// that user (a credential change should end the sessions it protected) and
+// returns the plaintext exactly once -- which is why this component holds it
+// in state and offers a copy button. No endpoint can ever show it again,
+// because nothing capable of showing it was kept. That is the difference
+// between resetting a credential and retrieving one, and a system that can
+// tell you your own password is a system that can tell somebody else.
+
 import { useEffect, useState } from "react"
 import { KeyRound, Ban, ShieldCheck, RotateCcw, Trash2, Shield, Search, Copy, Check } from "lucide-react"
 import {

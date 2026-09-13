@@ -63,12 +63,14 @@ export interface ThrottleVerdict {
   retryAfterMs: number
 }
 
+/** Allowed until MAX_FAILURES inside the window. `retryAfterMs` counts down to the oldest failure ageing out, and is 0 whenever allowed. */
 export function checkLogin(pseudo: string, now: number = Date.now()): ThrottleVerdict {
   const list = recent(failures.get(key(pseudo)) ?? [], now)
   if (list.length < MAX_FAILURES) return { allowed: true, retryAfterMs: 0 }
   return { allowed: false, retryAfterMs: Math.max(1, list[0] + WINDOW_MS - now) }
 }
 
+/** Records one failure and moves the key to the tail of the eviction order, so a pseudo under active attack is the last thing pruned. */
 export function recordFailure(pseudo: string, now: number = Date.now()): void {
   const k = key(pseudo)
   const list = recent(failures.get(k) ?? [], now)

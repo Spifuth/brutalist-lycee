@@ -1,3 +1,6 @@
+// The study-paths page: where a STI2D SIN baccalaureate can lead. Content
+// only, assembled from components/primitives.
+
 import type { Metadata } from "next"
 import { PageShell, PageHeader } from "@/components/site/page-shell"
 import { Section, Callout, KeyList, List, P } from "@/components/primitives"

@@ -1,3 +1,19 @@
+// Guards the four rules of Conway's Game of Life, and one React contract.
+//
+// The glider case is the one to read. A subtly wrong rule still produces
+// *something* that moves, and a grid that animates looks right, so the
+// assertion compares the whole board against the same glider stamped one cell
+// along rather than counting live cells. When the output of a bug is still
+// plausible output, the assertion has to be exact.
+//
+// The last test is a different kind of guard. `stamp()` must not mutate the
+// grid it was handed, because components/vie/game-of-life.tsx keeps the
+// previous grid in React state: editing a state object in place produces a
+// re-render that shows nothing at all, since React compares references and the
+// identical object means "no change".
+//
+// Deleted, nothing fails loudly. A broken rule gives the student a different
+// animation, and only someone who already knows what a glider does notices.
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { createGrid, step, get, population, PATTERNS, stamp, type Grid } from "../lib/life.ts"

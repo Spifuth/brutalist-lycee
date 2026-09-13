@@ -1,5 +1,17 @@
 "use client"
 
+// Dead code: the template's marketing navbar, never rendered anywhere.
+//
+// Nothing imports it. It came in with commit 827d40e ("chore: import v0
+// brutalist bundle unmodified") and was never edited -- the links all point
+// at "#" and the wording is a software company's ("Request Demo",
+// "Enterprise"). The bar the site really uses is
+// components/site/site-nav.tsx. Reported rather than deleted.
+//
+// Worth one look before it goes, as a contrast with its replacement: this
+// navbar hard-codes its four links in the JSX, site-nav.tsx reads them from
+// lib/nav.ts. That is most of the difference between a mock-up and a site.
+
 import { Cpu } from "lucide-react"
 import { motion } from "framer-motion"
 import { ThemeToggle } from "@/components/theme-toggle"

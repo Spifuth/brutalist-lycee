@@ -1,5 +1,14 @@
 "use client"
 
+// Dead code: a footer from the original template, never rendered anywhere.
+//
+// Nothing imports it. It arrived with commit 827d40e ("chore: import v0
+// brutalist bundle unmodified") and has not been edited since. The footer the
+// site really uses is components/site/site-footer.tsx, which reads its links
+// from lib/nav.ts instead of hard-coding a "Privacy / Terms / Status /
+// GitHub" row whose four links all point at "#". Reported rather than
+// deleted: this branch only adds comments.
+
 import { motion } from "framer-motion"
 
 const ease = [0.22, 1, 0.36, 1] as const

@@ -1,3 +1,11 @@
+// The "Réseaux" subject: what happens between a typed address and a page on
+// screen, and what a shared Wi-Fi still sees once HTTPS is on.
+//
+// Real written content, not generated lorem -- one subject per file, like
+// ./docs-git.ts, so a long course does not bury the subject index in
+// ./docs.ts. The import below is `import type`, which TypeScript erases
+// entirely at compile time: it costs no runtime import, so ./docs.ts can
+// import this file back without a cycle.
 import type { DocSubject } from "./docs"
 
 export const RESEAUX_SUBJECT: DocSubject = {

@@ -1,3 +1,7 @@
+// "Le voyage d'une donnée": the seven steps between pressing Enter and the
+// page appearing, and who can read what at each one. A server shell around
+// <DataJourney>, the client component that does the unfolding.
+
 import type { Metadata } from "next"
 import { PageShell, PageHeader } from "@/components/site/page-shell"
 import { Callout, P } from "@/components/primitives"

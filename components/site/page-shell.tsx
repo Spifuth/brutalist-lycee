@@ -1,3 +1,17 @@
+// The frame every ordinary page sits in: nav on top, footer underneath,
+// content between.
+//
+// A shell *component* rather than a Next.js layout.tsx, and the difference is
+// worth knowing. A layout wraps a whole route segment whether the page wants
+// it or not; a shell is opted into, page by page. This site needs both:
+// app/docs/layout.tsx rebuilds the same frame around a sidebar for every docs
+// URL, while /secret drops the chrome entirely because the joke needs a bare
+// screen. Use a layout when the frame is a property of the URL, and a
+// component when it is a choice the page makes.
+//
+// PageHeader lives here rather than in components/primitives because it
+// renders the page <h1>, and a page gets exactly one of those.
+
 import type { ReactNode } from "react"
 import { SiteNav } from "@/components/site/site-nav"
 import { SiteFooter } from "@/components/site/site-footer"

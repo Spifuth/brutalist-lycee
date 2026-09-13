@@ -1,3 +1,18 @@
+// The cybersecurity course page: common threats, passwords, phishing, and a
+// workshop at the end where the page is its own exhibit.
+//
+// Every component on this page renders on the server -- the primitives it is
+// built from carry no directive, see components/primitives/index.tsx -- so the
+// whole article arrives as finished HTML and ships no JavaScript. Which is
+// also the point of the "Lire ce qui traîne" section: the fake API key below
+// is visible in "view source", with no devtools and no JavaScript, because
+// that is what "rendered on the server" means. The lesson and the mechanism
+// are the same thing here.
+//
+// `dangerouslySetInnerHTML` is used on purpose and is safe here for the one
+// reason that makes it ever safe: the value is JSON.stringify of data this
+// file constructed, not anything a visitor supplied.
+
 import type { Metadata } from "next"
 import Link from "next/link"
 import { PageShell, PageHeader } from "@/components/site/page-shell"
@@ -9,11 +24,12 @@ export const metadata: Metadata = {
   description: "Les bases de la cybersécurité : menaces courantes, mots de passe, phishing et bons réflexes.",
 }
 
-// Trois cachettes de la chasse vivent dans la section « Lire ce qui traîne »
-// en bas de page. Elles ne sont pas décoratives : chacune illustre une erreur
-// réelle — un encodage pris pour un chiffrement, une charge utile de JWT lue
-// sans clé, une clé d'API laissée côté client. Les codes viennent de la base ;
-// le dépôt est public et ne doit jamais les contenir.
+// Three of the hunt's hiding places live in the « Lire ce qui traîne »
+// section at the bottom of the page. They are not decoration: each one
+// illustrates a real mistake -- an encoding taken for encryption, a JWT
+// payload read without a key, an API key left on the client side. The codes
+// come from the database; this repository is public and must never hold
+// them.
 export const dynamic = "force-dynamic"
 
 export default async function CyberPage() {
@@ -123,7 +139,7 @@ export default async function CyberPage() {
           <script
             type="application/json"
             id="app-config"
-            // Une fausse clé, jamais une vraie : la faille est illustrée, pas créée.
+            // A fake key, never a real one: the flaw is demonstrated, not created.
             dangerouslySetInnerHTML={{
               __html: JSON.stringify({ env: "demo", apiKey: fakeApiKey(codes["api-key"]) }, null, 2),
             }}

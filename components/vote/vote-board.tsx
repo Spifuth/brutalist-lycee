@@ -1,5 +1,24 @@
 "use client"
 
+// The "what should we cover" board: fifteen topics, three picks per student,
+// live totals.
+//
+// Read how the number under a bar is built before trusting it. It is
+// `topic.base + tallies[topic.id]`: a per-topic constant from lib/vote.ts
+// added to the real count, so an empty board still shows plausible-looking
+// numbers instead of fifteen zeros. Seeding a display like that is a common
+// trick and a fair one, on one condition -- the seed must never reach
+// anything that gets counted, and the code must make obvious which half is
+// which. Here `totalFor()` is where the two meet, and nothing else reads it.
+//
+// The cap is the second thing to read. `MAX_PICKS` is checked here and then
+// passed *to* the server -- `toggleVote(id, MAX_PICKS)` -- where it becomes
+// the parameter the server-side check uses. A limit supplied by the caller is
+// a limit the caller chooses, and a server action is reachable without this
+// page. The open/closed gate a few lines above it in app/actions/engage.ts is
+// the shape to copy instead: read from the database, trusted from nowhere
+// else.
+
 import { useEffect, useMemo, useState } from "react"
 import { Check, Lock } from "lucide-react"
 import { VOTE_TOPICS, MAX_PICKS, type VoteTopic } from "@/lib/vote"

@@ -105,9 +105,9 @@ test("un code non typable est refusé", () => {
   assert.throws(() => parseSecretsYaml(one.replace("STUXNET", "Stux net!")), /Stux net!/)
 })
 
-// La règle de l'audit du 2026-09-08, appliquée par la machine plutôt que par la
-// bonne volonté : 38 des 160 premiers secrets avaient la réponse écrite dans
-// leur propre nom, donc il n'y avait rien à chercher.
+// The rule from the 2026-09-08 audit (bb9d250), enforced by the machine
+// rather than by good intentions: 37 of the first 160 secrets had the answer
+// written into their own name, so there was nothing left to look for.
 test("un nom qui contient la réponse est refusé", () => {
   assert.throws(
     () => parseSecretsYaml(`secrets:
@@ -138,9 +138,9 @@ test("les points explicites l'emportent sur le barème", () => {
   assert.equal(s.points, 69)
 })
 
-// Le modèle versionné doit rester lisible par le parseur : c'est le seul
-// fichier de cette famille que le dépôt voit, donc le seul qu'un test peut
-// vérifier. S'il cesse d'être valide, la documentation ment.
+// The versioned template has to stay readable by the parser: it is the only
+// file of this family the repository can see, so the only one a test can
+// check. If it stops being valid, the documentation lies.
 test("db/secrets.example.yml est valide et sert d'exemple aux alias", () => {
   const parsed = parseSecretsYaml(readFileSync("db/secrets.example.yml", "utf8"))
   assert.ok(parsed.length >= 4, "le modèle doit montrer plusieurs cas")
@@ -160,7 +160,7 @@ test("--lenient tolère un nom hérité qui contient sa réponse, et rien d'autr
 `
   const [s] = parseSecretsYaml(legacy, { lenientNames: true })
   assert.equal(s.code, "HOLLOW-KNIGHT")
-  // La tolérance ne s'étend pas aux autres refus : une catégorie inconnue
-  // reste une erreur, sinon la porte de sortie deviendrait une porte d'entrée.
+  // The tolerance does not extend to the other refusals: an unknown category
+  // is still an error, or the escape hatch would become a way in.
   assert.throws(() => parseSecretsYaml(legacy.replace("GAMING", "PATATE"), { lenientNames: true }), /PATATE/)
 })

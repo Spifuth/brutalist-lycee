@@ -69,6 +69,7 @@ export interface Broadcaster<T> {
 
 const DEFAULT_INTERVAL_MS = 1000
 
+/** A fresh subscriber set and timer, independent of every other broadcaster. The first tick throws unless `setPoller` has been called. */
 export function createBroadcaster<T>(name: string, defaultIntervalMs = DEFAULT_INTERVAL_MS): Broadcaster<T> {
   const subscribers = new Set<Subscriber<T>>()
 

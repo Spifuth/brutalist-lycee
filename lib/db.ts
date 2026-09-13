@@ -1,3 +1,9 @@
+// The Postgres connection pool, and the only place in the app that makes one.
+//
+// A *pool* keeps a handful of connections open and lends them out, because
+// opening a TCP connection and authenticating per query would dominate the
+// cost of every page. Everything else in the app goes through `query()` and
+// `queryOne()` here; nothing imports `pg` directly.
 import { Pool, type QueryResultRow } from "pg"
 
 // The pool is created lazily on first query rather than at import time. This

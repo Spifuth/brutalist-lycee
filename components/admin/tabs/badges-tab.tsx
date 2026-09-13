@@ -1,5 +1,36 @@
 "use client"
 
+// CRUD for the badge catalogue. It is the plainest of the four form tabs in
+// this folder, so the idiom all four share is written down here rather than
+// repeated in secrets-tab, quizzes-tab and docs-tab.
+//
+// One piece of state, `draft`, is both the form's contents and its
+// visibility: null means no form on screen. "Nouveau" spreads the EMPTY
+// template into it, "Modifier" spreads the row -- so a single form serves
+// create and edit -- and every keystroke replaces the object
+// (`setDraft({ ...draft, name: e.target.value })`) instead of mutating it,
+// which is what lets React see the change at all. Whether a save inserts or
+// updates then comes down to one question, "does the draft carry an id?",
+// and that is exactly why the server action is named *upsert* rather than
+// split in two. Three states (list, draft, flash) and two functions (refresh,
+// save): that is a whole CRUD screen, and the other tabs only add a state
+// when they add a second screen.
+//
+// `slug` is a foreign key the database does not enforce. quizzes.badge_slug
+// and secrets.badge_slug (db/schema.sql) are plain TEXT columns, filled by
+// hand in another tab, with no REFERENCES to break when this one changes.
+// Renaming a slug here raises nothing anywhere -- it quietly leaves those
+// rows pointing at a badge that no longer exists. lib/awards.ts is where that
+// gets caught: awardBadge() logs loudly and awards nothing when a slug does
+// not resolve, because three secrets really did point at a badge slug that
+// was never created (`git log 5833dcf`). A soft reference needs a loud
+// failure, or it fails as silence.
+//
+// `icon` is collected and stored, but nothing draws it today: badges reach a
+// student through app/actions/badges.ts, and the badge cards in
+// components/profile/profile-view.tsx draw a fixed Award/Lock pair instead.
+// A form field is a promise -- check who reads it before you add one.
+
 import { useEffect, useState } from "react"
 import { Plus, Pencil, Trash2, Award } from "lucide-react"
 import { listBadges, upsertBadge, deleteBadge, type BadgeRow } from "@/app/actions/admin"

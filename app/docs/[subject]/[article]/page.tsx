@@ -1,3 +1,32 @@
+// One article of the documentation. Also: how a folder name becomes a URL.
+//
+// This single file serves every article on the site, and nothing in it says
+// which one. That is worth stopping on, because it is the first thing the App
+// Router does that has no equivalent in plain HTML.
+//
+// There is no routing table anywhere in this project. The URL *is* the folder
+// tree: app/quiz/page.tsx answers /quiz because it sits in a folder called
+// quiz. A folder whose name is wrapped in square brackets -- [subject] and
+// [article] here -- is a *dynamic segment*: it matches any one path segment
+// and hands the matched text to the page. So /docs/reseaux/du-nom-a-la-page
+// lands in this file with { subject: "reseaux", article: "du-nom-a-la-page" },
+// and every other article lands in the same file with different values. Rename
+// the [article] folder and you have renamed the parameter.
+//
+// `params` is a Promise and has to be awaited. That is deliberate in recent
+// Next versions: the segment values are not necessarily settled when rendering
+// starts, and making them a Promise lets the framework begin rendering the
+// parts of the page that do not depend on them instead of waiting.
+//
+// notFound() is the other idiom worth naming. It returns nothing -- it throws,
+// and the framework catches it and renders the 404 page. Which is why the
+// lines after it can assume `data` exists, and why TypeScript agrees rather
+// than complaining: notFound() is typed as returning `never`.
+//
+// The URL being the folder tree cuts both ways. It is impossible to have a
+// route no file explains, and impossible to move a file without moving its
+// URL.
+
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import Link from "next/link"

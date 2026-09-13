@@ -1,5 +1,9 @@
 "use client"
 
+// The top half of the landing page: headline, typed command line, and the
+// signup card on the right. Presentation only -- every decision it looks like
+// it makes belongs to components/landing/signup-card.tsx.
+
 import { motion } from "framer-motion"
 import { Typewriter } from "@/components/typewriter"
 import { SignupCard } from "@/components/landing/signup-card"

@@ -1,5 +1,13 @@
 #!/usr/bin/env node
 // Fails the build if compiled output references an origin we do not control.
+// Sibling of scripts/check-file-headers.mjs: same shape (walk a tree, collect
+// offenders, print them, exit non-zero), guarding a different promise.
+//
+// The promise: CONTRIBUTING.md §6 tells contributors this site "talks to no
+// one" -- no CDN, no Google font, no analytics script. That line is only
+// true for as long as something checks it on every build; without this
+// script it would be a hope, not a guarantee.
+//
 // Rationale: this site serves minors. Two generated bundles on this estate have
 // shipped external beacons (unpkg React, @vercel/analytics). A grep in CI is
 // cheaper than finding out from a network tab.

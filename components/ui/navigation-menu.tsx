@@ -1,3 +1,6 @@
+// Vendored shadcn/ui primitive -- overwritten on the next shadcn update.
+// Do not restyle here; colour and shape live in globals.css -- see STYLE.md
+// §4 for the colour tokens, §1-2 for radius and borders.
 import * as React from 'react'
 import * as NavigationMenuPrimitive from '@radix-ui/react-navigation-menu'
 import { cva } from 'class-variance-authority'

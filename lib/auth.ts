@@ -1,3 +1,19 @@
+// Session authentication: an opaque token in an httpOnly cookie, with the
+// database as the only thing that knows who that token belongs to.
+//
+// The cookie carries 32 random bytes (lib/crypto.ts's generateSessionToken)
+// and nothing else -- no user id, no role, no expiry the browser can read or
+// edit. Every request re-reads the `sessions` row to resolve it, and that one
+// extra query per request is what buys instant revocation: a self-describing
+// token (a JWT) needs no lookup and therefore cannot be withdrawn before it
+// expires. It is why "suspend this account" in app/actions/admin.ts is a
+// DELETE on `sessions` and takes effect on the student's very next click.
+//
+// requireUser() and requireAdmin() throw instead of redirecting, because they
+// are called from server actions rather than from a middleware -- this app has
+// no middleware.ts at all. Authorization here is a line at the top of each
+// action, so an action that forgets the line is simply public; putting the
+// check on the first statement is what makes its absence visible.
 import "server-only"
 import { cookies } from "next/headers"
 import { queryOne, query } from "@/lib/db"

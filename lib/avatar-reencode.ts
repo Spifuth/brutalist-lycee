@@ -1,3 +1,5 @@
+// The one `sharp` call that turns an uploaded file into an avatar -- and, as a
+// side effect that is really the point, destroys its metadata.
 import sharp from "sharp"
 import { AVATAR_OUTPUT_PX } from "./avatar-format.ts"
 

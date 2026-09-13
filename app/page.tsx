@@ -1,3 +1,26 @@
+// The landing page: the hero, a scrolling band of themes, and one tile per
+// section of the site.
+//
+// A Server Component, and the build agrees: `pnpm build` prints "/" with a
+// circle, meaning this HTML was produced once at build time and is served as a
+// file. Nothing here reads the database, so nothing forces a rebuild per
+// request. The rule that comes with that default is the one to remember: this
+// file cannot use useState, useEffect or an onClick. The animated hero next
+// door (components/landing/landing-hero.tsx) is a separate file carrying
+// "use client" for exactly that reason, and the page stays static around it.
+//
+// The marquee is worth stealing. The list is rendered twice --
+// `[...ROTATING, ...ROTATING]` -- and the keyframes in app/globals.css
+// translate the strip by exactly -50%. Half of a doubled list is the original
+// list, so at the instant the animation loops, the frame it jumps back to is
+// identical to the frame it just left and the seam is invisible. That is the
+// whole trick behind every seamless CSS marquee, whatever the content:
+// duplicate, then move by 50%.
+//
+// The tiles are built from NAV_ITEMS (lib/nav.ts), the same list the top bar
+// reads, so the count printed above the grid and the grid itself cannot drift
+// apart. components/site/site-nav.tsx explains what that single source buys.
+
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { PageShell } from "@/components/site/page-shell"

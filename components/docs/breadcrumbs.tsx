@@ -1,3 +1,10 @@
+// The "Docs > Reseaux > this article" trail at the top of a docs page.
+//
+// Worth one line: the `aria-label`. A docs article carries four <nav>
+// elements (this trail, the top bar, the sidebar, the table of contents), and
+// a screen reader announces an unlabelled one as just "navigation". Once a
+// page has more than one, each needs a name.
+
 import Link from "next/link"
 import { ChevronRight } from "lucide-react"
 

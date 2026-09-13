@@ -1,5 +1,27 @@
 "use client"
 
+// Holds "who is signed in" for the whole client tree.
+//
+// A React *context* answers one specific problem: a value that many
+// components need and that almost nobody wants to pass down. Without it the
+// signed-in user would travel through every layout and every page as a prop,
+// crossing components that do not care about it. The cost is that every
+// consumer re-renders when the value changes -- fine for a session that
+// changes twice a day, wrong for anything that changes per keystroke. That is
+// the question to ask before reaching for a context: how often does this
+// value move?
+//
+// The provider owns no rules of its own. It calls the server actions in
+// app/actions/auth.ts and keeps what they return; the cookie, the passphrase
+// and the login limits are all decided on the server. A client context is a
+// cache of the server's answer, never the authority -- anything it stores can
+// be edited from the browser console.
+//
+// `ready` is separate from `user` because "nobody is signed in" and "we have
+// not asked yet" look identical in a nullable field, and a UI that cannot
+// tell them apart flashes a signed-out screen at a signed-in visitor on every
+// single page load.
+
 import { createContext, useCallback, useContext, useEffect, useState } from "react"
 import type { SessionUser } from "@/lib/auth"
 import {

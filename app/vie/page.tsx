@@ -1,3 +1,21 @@
+// Conway's Game of Life, reachable only by typing `life` in the /terminal
+// sandbox.
+//
+// The interesting line here is the one that is missing. This page has no
+// `export const dynamic = "force-dynamic"`, and `pnpm build` still prints /vie
+// with an f rather than a circle: awaiting `searchParams` is enough on its own
+// to opt a page out of static rendering, because a query string is by
+// definition unknown at build time. cookies() and headers() do the same. You
+// do not always have to ask for dynamic rendering -- sometimes you acquire it
+// by touching something that only exists per request, which is also how a page
+// silently stops being cacheable.
+//
+// ?debug=true prints a hunt code. Because this is a Server Component, that
+// code is not in the JavaScript the browser downloads: after a build, grep
+// .next/static for SIN-DEBUG-PARAM and it is absent, while the same grep over
+// .next/server finds it. app/secret/page.tsx does the opposite, on purpose,
+// and the pair is the shortest demonstration of what the directive changes.
+
 import type { Metadata } from "next"
 import { PageShell, PageHeader } from "@/components/site/page-shell"
 import { Callout, KeyList, P } from "@/components/primitives"

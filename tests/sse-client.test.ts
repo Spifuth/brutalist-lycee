@@ -1,3 +1,28 @@
+// Guards the reconnection logic behind every live page, against the two
+// failures that actually happened in a classroom on 2026-09-08/09.
+//
+// A bare `new EventSource(url)` is not a working subscription, and that is the
+// genuinely surprising part. Per the HTML spec the browser retries *some*
+// failures and permanently gives up on others: a non-200 response -- a 502
+// from the reverse proxy while the container restarts -- fails the connection
+// for good, readyState goes to CLOSED, and nothing ever retries. The second
+// failure reports nothing at all: the stream simply stops arriving. Both
+// routes push a frame every second, so silence is not a quiet period, it is a
+// dead connection, and only a watchdog timer can tell those apart.
+//
+// How any of this is testable without a browser is the transferable part.
+// Every dependency that would otherwise need one is injected: `create` builds
+// the EventSource, `setTimer`/`clearTimer` stand in for the clock. FakeSource
+// and fakeTimers below are a dozen lines each, and they turn "wait twenty
+// seconds and see" into `timers.fire(20_000)`. Owning the clock is what makes
+// a backoff curve assertable at all, instead of a suite that really waits.
+//
+// The last test is a different kind entirely: it greps the repository for `new
+// EventSource` and fails if any component reintroduces one. Four of them
+// learned this the hard way; the fifth is stopped by CI.
+//
+// Deleted, the failure comes back and presents as "the site is broken", with a
+// healthy server and nothing in any log.
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { spawnSync } from "node:child_process"

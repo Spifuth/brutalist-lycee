@@ -1,3 +1,23 @@
+// Guards the shared canvas: its geometry, its palette, its cooldown, and the
+// wire format that carries it to thirty browsers at once.
+//
+// The encoding tests are the ones to read. Pixels travel as a flat array --
+// [x, y, colour, x, y, colour, ...] -- because the whole canvas is sent on
+// every connection and `{"x":12,"y":250,"color":7}` is 26 bytes where
+// `12,250,7` is 8. The price of that choice is a format with no
+// self-description: drop one number and every following pixel reads a slot
+// early, colours become coordinates, and the canvas smears without anything
+// throwing. So the decoder has to refuse a length that is not a multiple of
+// three. Every packed format has that property -- the framing check is all
+// that stands between a dropped value and plausible-looking garbage.
+//
+// The bounds and cooldown cases cover arguments nobody sends on purpose: NaN,
+// Infinity, a fractional coordinate, a last-placement timestamp in the future
+// from a skewed client clock. That last one is the difference between a
+// five-second wait and a student locked out of the canvas for good.
+//
+// Deleted, the canvas keeps drawing. A decode regression shows up as a smear
+// that looks like somebody's drawing.
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import {

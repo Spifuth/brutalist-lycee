@@ -1,3 +1,24 @@
+// The house style, as components: Section, CodeBlock, Callout, KeyList, List,
+// Table, P. Everything the course pages and the docs are built from.
+//
+// What they have in common matters more than what each one does: none of them
+// accepts a `className` (Section takes one, for layout, and that is the
+// exception that proves how deliberate the rest is). A component that lets
+// every call site restyle it stops being a rule and becomes a suggestion, and
+// a site drifts into forty shades of border. Closing that door is what lets a
+// visual style survive many contributors who have never spoken to each other.
+//
+// None of them declares "use client" either, so they render on the server and
+// ship no JavaScript at all. In the App Router that is the default rather
+// than an optimisation you switch on, and it is worth not losing by accident:
+// a paragraph, a table and a code block have nothing to react to.
+//
+// They also lean on HTML that already carries meaning -- <dl>/<dt>/<dd> for a
+// definition list, <figure>/<figcaption> for a table and its footnote,
+// scope="col" on the headers. A screen reader announces "table, three
+// columns" from that markup alone. A grid of <div>s looks identical and
+// announces nothing, and you will not notice, because you can see.
+
 import type { ReactNode } from "react"
 import { Terminal, Info, AlertTriangle, Lightbulb, Check } from "lucide-react"
 import { cn } from "@/lib/utils"

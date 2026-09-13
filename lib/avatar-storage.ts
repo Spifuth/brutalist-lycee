@@ -1,3 +1,11 @@
+// Where avatar files live on disk, and the only module allowed to touch them.
+//
+// Uploads are the one piece of student data this app does not keep in
+// Postgres, so they are the one piece a `pg_dump` does not carry -- hence the
+// bind-mount reasoning below. Funnelling every read, write and delete through
+// a single module is what makes one filename check (SAFE_FILENAME_RE) cover
+// the whole surface: a path-traversal guard is only worth something if there
+// is no second door into the directory.
 import "server-only"
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises"
 import { join } from "node:path"

@@ -1,17 +1,17 @@
-// Le format des secrets privés — celui que le dépôt ne voit jamais.
+// The private secrets format — the one the repository never sees.
 //
-// Pourquoi ce fichier existe : jusqu'ici tous les codes de la chasse vivaient
-// dans `db/seeds/secrets.ts`, donc dans un dépôt public dont le guide de
-// contribution donne lui-même l'adresse. La feuille de réponses était publiée
-// avec le jeu. Les nouveaux secrets passent désormais par un YAML gitignoré,
-// que ce module lit.
+// Why this file exists: until now every code in the hunt lived in
+// `db/seeds/secrets.ts`, and therefore in a public repository whose own
+// contributing guide gives out the address. The answer sheet was published
+// together with the game. New secrets now go through a gitignored YAML file,
+// which this module reads.
 //
-// Pourquoi un parseur maison plutôt qu'une dépendance : le fichier est édité à
-// la main, entre deux cours, par quelqu'un qui n'écrit pas du YAML tous les
-// jours. La panne à traiter n'est pas un cas tordu de la spécification YAML,
-// c'est un deux-points dans une phrase française non quotée. On accepte donc
-// un sous-ensemble volontairement étroit et on refuse tout le reste **avec un
-// numéro de ligne**, ce qu'une bibliothèque généraliste ne fait pas mieux ici.
+// Why a hand-written parser rather than a dependency: the file is edited by
+// hand, between two lessons, by somebody who does not write YAML every day.
+// The failure to handle is not some twisted corner of the YAML specification,
+// it is a colon inside an unquoted French sentence. So this accepts a
+// deliberately narrow subset and refuses everything else **with a line
+// number**, which is the part a general-purpose library does no better here.
 
 import { familyOf, type SecretDifficulty } from "./secret-taxonomy.ts"
 
@@ -22,7 +22,7 @@ export const POINTS_BY_DIFFICULTY: Record<SecretDifficulty, number> = {
   insane: 50,
 }
 
-/** Ce que voit l'élève quand il a trouvé : la réponse était le code lui-même. */
+/** What the student sees once found: the answer was the code itself. */
 export const DEFAULT_LOCATION = "Devinette — la réponse est le code"
 
 const CODE_RE = /^[A-Z0-9][A-Z0-9-]*$/
@@ -46,7 +46,7 @@ class YamlError extends Error {
   }
 }
 
-/** Enlève les accents et la ponctuation pour comparer des mots, pas des octets. */
+/** Strips accents and punctuation so words get compared, not bytes. */
 function words(text: string): string[] {
   return text
     .normalize("NFD")
@@ -56,7 +56,7 @@ function words(text: string): string[] {
     .filter(Boolean)
 }
 
-/** `true` si la suite de mots `needle` apparaît telle quelle dans `haystack`. */
+/** `true` when the word sequence `needle` appears verbatim inside `haystack`. */
 function containsSequence(haystack: string[], needle: string[]): boolean {
   if (needle.length === 0 || needle.length > haystack.length) return false
   for (let i = 0; i <= haystack.length - needle.length; i++) {
@@ -70,7 +70,7 @@ function parseScalar(raw: string, line: number, key: string): string {
   if (!value) throw new YamlError(line, `« ${key} » est vide.`)
   const quote = value[0]
   if (quote === '"' || quote === "'") {
-    // On lit jusqu'au guillemet fermant ; ce qui suit est un commentaire.
+    // Read up to the closing quote; whatever follows it is a comment.
     let out = ""
     let i = 1
     while (i < value.length) {
@@ -108,25 +108,28 @@ function parseList(raw: string, line: number, key: string): string[] {
 }
 
 /**
- * Lit le YAML privé et rend des secrets validés, ou jette.
+ * Reads the private YAML and returns validated secrets, or throws.
  *
- * Les refus sont volontairement stricts : ce fichier alimente directement la
- * base de production d'un jeu joué en classe, et une erreur silencieuse y
- * coûte plus cher qu'un import qui s'arrête.
+ * The refusals are strict on purpose: this file feeds straight into the
+ * production database of a game played in class, and a silent mistake costs
+ * more there than an import that stops.
  */
 export interface ParseOptions {
   /**
-   * Tolère un nom qui contient sa réponse, en le signalant au lieu de refuser.
+   * Tolerates a name that contains its own answer, reporting it instead of
+   * refusing.
    *
-   * N'existe que pour un cas : réimporter un export de la base d'avant la
-   * règle. 38 des 160 premiers secrets ont la réponse écrite dans leur nom, et
-   * `pnpm secrets:export` les ressort tels quels — sans cette porte, un
-   * aller-retour export → import serait impossible tant qu'ils ne sont pas
-   * réécrits. À ne jamais utiliser pour du contenu neuf.
+   * Exists for exactly one case: re-importing an export taken from the
+   * database from before the rule. 37 of the first 160 secrets have the answer
+   * written into their name, and `pnpm secrets:export` hands them back as they
+   * are — without this door, an export -> import round trip would be
+   * impossible until every one of them is rewritten. Never to be used for new
+   * content.
    */
   lenientNames?: boolean
 }
 
+/** Throws a YamlError carrying the offending line number on the first problem; never returns a partial list. */
 export function parseSecretsYaml(text: string, options: ParseOptions = {}): SecretEntry[] {
   const lines = text.split(/\r?\n/)
   const items: { fields: Record<string, string>; lines: Record<string, number>; start: number }[] = []
@@ -197,10 +200,10 @@ export function parseSecretsYaml(text: string, options: ParseOptions = {}): Secr
       )
     }
 
-    // La règle que l'audit du 2026-09-08 a tirée des 160 premiers secrets :
-    // 38 d'entre eux avaient la réponse écrite dans leur propre nom, donc il
-    // n'y avait rien à chercher. L'indice, lui, n'est pas contrôlé : il a le
-    // droit d'être proche, c'est son rôle.
+    // The rule the 2026-09-08 audit (bb9d250) drew out of the first 160
+    // secrets: 37 of them had the answer written into their own name, so
+    // there was nothing left to look for. The hint is deliberately not
+    // checked — it is allowed to be close, that is its job.
     if (containsSequence(words(item.fields.name), words(code))) {
       const message = `le nom contient la réponse (« ${code} ») — il n'y aurait rien à chercher. Décris le secret sans le nommer.`
       if (!options.lenientNames) throw new YamlError(at("name"), message)

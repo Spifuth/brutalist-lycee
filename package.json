@@ -20,6 +20,7 @@
     "db:setup": "node --env-file-if-exists=.env db/migrate.mjs && tsx --env-file-if-exists=.env db/seed.ts",
     "db:migrate-legacy": "node --experimental-sqlite --experimental-strip-types db/migrate-from-sqlite.ts",
     "check:origins": "node scripts/check-no-external-origins.mjs .next/static",
+    "check:headers": "node scripts/check-file-headers.mjs",
     "test": "node --test --experimental-strip-types tests/*.test.ts"
   },
   "dependencies": {

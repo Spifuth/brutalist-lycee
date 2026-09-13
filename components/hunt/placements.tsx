@@ -1,37 +1,51 @@
 "use client"
 
+// Three hiding places that exist only in the browser: a request made to be
+// looked at, a key written into local storage, and a paragraph that renders
+// only in a five-minute window after midnight.
+//
+// What they have in common is the point of the exercise -- each one is a
+// surface any visitor can inspect and almost nobody thinks to open: the
+// Network tab, the Application tab, the clock.
+// /docs/ce-site/verifie-toi-meme walks a student through the first of them.
+// Read as a game here, it is the cheap version of the lesson every web
+// developer eventually learns expensively: everything handed to a browser
+// belongs to whoever is holding the browser.
+
 import { useEffect, useState } from "react"
 
 /**
- * Les trois cachettes de /chasse qui ont besoin du navigateur.
+ * The three /chasse hiding places that need a browser.
  *
- * Les codes arrivent en props depuis le composant serveur : ils viennent de la
- * base et ne sont écrits nulle part dans le dépôt.
+ * The codes arrive as props from the server component: they come from the
+ * database and are written nowhere in the repository.
  */
 export function HuntPlacements({ timing, storage }: { timing?: string; storage?: string }) {
   const [showTiming, setShowTiming] = useState(false)
 
   useEffect(() => {
-    // SIN-NETWORK-SPY et SIN-HEADER-CUSTOM : une requête qui n'existe que pour
-    // apparaître dans l'onglet Réseau. On ignore volontairement la réponse.
+    // SIN-NETWORK-SPY and SIN-HEADER-CUSTOM: a request whose only reason to
+    // exist is to show up in the Network tab. The response is ignored on
+    // purpose.
     fetch("/api/decoy").catch(() => {})
   }, [])
 
   useEffect(() => {
-    // SIN-LOCALSTORAGE-HACK : le navigateur garde des données par site, et
-    // personne ne pense à les regarder.
+    // SIN-LOCALSTORAGE-HACK: the browser keeps data per site, and nobody
+    // thinks to go and look at it.
     if (!storage) return
     try {
       window.localStorage.setItem("lycee.debug", storage)
     } catch {
-      // Navigation privée ou stockage refusé : la cachette saute, pas la page.
+      // Private browsing, or storage refused: the hiding place is lost, the
+      // page is not.
     }
   }, [storage])
 
   useEffect(() => {
-    // SIN-TIMING-TRAP : visible uniquement entre minuit et minuit cinq. Vérifié
-    // à l'affichage puis chaque minute, sinon un onglet resté ouvert raterait
-    // le créneau.
+    // SIN-TIMING-TRAP: visible only between midnight and five past. Checked on
+    // render and then every minute, otherwise a tab left open would sit
+    // through the window without noticing it.
     const check = () => {
       const now = new Date()
       setShowTiming(now.getHours() === 0 && now.getMinutes() < 5)

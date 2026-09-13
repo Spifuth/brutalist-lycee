@@ -1,3 +1,11 @@
+// The site's on/off switches: whether the vote is open, whether the AI demo
+// is on, whether the terminal is live.
+//
+// The note under the import is the part worth generalising. A row that does
+// not exist is still an answer, and somebody is choosing which one — any store
+// with optional keys (a settings table, a feature-flag service, an env var, a
+// JSON config) hands you that decision in silence, and the safe default is
+// almost never the convenient one.
 import { query, queryOne } from "@/lib/db"
 
 // Typed read/write over the `settings` key/value table (db/schema.sql):

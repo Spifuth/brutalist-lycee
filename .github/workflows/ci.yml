@@ -27,6 +27,8 @@ jobs:
         run: pnpm check:origins
       - name: Typecheck
         run: pnpm typecheck
+      - name: File headers
+        run: pnpm check:headers
       - name: Test
         run: pnpm test
 

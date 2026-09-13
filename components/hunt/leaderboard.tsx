@@ -1,5 +1,21 @@
 "use client"
 
+// The /classement table: rank, avatar, secrets found, badges, points.
+//
+// It renders a ranking it does not compute. `getLeaderboard()`
+// (app/actions/engage.ts) does the ordering in SQL -- `ORDER BY points DESC,
+// secrets DESC, created_at ASC` with `LIMIT 50` -- and the rank shown here is
+// nothing but the position in the array that arrived. That split is the
+// lesson: sorting in the browser could only reshuffle the fifty rows the
+// database already picked, and those are the wrong fifty the moment the two
+// orderings differ. Order where the data is, then render what you are given.
+//
+// The third sort key is the part worth stealing. Two students on equal points
+// and equal secrets are separated by account age, so the order is total
+// rather than arbitrary. Ties left unresolved are free to come back in a
+// different order on the next query -- and in a paginated list that is how
+// one row shows up twice while another never shows up at all.
+
 import Image from "next/image"
 import { Trophy, Award, KeyRound } from "lucide-react"
 import { avatarUrl } from "@/lib/badges"

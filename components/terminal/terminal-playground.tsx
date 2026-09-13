@@ -1,5 +1,27 @@
 "use client"
 
+// The terminal page: an xterm.js surface in the browser, and the keystroke
+// loop behind it.
+//
+// Two browser-side techniques are worth taking away. xterm.js is loaded with
+// `await import(...)` inside the effect rather than a top-level import, so a
+// visitor who never opens this page never downloads it -- *code splitting*,
+// and the reason one heavy route does not tax every other one. And the
+// component asks the server at runtime which mode it is in instead of reading
+// a constant fixed when the site was built; the comment inside the effect
+// says why that distinction is not a detail.
+//
+// The fallback is the part to copy. With nothing to connect to, the page runs
+// a simulated shell in the browser (lib/sim-shell.ts, pinned by
+// tests/sim-shell.test.ts) and stays a usable exercise instead of an error
+// message. Degrading to something that still teaches beats failing honestly.
+//
+// The input loop below is worth having read once, because it is what a
+// terminal really is. It receives characters, not lines: `\r` means the line
+// you have been accumulating in `buffer` is finished, 127 is a backspace you
+// apply yourself, 3 is Ctrl-C, and anything from 32 up is printable text to
+// echo back. The line you thought existed is something this loop builds.
+
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { ChevronRight, Wifi, WifiOff, Info } from "lucide-react"

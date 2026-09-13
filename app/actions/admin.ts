@@ -1,5 +1,21 @@
 "use server"
 
+// Everything /admin can change, and the single rule every function below
+// obeys: `await requireAdmin()` as the first statement, before any query runs.
+//
+// A Server Action is not an internal function call. Next.js compiles each
+// `"use server"` export into a real HTTP endpoint with a generated id, and the
+// browser reaches it by POST. So the console being hidden protects nothing:
+// app/admin/page.tsx renders for anybody and says so in its own header, and
+// these functions are the actual gate. The rule outlives this framework —
+// wherever authorization lives in the handler instead of in a router, the only
+// thing keeping it correct is that every handler remembers, which is why the
+// check goes on line one, where its absence is visible at a glance.
+//
+// The other habit worth copying is here in `revokeBadge` and `resetUserPassphrase`:
+// an admin tool is a tool for undoing things, so removing a badge takes its
+// points back and resetting a passphrase drops the sessions it opened.
+
 import { revalidatePath } from "next/cache"
 import { query, queryOne } from "@/lib/db"
 import { requireAdmin } from "@/lib/auth"
@@ -20,6 +36,7 @@ export interface AdminStats {
   redemptions: number
 }
 
+/** Nine counts in one round trip; zeroes on an empty database. */
 export async function getAdminStats(): Promise<AdminStats> {
   await requireAdmin()
   const row = await queryOne<Record<string, string>>(`
@@ -63,6 +80,7 @@ export interface AdminUser {
   lastSeenAt: string
 }
 
+/** Case-insensitive substring match on `pseudo_lower`. An empty `search` lists everyone, newest first. */
 export async function listUsers(search = ""): Promise<AdminUser[]> {
   await requireAdmin()
   const like = `%${search.trim().toLowerCase()}%`
@@ -78,6 +96,7 @@ export async function listUsers(search = ""): Promise<AdminUser[]> {
   )
 }
 
+/** Returns the new passphrase once — it is never stored in plaintext — and drops the user's sessions so the old one stops working immediately. */
 export async function resetUserPassphrase(userId: string): Promise<{ passphrase: string }> {
   await requireAdmin()
   const passphrase = generatePassphrase()
@@ -89,6 +108,7 @@ export async function resetUserPassphrase(userId: string): Promise<{ passphrase:
   return { passphrase }
 }
 
+/** Throws if an admin aims it at themselves. Suspending also deletes the user's sessions, so it takes effect on their next click rather than in 90 days. */
 export async function setUserStatus(userId: string, status: "active" | "suspended") {
   const admin = await requireAdmin()
   if (userId === admin.id) throw new Error("Impossible de te suspendre toi-même.")
@@ -97,6 +117,7 @@ export async function setUserStatus(userId: string, status: "active" | "suspende
   revalidatePath("/admin")
 }
 
+/** Throws if an admin tries to remove their own admin flag. */
 export async function setUserAdmin(userId: string, isAdmin: boolean) {
   const admin = await requireAdmin()
   if (userId === admin.id && !isAdmin) throw new Error("Impossible de retirer ton propre accès admin.")
@@ -104,6 +125,7 @@ export async function setUserAdmin(userId: string, isAdmin: boolean) {
   revalidatePath("/admin")
 }
 
+/** Wipes attempts, surveys, badges and redemptions and zeroes points. Keeps the account, the pseudo and the passphrase. */
 export async function resetUserProgress(userId: string) {
   await requireAdmin()
   await query("DELETE FROM quiz_attempts WHERE user_id = $1", [userId])
@@ -114,6 +136,7 @@ export async function resetUserProgress(userId: string) {
   revalidatePath("/admin")
 }
 
+/** Throws on self-deletion. Every child row cascades with the user (db/schema.sql), so there is nothing left to undo from. */
 export async function deleteUser(userId: string) {
   const admin = await requireAdmin()
   if (userId === admin.id) throw new Error("Impossible de supprimer ton propre compte.")
@@ -133,6 +156,7 @@ export interface AdminAvatar {
   uploadedAt: string
 }
 
+/** Only users who currently hold an uploaded file, newest upload first. */
 export async function listAvatars(): Promise<AdminAvatar[]> {
   await requireAdmin()
   return query<AdminAvatar>(
@@ -143,6 +167,7 @@ export async function listAvatars(): Promise<AdminAvatar[]> {
   )
 }
 
+/** The admin-facing wrapper: checks the caller, then revalidates the three pages that render an avatar. */
 export async function removeAvatar(userId: string): Promise<void> {
   await requireAdmin()
   await processRemoveAvatar(userId)
@@ -182,6 +207,7 @@ export interface BadgeRow {
   position: number
 }
 
+/** Every badge, including the `manual` ones no code path awards on its own. */
 export async function listBadges(): Promise<BadgeRow[]> {
   await requireAdmin()
   return query<BadgeRow>(
@@ -189,6 +215,7 @@ export async function listBadges(): Promise<BadgeRow[]> {
   )
 }
 
+/** Insert or update, decided by the presence of `input.id`. */
 export async function upsertBadge(input: Omit<BadgeRow, "id"> & { id?: string }) {
   await requireAdmin()
   if (input.id) {
@@ -206,6 +233,7 @@ export async function upsertBadge(input: Omit<BadgeRow, "id"> & { id?: string })
   revalidatePath("/profil")
 }
 
+/** Cascades to every `user_badges` row, so students lose the badge — but the points it granted stay on their total. revokeBadge is the reversible path. */
 export async function deleteBadge(id: string) {
   await requireAdmin()
   await query("DELETE FROM badges WHERE id = $1", [id])
@@ -236,6 +264,7 @@ export interface SecretRow {
   redemptions: number
 }
 
+/** Ordinary secrets first (their `unlock_at` is NULL and NULLS FIRST sorts those ahead), then category, points, name. Each carries its redemption count. */
 export async function listSecrets(): Promise<SecretRow[]> {
   await requireAdmin()
   return query<SecretRow>(
@@ -247,6 +276,7 @@ export async function listSecrets(): Promise<SecretRow[]> {
   )
 }
 
+/** Upper-cases `code` and `category`, falls back to `medium` on an unknown difficulty, and turns a 0 or NaN `unlockAt` into NULL — see the comment inside. */
 export async function upsertSecret(input: Omit<SecretRow, "id" | "redemptions"> & { id?: string }) {
   await requireAdmin()
   const code = input.code.trim().toUpperCase()
@@ -276,6 +306,7 @@ export async function upsertSecret(input: Omit<SecretRow, "id" | "redemptions"> 
   revalidatePath("/chasse")
 }
 
+/** Cascades to `secret_redemptions` and `secret_aliases`. Points already added to students stay. */
 export async function deleteSecret(id: string) {
   await requireAdmin()
   await query("DELETE FROM secrets WHERE id = $1", [id])
@@ -298,6 +329,7 @@ export interface AdminQuiz {
   questions: number
 }
 
+/** Every quiz, published or not, with its question count — /admin has to see the drafts /quiz hides. */
 export async function listQuizzes(): Promise<AdminQuiz[]> {
   await requireAdmin()
   return query<AdminQuiz>(
@@ -308,6 +340,7 @@ export async function listQuizzes(): Promise<AdminQuiz[]> {
   )
 }
 
+/** Returns the quiz id in both branches, so a caller can go straight on to its questions after a create. */
 export async function upsertQuiz(input: Omit<AdminQuiz, "id" | "questions"> & { id?: string }) {
   await requireAdmin()
   if (input.id) {
@@ -328,6 +361,7 @@ export async function upsertQuiz(input: Omit<AdminQuiz, "id" | "questions"> & { 
   return row!.id
 }
 
+/** Cascades to its questions *and* to every past `quiz_attempts` row, so deleting a quiz rewrites history rather than hiding it. Unpublishing is the softer move. */
 export async function deleteQuiz(id: string) {
   await requireAdmin()
   await query("DELETE FROM quizzes WHERE id = $1", [id])
@@ -344,6 +378,7 @@ export interface AdminQuizQuestion {
   position: number
 }
 
+/** In `position` order — what /quiz renders, and what openSession shuffles from. */
 export async function listQuizQuestions(quizId: string): Promise<AdminQuizQuestion[]> {
   await requireAdmin()
   return query<AdminQuizQuestion>(
@@ -353,6 +388,7 @@ export async function listQuizQuestions(quizId: string): Promise<AdminQuizQuesti
   )
 }
 
+/** Callers pass a real array; `options` is JSON-encoded here. Insert or update, decided by `input.id`. */
 export async function upsertQuizQuestion(
   quizId: string,
   input: Omit<AdminQuizQuestion, "id"> & { id?: string },
@@ -373,6 +409,7 @@ export async function upsertQuizQuestion(
   revalidatePath("/quiz")
 }
 
+/** Leaves gaps in `position`, on purpose: ordering only needs the values to be increasing, not contiguous. */
 export async function deleteQuizQuestion(id: string) {
   await requireAdmin()
   await query("DELETE FROM quiz_questions WHERE id = $1", [id])
@@ -392,6 +429,7 @@ export interface AdminDocSubject {
   articles: number
 }
 
+/** Every subject with its article count, published articles or not. */
 export async function listDocSubjects(): Promise<AdminDocSubject[]> {
   await requireAdmin()
   return query<AdminDocSubject>(
@@ -401,6 +439,7 @@ export async function listDocSubjects(): Promise<AdminDocSubject[]> {
   )
 }
 
+/** Insert or update, decided by `input.id`. */
 export async function upsertDocSubject(input: Omit<AdminDocSubject, "id" | "articles"> & { id?: string }) {
   await requireAdmin()
   if (input.id) {
@@ -416,6 +455,7 @@ export async function upsertDocSubject(input: Omit<AdminDocSubject, "id" | "arti
   revalidatePath("/docs")
 }
 
+/** Cascades to every article underneath it, so this removes a whole branch of /docs at once. */
 export async function deleteDocSubject(id: string) {
   await requireAdmin()
   await query("DELETE FROM doc_subjects WHERE id = $1", [id])
@@ -434,6 +474,7 @@ export interface AdminDocArticle {
   published: boolean
 }
 
+/** Stringifies each article's `blocks` into `blocksText`, because the admin form edits them as raw JSON. */
 export async function listDocArticles(subjectId: string): Promise<AdminDocArticle[]> {
   await requireAdmin()
   const rows = await query<Omit<AdminDocArticle, "blocksText"> & { blocks: unknown }>(
@@ -444,6 +485,7 @@ export async function listDocArticles(subjectId: string): Promise<AdminDocArticl
   return rows.map((r) => ({ ...r, blocksText: JSON.stringify(r.blocks, null, 2) }))
 }
 
+/** Throws when `blocksText` is not valid JSON — refusing beats storing a blob no renderer can read. Empty text is accepted as `[]`. */
 export async function upsertDocArticle(
   input: Omit<AdminDocArticle, "id" | "blocksText"> & { id?: string; blocksText: string },
 ) {
@@ -469,6 +511,7 @@ export async function upsertDocArticle(
   revalidatePath("/docs")
 }
 
+/** Removes the article only; its subject stays. */
 export async function deleteDocArticle(id: string) {
   await requireAdmin()
   await query("DELETE FROM doc_articles WHERE id = $1", [id])
@@ -487,6 +530,7 @@ export interface ModQuestion {
   createdAt: string
 }
 
+/** Every question in every status, newest first. The moderation queue is the `pending` subset of this. */
 export async function listAllQuestions(): Promise<ModQuestion[]> {
   await requireAdmin()
   return query<ModQuestion>(
@@ -495,6 +539,7 @@ export async function listAllQuestions(): Promise<ModQuestion[]> {
   )
 }
 
+/** Reversible in both directions: `rejected` is a status, not a deletion, so a moderation mistake can be walked back. */
 export async function setQuestionStatus(id: string, status: "approved" | "rejected" | "pending") {
   await requireAdmin()
   await query("UPDATE questions SET status = $1 WHERE id = $2", [status, id])
@@ -502,6 +547,7 @@ export async function setQuestionStatus(id: string, status: "approved" | "reject
   revalidatePath("/questions")
 }
 
+/** The irreversible one. Prefer setQuestionStatus("rejected") unless the text genuinely has to go. */
 export async function deleteQuestion(id: string) {
   await requireAdmin()
   await query("DELETE FROM questions WHERE id = $1", [id])

@@ -1,5 +1,21 @@
 "use client"
 
+// Conway's Game of Life on a canvas: play, step, paint cells with the pointer.
+//
+// The rules are not in this file. lib/life.ts holds them with no React and no
+// canvas, which is exactly what lets tests/life.test.ts assert that a glider
+// travels in the right direction by drawing two ASCII grids. Split a
+// simulation from its display and the interesting half becomes testable in
+// milliseconds; keep them married and the only way to check a rule is to
+// stare at a screen and hope.
+//
+// The render loop is deliberately the opposite of
+// components/pixelwar/pixel-canvas.tsx. Here the grid is React state and each
+// generation repaints all of it -- 64 x 36 is 2 304 cells, and that is free.
+// The PixelWar board is 90 000 cells changing several times a second, so it
+// keeps them in a ref and never re-renders at all. Same library, same
+// problem, opposite answer: the volume of data decides, not taste.
+
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Play, Pause, SkipForward, Trash2, Shuffle } from "lucide-react"
 import {

@@ -1,5 +1,35 @@
 "use client"
 
+// The /profil page: identity card, avatar upload, survey progress, badge
+// collection.
+//
+// The upload is the part to steal, and three of its details are not obvious
+// the first time:
+//
+// 1. The <input type="file"> is hidden and a styled <label htmlFor> stands in
+//    for it. A file input cannot really be restyled -- the browser owns that
+//    widget -- but a label is a genuine activator: clicking it opens the
+//    picker, and unlike a <div> with an onClick it stays keyboard-reachable
+//    and announces itself correctly, for free.
+// 2. `e.target.value = ""` immediately after reading the file. The `change`
+//    event fires only when the value actually changes, so choosing the same
+//    file twice in a row is silence -- the second choice is not a change.
+//    Clearing the input after each read makes every choice a change again.
+//    This bites everyone once.
+// 3. The file travels as `FormData` to a server action
+//    (app/actions/avatar.ts), not as JSON. Server actions take FormData
+//    natively, and a binary file has no sensible JSON form -- base64 would
+//    inflate it by a third for nothing. Size, real format and re-encoding are
+//    all decided on the server, where the browser cannot argue;
+//    tests/avatar-format.test.ts covers that end.
+//
+// The badge and secret counts are fetched in an effect that depends on
+// `showSurvey` as well as `user`, so closing the survey panel refetches them
+// -- finishing a survey can earn a badge. Using a UI flag as a refetch
+// trigger is honest and readable at this size, and it is also exactly the
+// point where a data-fetching library, with a real cache and real
+// invalidation, starts paying for itself.
+
 import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { LogOut, Award, Lock, ArrowRight, Search, Upload } from "lucide-react"

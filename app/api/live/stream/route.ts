@@ -1,3 +1,42 @@
+// The live-quiz stream: one long-lived HTTP response per viewer, held open.
+//
+// This is *SSE* (server-sent events). The browser opens one GET and the
+// server simply never finishes the response, writing another `data:` line
+// each time something changes. Compare the two techniques a student reaches
+// for first. *Polling* asks "anything new?" on a timer, and is wrong most
+// times it asks -- too slow to feel live, too frequent to be cheap, and the
+// only way to fix one is to make the other worse. A *WebSocket* is a
+// full-duplex connection with its own protocol upgrade, which you need when
+// the *client* also has to push. Here the browser only ever listens, so SSE
+// is the smaller correct answer: plain HTTP with a `text/event-stream` body,
+// read on the other side by the browser's `EventSource`.
+//
+// What `EventSource` does not give you is a subscription that survives, and
+// that is the part worth carrying to another project. Its built-in retry is
+// abandoned for good on a non-200 response -- the `502` a reverse proxy
+// returns while this container restarts is exactly that -- and a stream can
+// also stop arriving while the browser still reports it open. So nothing in
+// this app opens either stream route directly: lib/sse-client.ts supervises
+// the connection, reopens what the browser gave up on, and treats silence as
+// death, and tests/sse-client.test.ts drives both failures without a browser
+// (its last test greps `app`, `components` and `lib` and fails if any file
+// constructs an `EventSource` directly). Read lib/sse-client.ts before
+// writing a client against this route.
+//
+// The shape below is the part worth stealing, and it is not specific to
+// quizzes. One poller for the whole room rather than one per viewer
+// (lib/live-broadcast.ts), then a per-viewer slice done in memory on the way
+// out (`mergeViewerAnswer`), so "everyone gets the same frame" and "nobody
+// receives their neighbour's answer" are both true without a second query.
+// /docs/ce-site/quiz-direct-une-requete does the arithmetic for a class of
+// thirty: one database query per second instead of thirty.
+//
+// Known defect, left as found: the JSDoc block that opens "Builds the current
+// question's client-facing view" documents `buildQuestionView`, but commit
+// fac0d0f inserted `hasPayload` between the comment and the function, so it is
+// now attached to the wrong one. Nothing breaks -- TypeScript does not read
+// doc comments -- which is exactly why a refactor can orphan one in silence.
+
 import { getSessionUser } from "@/lib/auth"
 import { query, queryOne } from "@/lib/db"
 import {

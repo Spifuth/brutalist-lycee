@@ -31,13 +31,13 @@ export interface SecretSeed {
   difficulty: SecretDifficulty
   badgeSlug?: string
   /**
-   * L'endroit du site où ce code est réellement posé, quand il l'est.
+   * Where on the site this code is actually placed, when it is.
    *
-   * Le nom d'emplacement vit ici, le code reste en base : une page demande
-   * « le secret posé à tel endroit » et n'écrit jamais la réponse dans le
-   * dépôt. Les valeurs possibles sont celles de `lib/secret-placements.ts`,
-   * et `tests/secret-placements.test.ts` vérifie que chacune est pourvue une
-   * fois et une seule.
+   * The placement name lives here, the code stays in the database: a page
+   * asks for "the secret placed at this spot" and never writes the answer
+   * into the repo. Valid values are the ones from
+   * `lib/secret-placements.ts`, and `tests/secret-placements.test.ts` checks
+   * that each one is claimed exactly once.
    */
   placement?: string
   /**

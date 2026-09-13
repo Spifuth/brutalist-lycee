@@ -1,5 +1,24 @@
 "use client"
 
+// The secret hunt: a box to redeem a code, the full list of hints with
+// filters, and a progress rail.
+//
+// The board arrives in one call to `getHuntBoard()` and every filter after
+// that is a computation over the array already in memory: `visible` is
+// derived with `useMemo` and never stored in state. Derived state that is
+// also stored is two sources of truth that agree only while you remember to
+// update both; deriving it makes disagreement impossible. It is also why the
+// search box needs no *debounce* -- debouncing is for when each keystroke
+// would otherwise become a request, and nothing here leaves the browser.
+//
+// Worth noticing while reading, because it is the exact opposite of what
+// components/quiz/live-quiz.tsx does with a correct answer: `HuntEntry`
+// carries `location` -- where the secret is hidden -- for every secret,
+// found or not, and this file merely declines to render it until `found`.
+// The hiding is done by JSX, so the answers are sitting in the browser of
+// anyone who opens the Network tab. The codes themselves are not sent: they
+// are checked server-side by `redeemSecret` (app/actions/engage.ts).
+
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { KeyRound, Check, Lock, Trophy, Search, Crown } from "lucide-react"

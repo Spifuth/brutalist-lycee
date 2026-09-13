@@ -1,12 +1,12 @@
-// Sort les secrets de la base au format YAML privé.
+// Dumps the secrets from the database to the private YAML format.
 //
 //   docker exec brutalist-web tsx db/export-secrets.ts > db/secrets.yml
 //
-// C'est la moitié qui manquait. Un secret créé dans la console admin
-// n'existait dans aucun fichier : `pnpm db:setup` ne le recréait pas, aucun
-// test ne le voyait, et sept d'entre eux ont fini par faire dériver le palier
-// final sans que rien ne le signale. Exporter referme la boucle — ce qui est
-// créé en direct redescend dans un fichier, gitignoré, versionnable ailleurs.
+// This is the half that was missing. A secret created from the admin console
+// existed in no file: `pnpm db:setup` never recreated it, no test ever saw
+// it, and seven of them ended up drifting the final milestone with nothing
+// to signal it. Exporting closes the loop — what is created live comes back
+// down into a file, gitignored, versionable elsewhere.
 import pg from "pg"
 
 const connectionString =
@@ -16,7 +16,7 @@ if (!connectionString) {
   process.exit(1)
 }
 
-/** Toujours entre guillemets : une phrase française contient des deux-points. */
+/** Always quoted: a French sentence contains colons. */
 function quote(text: string): string {
   return `"${text.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`
 }
