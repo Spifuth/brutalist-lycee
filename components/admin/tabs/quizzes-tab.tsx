@@ -22,13 +22,13 @@
 // re-checks who is calling (`requireAdmin()`), not whether what they sent
 // makes sense.
 //
-// Which is the trap in the question form below. save() drops blank options
-// with `options.filter((o) => o.trim())` but sends `correctIndex` exactly as
-// the radio buttons left it -- and that index counted the four boxes on
-// screen, empty ones included. Leave the first box blank, tick the second,
-// and the question is stored with its answer pointing one slot past the right
-// one. Nothing errors, at save or at play, because an index is valid for any
-// array. Fill the options from the top.
+// Which is why the question form below does not forward what it holds. The
+// form always shows four option boxes, so the blank ones are dropped at save
+// time -- and dropping an entry renumbers everything after it, so the stored
+// `correctIndex` has to be rebuilt against the list that is actually saved.
+// An index and the array it indexes are one value: rebuild them together or
+// neither. compactOptions() in lib/quiz-draft.ts does exactly that, and
+// tests/quiz-draft.test.ts fails if the two ever drift apart again.
 
 import { useEffect, useState } from "react"
 import { Plus, Pencil, Trash2, ListChecks, ChevronLeft } from "lucide-react"
@@ -43,6 +43,7 @@ import {
   type AdminQuizQuestion,
 } from "@/app/actions/admin"
 import { AdminCard, Field, TextInput, TextArea, Btn, ConfirmBtn, Flash } from "@/components/admin/ui"
+import { compactOptions } from "@/lib/quiz-draft"
 import { cn } from "@/lib/utils"
 
 const EMPTY_QUIZ: Omit<AdminQuiz, "id" | "questions"> & { id?: string } = {
@@ -203,6 +204,7 @@ const EMPTY_Q: Omit<AdminQuizQuestion, "id"> & { id?: string } = {
 function QuizQuestionsEditor({ quiz, onBack }: { quiz: AdminQuiz; onBack: () => void }) {
   const [rows, setRows] = useState<AdminQuizQuestion[]>([])
   const [draft, setDraft] = useState<typeof EMPTY_Q | null>(null)
+  const [flash, setFlash] = useState<{ ok: boolean; msg: string } | null>(null)
 
   async function refresh() {
     setRows(await listQuizQuestions(quiz.id))
@@ -212,10 +214,24 @@ function QuizQuestionsEditor({ quiz, onBack }: { quiz: AdminQuiz; onBack: () => 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  /** Opening, closing or switching the form drops a refusal left by a previous attempt. */
+  function editDraft(next: typeof EMPTY_Q | null) {
+    setFlash(null)
+    setDraft(next)
+  }
+
   async function save() {
     if (!draft) return
-    await upsertQuizQuestion(quiz.id, { ...draft, options: draft.options.filter((o) => o.trim()) })
-    setDraft(null)
+    const { options, correctIndex } = compactOptions(draft.options, draft.correctIndex)
+    // -1 means the box ticked as correct was itself blank: the question has no
+    // answer. Refusing is the whole point -- promoting the next option would
+    // be the same silent corruption this call was added to remove.
+    if (correctIndex === -1) {
+      setFlash({ ok: false, msg: "La bonne réponse cochée est vide : remplis cette option ou coche-en une autre." })
+      return
+    }
+    await upsertQuizQuestion(quiz.id, { ...draft, options, correctIndex })
+    editDraft(null)
     refresh()
   }
 
@@ -228,7 +244,7 @@ function QuizQuestionsEditor({ quiz, onBack }: { quiz: AdminQuiz; onBack: () => 
             <Btn variant="ghost" onClick={onBack}>
               <ChevronLeft size={12} className="mr-1 inline" /> Retour
             </Btn>
-            <Btn variant="accent" onClick={() => setDraft({ ...EMPTY_Q, position: rows.length })}>
+            <Btn variant="accent" onClick={() => editDraft({ ...EMPTY_Q, position: rows.length })}>
               <Plus size={12} className="mr-1 inline" /> Question
             </Btn>
           </div>
@@ -256,7 +272,7 @@ function QuizQuestionsEditor({ quiz, onBack }: { quiz: AdminQuiz; onBack: () => 
                   </ul>
                 </div>
                 <div className="flex shrink-0 gap-1">
-                  <Btn variant="ghost" aria-label="Modifier" onClick={() => setDraft(q)}>
+                  <Btn variant="ghost" aria-label="Modifier" onClick={() => editDraft(q)}>
                     <Pencil size={14} />
                   </Btn>
                   <ConfirmBtn label="Supprimer" onConfirm={() => deleteQuizQuestion(q.id).then(refresh)}>
@@ -312,11 +328,12 @@ function QuizQuestionsEditor({ quiz, onBack }: { quiz: AdminQuiz; onBack: () => 
               />
             </Field>
           </div>
+          {flash && <Flash msg={flash.msg} ok={flash.ok} />}
           <div className="mt-4 flex gap-2">
             <Btn variant="accent" onClick={save}>
               Enregistrer
             </Btn>
-            <Btn variant="ghost" onClick={() => setDraft(null)}>
+            <Btn variant="ghost" onClick={() => editDraft(null)}>
               Annuler
             </Btn>
           </div>
