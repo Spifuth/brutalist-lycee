@@ -1,5 +1,19 @@
 "use server"
 
+// Painting one cell of the shared canvas, reading the whole canvas, and the
+// admin wipe. The geometry, palette and wire format are in lib/pixelwar.ts.
+//
+// `placePixel` re-checks bounds, colour and cooldown that the browser has
+// already checked, and that duplication is the lesson rather than an oversight.
+// The client-side checks exist so a student gets an instant answer; the
+// server-side ones exist because a Server Action is a public HTTP endpoint and
+// a client is never a participant in enforcing the rules it is subject to.
+// Validation in the browser is a UX feature, validation on the server is the
+// rule, and you write both — knowing that only one of them is load-bearing.
+//
+// That is also why the cooldown is a row in `pixel_cooldowns` keyed by user
+// and not a timer in the browser: a timer in the browser is a suggestion.
+
 import { query, queryOne } from "@/lib/db"
 import { getSessionUser, requireUser, requireAdmin } from "@/lib/auth"
 import {

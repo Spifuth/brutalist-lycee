@@ -2,6 +2,7 @@
 // SWAP POINT: replace these with real DB (Neon) reads/writes later.
 // Everything is namespaced under "lycee.*" keys.
 
+/** Returns `fallback` on the server, on a missing key and on unparseable JSON. It never throws — a corrupted local value must not break a render. */
 export function readJSON<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback
   try {
@@ -13,6 +14,7 @@ export function readJSON<T>(key: string, fallback: T): T {
   }
 }
 
+/** No-op on the server, and swallows quota / private-mode errors. Dispatches `lycee:storage` because the native `storage` event only fires in *other* tabs. */
 export function writeJSON<T>(key: string, value: T): void {
   if (typeof window === "undefined") return
   try {
@@ -24,6 +26,7 @@ export function writeJSON<T>(key: string, value: T): void {
   }
 }
 
+/** Same server no-op and same same-tab notification as writeJSON. */
 export function removeKey(key: string): void {
   if (typeof window === "undefined") return
   try {

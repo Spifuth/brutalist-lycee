@@ -1,3 +1,11 @@
+// The four numbers on /accueil's live-stats strip.
+//
+// Four counts in one statement rather than four statements, for the reason
+// given under the import and for a second one worth carrying elsewhere: a
+// query's cost is dominated by the round trip, not by the counting. Collapsing
+// N independent reads into one subquery-per-column SELECT is usually the
+// cheapest speed-up on offer, and it is the only version in which all four
+// numbers describe the same instant.
 import { queryOne } from "@/lib/db"
 
 // Real counts for the /accueil live-stats strip. This page is what a whole
@@ -13,6 +21,7 @@ export interface HomeStats {
   questions: number
 }
 
+/** Zeroes rather than null on an empty database, so /accueil always renders four numbers. */
 export async function getHomeStats(): Promise<HomeStats> {
   const row = await queryOne<Record<string, string>>(`
     SELECT

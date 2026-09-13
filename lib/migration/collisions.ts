@@ -26,6 +26,7 @@ export interface CollisionResolution {
   drop: string[]
 }
 
+/** Every input pseudo comes back exactly once, in `keep` or in `drop`. A group of one is a keep, so a collision-free list returns an empty `drop`. */
 export function resolveCollisions(users: MigrationUser[]): CollisionResolution {
   const groups = new Map<string, MigrationUser[]>()
   for (const user of users) {

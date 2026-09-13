@@ -1,7 +1,19 @@
+// The pre-database mock of the question wall: posts and upvotes in
+// localStorage.
+//
+// ⚠️ Nothing imports this file. The real question wall is in Postgres —
+// `getQuestions`, `submitQuestion` and `upvoteQuestion` in
+// app/actions/engage.ts, with moderation in app/actions/admin.ts — and the
+// components all call those. This file carried a "SWAP POINT" note saying a
+// real version would persist to the database — the swap happened, and the mock
+// stayed.
+//
+// Which is the lesson: dead code does not announce itself. It typechecks, it
+// is covered by no failing test, and it reads exactly like live code — so the
+// only thing that separates "this is how the app works" from "this is how the
+// app used to work" is somebody grepping for the importers. Do that before
+// trusting any module you have not seen called.
 import { readJSON, writeJSON } from "@/lib/storage"
-
-// SWAP POINT: anonymous questions + upvotes are mocked in localStorage.
-// A real version would persist to Neon and moderate server-side.
 
 export interface QuestionPost {
   id: string
@@ -21,6 +33,7 @@ const SEED: QuestionPost[] = [
   { id: "seed-5", text: "C'est quoi la différence entre le web et Internet ?", votes: 12, at: Date.now() - 1000 * 60 * 20 },
 ]
 
+/** Seeds localStorage on the first read, so a first visit gets SEED rather than an empty wall. */
 export function loadQuestions(): QuestionPost[] {
   const stored = readJSON<QuestionPost[] | null>(QUESTIONS_STORAGE_KEY, null)
   if (stored === null) {
@@ -30,10 +43,12 @@ export function loadQuestions(): QuestionPost[] {
   return stored
 }
 
+/** Overwrites the whole list; there is no per-item write. */
 export function saveQuestions(list: QuestionPost[]): void {
   writeJSON(QUESTIONS_STORAGE_KEY, list)
 }
 
+/** Returns the new list, newest first. Trims whitespace and validates nothing else. */
 export function addQuestion(text: string): QuestionPost[] {
   const list = loadQuestions()
   const post: QuestionPost = {
@@ -47,6 +62,7 @@ export function addQuestion(text: string): QuestionPost[] {
   return next
 }
 
+/** Flips this browser's own vote. The count lives only in localStorage, so "one vote each" means one per browser. */
 export function toggleVote(id: string): QuestionPost[] {
   const list = loadQuestions().map((q) =>
     q.id === id ? { ...q, votes: q.votes + (q.votedByMe ? -1 : 1), votedByMe: !q.votedByMe } : q,

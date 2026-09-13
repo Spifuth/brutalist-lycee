@@ -1,5 +1,28 @@
 "use server"
 
+// Avatar upload: the one path in this app that writes a student's own file to
+// the server's disk.
+//
+// Four checks, in this order, and the order is the point. Declared size before
+// the file is read into memory, real size after, magic bytes before anything
+// decodes it, then a full re-encode through sharp. Nothing the browser *says*
+// about a file is trusted — not the Content-Type, not the filename, not the
+// extension — because a client picks all three. Only the first bytes of a file
+// say what it actually is. The stored name is generated here with
+// `randomUUID()`, so no user-controlled string ever reaches the filesystem;
+// lib/avatar-storage.ts then refuses anything that is not exactly that shape.
+//
+// The split into `uploadAvatar` (reads the session) and `processAvatarUpload`
+// (takes an id already authenticated) is a testability pattern worth copying,
+// and the doc on the second function explains why.
+//
+// ⚠️ Known defect, found 2026-09-13 and not fixed here: inside
+// `processAvatarUpload`, the three lines explaining why the old file is
+// deleted *after* the new one is written are glued to the top of the "Badges."
+// comment, above the badge block, instead of sitting above the deletion they
+// describe. Same accident as issue #38 — a comment is attached to its
+// position, not to its subject.
+
 import { randomUUID } from "node:crypto"
 import { revalidatePath } from "next/cache"
 import { requireUser } from "@/lib/auth"

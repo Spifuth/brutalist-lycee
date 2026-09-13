@@ -1,11 +1,24 @@
+// The survey question bank, the three survey lengths, and the local copy of a
+// student's answers.
+//
+// One decision shapes the whole file: an answer is stored under its QUESTION
+// key, never under its position in a survey. `court`, `moyen` and `complet`
+// are nothing but three ordered lists of keys into one shared QUESTION_BANK,
+// so a student who answered the short survey finds those same questions
+// already filled in when they open the long one. Keying by position would have
+// made the overlap a copy, and two copies disagree the first time somebody
+// changes their mind. Address data by a stable identity, not by where it
+// happens to sit today.
+//
+// The writes at the bottom are a local cache, not the record: they exist so
+// the next survey can pre-fill instantly. The source of truth is
+// `survey_responses` in Postgres, written by app/actions/engage.ts's
+// `saveSurvey` — components/survey/survey-runner.tsx calls both on confirm.
 import { readJSON, writeJSON } from "@/lib/storage"
 import type { SurveyLevel } from "@/lib/profile"
 
 // ---------------------------------------------------------------------------
-// Shared question bank. Every survey (court / moyen / complet) references keys
-// from this single bank so answers are stored per QUESTION KEY and shared
-// across surveys. Answering the short survey pre-fills the same questions in a
-// longer one later.
+// Types
 // ---------------------------------------------------------------------------
 
 export type QuestionType = "single" | "multi" | "scale"
@@ -301,10 +314,12 @@ export const SURVEYS: Record<SurveyLevel, SurveyDef> = {
 
 export const SURVEY_LEVELS: SurveyLevel[] = ["court", "moyen", "complet"]
 
+/** Indexes SURVEYS directly: the `SurveyLevel` union is the only guard, so a value cast in from outside comes back undefined at runtime. */
 export function getSurvey(level: SurveyLevel): SurveyDef {
   return SURVEYS[level]
 }
 
+/** The level's questions resolved out of QUESTION_BANK, in the order the level names them. A key with no bank entry yields `undefined` in the list rather than being skipped. */
 export function getQuestions(level: SurveyLevel): Question[] {
   return SURVEYS[level].questionKeys.map((k) => QUESTION_BANK[k])
 }
@@ -313,10 +328,12 @@ export function getQuestions(level: SurveyLevel): Question[] {
 // Persistence (SWAP POINT: loadSurveyData / saveSurveyResult -> real DB)
 // ---------------------------------------------------------------------------
 
+/** EMPTY_STORE when nothing has been answered yet, never null. */
 export function loadSurveyData(): SurveyStore {
   return readJSON<SurveyStore>(SURVEY_STORAGE_KEY, EMPTY_STORE)
 }
 
+/** Merges into the existing answers instead of replacing them — that merge is what lets a longer survey inherit a shorter one's answers. */
 export function saveSurveyResult(answers: SurveyAnswers, level: SurveyLevel): SurveyStore {
   const store = loadSurveyData()
   const merged: SurveyStore = {
@@ -330,6 +347,7 @@ export function saveSurveyResult(answers: SurveyAnswers, level: SurveyLevel): Su
   return merged
 }
 
+/** Same merge as saveSurveyResult, without marking any level complete. Nothing calls it today. */
 export function saveSurveyProgress(answers: SurveyAnswers): void {
   const store = loadSurveyData()
   writeJSON(SURVEY_STORAGE_KEY, { ...store, answers: { ...store.answers, ...answers }, updatedAt: Date.now() })

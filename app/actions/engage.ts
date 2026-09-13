@@ -1,5 +1,24 @@
 "use server"
 
+// Votes, the question wall, surveys, quiz attempts, the secret hunt and the
+// leaderboard — everything a signed-in student writes that is not the live
+// quiz.
+//
+// Read this file next to the four issues open against it, because they are one
+// mistake wearing four hats: a Server Action is a public HTTP endpoint, so its
+// arguments are attacker-supplied input and its return value is something the
+// browser gets to keep.
+//
+//   #30  `submitQuizAttempt(quizSlug, score, total)` is handed the score.
+//   #31  `toggleVote(topicKey, maxPicks = 3)` is handed its own limit.
+//   #32  `upvoteQuestion` increments a counter and records no voter.
+//   #29  `getHuntBoard` returns `location` for every secret, found or not.
+//
+// All four are open on purpose, labelled `good first issue`; none is fixed
+// here. The worked answer to all of them is `submitAnswer` in
+// app/actions/live.ts, which takes a *choice* from the client and derives the
+// result itself. A server may accept what the client did. Never what it won.
+
 import { query, queryOne } from "@/lib/db"
 import { requireUser, getSessionUser } from "@/lib/auth"
 import { awardBadge, addPoints } from "@/lib/awards"
@@ -84,6 +103,7 @@ export interface QuestionRow {
   created_at: string
 }
 
+/** Approved only by default, ordered by upvotes then recency — the order the wall renders. Public: reading needs no account. */
 export async function getQuestions(onlyApproved = true): Promise<QuestionRow[]> {
   const where = onlyApproved ? "WHERE status = 'approved'" : ""
   return query<QuestionRow>(
@@ -91,6 +111,7 @@ export async function getQuestions(onlyApproved = true): Promise<QuestionRow[]> 
   )
 }
 
+/** Lands in `pending`: nothing a student writes reaches the wall before /admin approves it. Refuses under 5 or over 500 characters. */
 export async function submitQuestion(body: string): Promise<{ ok: boolean; error?: string }> {
   const user = await requireUser()
   const text = (body || "").trim()
@@ -106,6 +127,7 @@ export async function submitQuestion(body: string): Promise<{ ok: boolean; error
   return { ok: true }
 }
 
+/** Increments the counter on an approved question. Records no voter, so it can be replayed — issue #32, see the file header. */
 export async function upvoteQuestion(id: string): Promise<{ ok: boolean }> {
   await requireUser()
   await query("UPDATE questions SET upvotes = upvotes + 1 WHERE id = $1 AND status = 'approved'", [id])
@@ -119,6 +141,7 @@ export async function upvoteQuestion(id: string): Promise<{ ok: boolean }> {
 
 // ---------------- Surveys ----------------
 
+/** Upserts on (user, level), so re-answering replaces instead of duplicating. Also sets the user's `level`, but only while it is still 'inconnu'. */
 export async function saveSurvey(
   level: string,
   answers: Record<string, unknown>,
@@ -135,6 +158,7 @@ export async function saveSurvey(
   return { ok: true }
 }
 
+/** Empty array when signed out rather than a throw: lib/profile.ts calls it without knowing whether a session exists. */
 export async function getMySurveys(): Promise<string[]> {
   const user = await getSessionUser()
   if (!user) return []
@@ -185,6 +209,7 @@ export async function submitQuizAttempt(
   return { ok: true, earned }
 }
 
+/** Empty object when signed out. Rows arrive oldest-first into a map keyed by slug, so the most recent attempt is the one that survives. */
 export async function getMyQuizResults(): Promise<Record<string, { score: number; total: number }>> {
   const user = await getSessionUser()
   if (!user) return {}
@@ -255,15 +280,16 @@ async function grantMilestones(userId: string): Promise<{ name: string; points: 
   return granted
 }
 
+/** Refuses an unknown code, an already-redeemed one, and a milestone typed by hand. On success it also grants whatever milestone this redemption has just unlocked. */
 export async function redeemSecret(code: string): Promise<RedeemResult> {
   const user = await requireUser()
   const clean = (code || "").trim().toUpperCase()
   if (!clean) return { ok: false, error: "Entre un code." }
 
-  // Le code canonique OU l'un de ses alias. Les alias existent parce qu'une
-  // réponse juste mais non prévue était refusée en plein cours (voir la table
-  // `secret_aliases` dans db/schema.sql) ; ils créditent toujours le secret
-  // canonique, donc une seule validation et un seul lot de points.
+  // The canonical code OR one of its aliases. Aliases exist because an answer
+  // that was right but unforeseen used to be refused in the middle of a lesson
+  // (see the `secret_aliases` table in db/schema.sql); they always credit the
+  // canonical secret, so there is still one redemption and one batch of points.
   const secret = await queryOne<{ id: string; name: string; points: number; badge_slug: string | null; unlock_at: number | null }>(
     `SELECT s.id, s.name, s.points, s.badge_slug, s.unlock_at
        FROM secrets s
@@ -323,6 +349,7 @@ export async function redeemSecret(code: string): Promise<RedeemResult> {
   }
 }
 
+/** `total` is filled even when signed out, so /chasse can show a visitor how much there is to find. */
 export async function getMySecrets(): Promise<{ found: number; total: number; names: string[] }> {
   const user = await getSessionUser()
   const total = Number(
@@ -349,6 +376,7 @@ export interface HuntEntry {
   found: boolean
 }
 
+/** Works signed out, with `found` at 0. Returns `location` for every secret including unfound ones — issue #29, see the file header. */
 export async function getHuntBoard(): Promise<{ entries: HuntEntry[]; found: number; total: number }> {
   const user = await getSessionUser()
   const secrets = await query<{
@@ -395,6 +423,7 @@ export interface LeaderRow {
   accent: string
 }
 
+/** Active users only, so a suspended account drops off /classement. Public: no session required. */
 export async function getLeaderboard(limit = 50): Promise<LeaderRow[]> {
   return query<LeaderRow>(
     `SELECT u.id AS "userId", u.pseudo, u.points,

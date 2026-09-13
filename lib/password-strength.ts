@@ -194,6 +194,7 @@ function keyboardRun(s: string): { run: string; kind: "suite-clavier" | "suite" 
   return null
 }
 
+/** Never throws: an empty or nullish input comes back as a 0-bit analysis rather than as an error. */
 export function analyse(raw: string): Analysis {
   const pw = raw ?? ""
   const length = pw.length
@@ -302,6 +303,7 @@ export function analyse(raw: string): Analysis {
   }
 }
 
+/** 0 when `guessesPerSecond` is zero or negative, so the caller always gets a number it can format. */
 export function crackSeconds(a: Analysis, guessesPerSecond: number): number {
   if (guessesPerSecond <= 0) return 0
   const s = a.guesses / guessesPerSecond
@@ -316,6 +318,7 @@ const YEAR = 365 * DAY
 /** Roughly 13.8 billion years, in seconds. */
 const UNIVERSE = 4.35e17
 
+/** French, because students read it. Anything under a second is "instantané" and everything past ~13.8 billion years is capped. */
 export function humaniseDuration(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 1) return "instantané"
   if (seconds >= UNIVERSE) return "plus longtemps que l'âge de l'univers"

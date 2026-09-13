@@ -69,6 +69,7 @@ const DEFAULT_SILENCE_MS = 20_000
 const DEFAULT_MIN_DELAY_MS = 1_000
 const DEFAULT_MAX_DELAY_MS = 30_000
 
+/** Opens the stream and keeps it open: exponential-backoff reconnect, plus a watchdog that restarts a stream which has gone silent. `close()` is the only way to stop it. */
 export function connectSse(url: string, options: ConnectOptions): SseConnection {
   const {
     on,

@@ -4,6 +4,14 @@
 // it is now a thin adapter over the real DB-backed session (AuthProvider +
 // server actions). Existing components that call useProfile() keep working, but
 // the data now comes from Postgres and is shared across devices.
+//
+// Worth stealing when you replace a store: keep the old module's shape — same
+// hook name, same returned fields, `setProfile` still callable — and a
+// migration that would have touched every call site touches one file instead.
+// The bill comes due in honesty, because a function can end up no longer doing
+// what its name promises: `setProfile` now writes nothing at all, it refreshes
+// the session. An adapter has to say so out loud, which is what the comment on
+// it at the bottom is for.
 
 import { useEffect, useState } from "react"
 import { useAuth } from "@/components/auth/auth-provider"

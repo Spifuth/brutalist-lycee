@@ -1,9 +1,22 @@
+// The server-authoritative rules of the live quiz: the shuffle, the scoring
+// formula and the state machine the teacher drives.
+//
+// Pure — no DB, no React, no clock of its own — which is the only reason
+// tests/live-session.test.ts can pin them. That file asserts the scoring
+// bounds, that an answer arriving after the window still floors at the base
+// instead of going negative, and that an illegal transition throws rather than
+// being silently allowed. None of it needs a server, a session or a database.
+//
+// Writing the state machine down as a table — `state -> op -> state`, with
+// everything absent meaning "refused" — is the part to steal. The alternative,
+// a scattering of `if (state === …)` inside the action handlers, has no
+// exhaustive list anywhere, so the illegal transitions are exactly the ones
+// nobody thought to write down. Here they are refused by default.
+//
+// The questions themselves come from Postgres via lib/content.ts and are
+// snapshotted into `QuestionRef[]` by `openSession` (app/actions/live.ts);
+// this module never resolves content.
 import type { QuizQuestion } from "@/lib/quizzes"
-
-// The server-authoritative rules of the live quiz. Pure — no DB, no React — so
-// scoring, timing and the state machine can be unit-tested in isolation. The
-// questions themselves come from Postgres via lib/content.ts and are snapshotted
-// into `QuestionRef[]` by `openSession`; this module never resolves content.
 
 /**
  * One question of a live session, in play order.
@@ -127,6 +140,7 @@ const TRANSITIONS: Record<LiveState, Partial<Record<LiveOp, LiveState>>> = {
   aborted: {},
 }
 
+/** Throws on any transition absent from TRANSITIONS — refusal is the default, not the special case. */
 export function nextState(current: LiveState, op: LiveOp): LiveState {
   const to = TRANSITIONS[current]?.[op]
   if (!to) {

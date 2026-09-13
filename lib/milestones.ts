@@ -10,14 +10,14 @@
 // on, and it should be testable without a database.
 
 /**
- * Le palier « tu as tout trouvé ». Son seuil n'est pas une constante : c'est le
- * nombre de secrets ordinaires actifs, recalculé après chaque import.
+ * The "you found everything" milestone. Its threshold is not a constant: it is
+ * the number of active ordinary secrets, recomputed after every import.
  *
- * Il l'a été, et ça s'est vu : la prod a tourné avec `unlock_at = 149` alors
- * qu'elle comptait 156 secrets ordinaires — sept ajoutés depuis la console
- * admin, que le test du fichier de seed ne pouvait pas voir. La récompense
- * finale tombait donc avant la fin. Un nombre écrit à la main dans deux
- * sources dérive ; un nombre recalculé ne dérive pas.
+ * It has drifted, and it showed: production ran with `unlock_at = 149` while
+ * holding 156 ordinary secrets — seven of them added from the admin console,
+ * which the seed-file test had no way of seeing. The final reward therefore
+ * landed before the end. A number written by hand in two sources drifts; a
+ * number that is recomputed cannot.
  */
 export const FINAL_MILESTONE_CODE = "SIN-FINAL-BOSS-ULTIMATE"
 

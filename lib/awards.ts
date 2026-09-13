@@ -1,3 +1,15 @@
+// Granting a badge: the `user_badges` row and the points on the user, which
+// have to move together or not at all.
+//
+// Both functions here are idempotent, and the rest of the app leans on it --
+// callers award badges from flows that legitimately run more than once (a
+// retried server action, a reconnect, milestonesReached() returning every gate
+// a student has passed rather than only the newest). `ON CONFLICT DO NOTHING
+// ... RETURNING id` is how that is done in a single round trip: zero rows back
+// means "already held", so points are added only by the call that actually won
+// the insert. A SELECT-then-INSERT reads the same and double-awards under a
+// double-click, because two calls can both pass the check before either
+// commits.
 import "server-only"
 import { query, queryOne } from "@/lib/db"
 

@@ -1,9 +1,19 @@
+// Every read the content pages make: quizzes, doc subjects, doc articles.
+// Mutations live in app/actions/*; these are plain reads, with no "use server".
+//
+// That split is the transferable part. Next.js compiles each `"use server"`
+// export into a real HTTP endpoint the browser can POST to, so anything marked
+// as an action is publicly reachable and has to re-check permission itself. A
+// plain server-only function is not reachable from outside at all, so it does
+// not need to. Marking reads as actions too would cost nothing visible and
+// would quietly widen the app's public surface for no gain.
+//
+// `import "server-only"` is the guard rail on the other side: importing this
+// file from a client component fails the build instead of shipping database
+// code, and the connection string it reads, into the browser bundle.
 import "server-only"
 import { query, queryOne } from "@/lib/db"
 import type { Quiz } from "@/lib/quizzes"
-
-// Server-only read helpers for DB-backed content, used by RSC pages.
-// Mutations live in app/actions/*; these are plain reads (no "use server").
 
 // ---------------- Quizzes ----------------
 
@@ -29,6 +39,7 @@ const TOPIC_LABEL: Record<string, string> = {
   "vie-privee": "Données personnelles",
 }
 
+/** Published quizzes only, in `position` order, each with its question count. A draft is invisible to /quiz entirely. */
 export async function getQuizList(): Promise<
   { slug: string; title: string; theme: string; description: string; count: number }[]
 > {
@@ -46,6 +57,7 @@ export async function getQuizList(): Promise<
   }))
 }
 
+/** Null when the slug is unknown *or* the quiz is unpublished — deliberately indistinguishable to the caller. */
 export async function getQuizContent(slug: string): Promise<Quiz | null> {
   const quiz = await queryOne<QuizRow & { id: string }>(
     "SELECT id, slug, title, description, topic, level FROM quizzes WHERE slug = $1 AND published",
@@ -96,6 +108,7 @@ function withCommand(s: Omit<DocSubjectMeta, "command">): DocSubjectMeta {
   return { ...s, command: `man ${s.slug}` }
 }
 
+/** Every subject with its published articles attached. Two queries total, not one per subject. */
 export async function getDocSubjects(): Promise<DocSubject[]> {
   const subjects = await query<Omit<DocSubjectMeta, "command">>(
     "SELECT id, slug, title, description, icon FROM doc_subjects ORDER BY position ASC",
@@ -111,6 +124,7 @@ export async function getDocSubjects(): Promise<DocSubject[]> {
   }))
 }
 
+/** Null when either slug misses. `prev`/`next` walk the flattened list across subject boundaries, so the last article of one subject links into the next. */
 export async function getDocArticle(
   subjectSlug: string,
   articleSlug: string,
@@ -138,11 +152,13 @@ export async function getDocArticle(
   }
 }
 
+/** Null for an unknown slug. Built on getDocSubjects(), so it costs those same two queries. */
 export async function getDocSubject(slug: string): Promise<DocSubject | null> {
   const subjects = await getDocSubjects()
   return subjects.find((s) => s.slug === slug) ?? null
 }
 
+/** Zeroes rather than null on an empty database. Counts published articles only, but every subject. */
 export async function countDocs(): Promise<{ subjects: number; articles: number }> {
   const row = await queryOne<{ subjects: string; articles: string }>(
     "SELECT (SELECT COUNT(*)::text FROM doc_subjects) AS subjects, (SELECT COUNT(*)::text FROM doc_articles WHERE published) AS articles",

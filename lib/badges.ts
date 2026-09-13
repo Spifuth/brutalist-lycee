@@ -56,6 +56,7 @@ export const BADGES: Badge[] = [
 const DICEBEAR_BASE =
   process.env.NEXT_PUBLIC_DICEBEAR_URL || "https://lycee.nebulahost.tech/dicebear"
 
+/** DiceBear SVG URL for a seed. An empty seed falls back to "anonyme" rather than producing a blank avatar. */
 export function dicebearUrl(seed: string): string {
   const s = encodeURIComponent(seed || "anonyme")
   return `${DICEBEAR_BASE}/10.x/pixel-art/svg?seed=${s}&backgroundType=solid`
