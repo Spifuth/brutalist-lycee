@@ -1,6 +1,25 @@
-// SWAP POINT: badge collection is planned but not yet earned for real.
-// For now every badge is mocked with a deterministic "unlocked" flag derived
-// from the profile so the collection looks alive.
+// Avatar URLs -- plus a `BADGES` list that feeds nothing.
+//
+// The live part of this file is the two functions at the bottom. `avatarUrl`
+// is the single place that decides whether a user renders as their uploaded
+// photo or as a generated DiceBear image, and `dicebearUrl` builds the second
+// case. components/profile/profile-view.tsx and components/hunt/leaderboard.tsx
+// are the only importers, and they import only `avatarUrl`.
+//
+// `BADGES` is not the badge catalogue, and nothing imports it. The badge
+// system lives entirely in the database: db/seeds/badges.ts defines the
+// catalogue, the `user_badges` table (db/schema.sql) records who earned what,
+// `awardBadge` in lib/awards.ts grants a badge and its points in one
+// idempotent write from the server actions in app/actions/, and
+// `getBadgeCollection` in app/actions/badges.ts joins the two into what
+// /profil renders -- its `earned` flag is `awarded_at != null`, a real row, not
+// a computed guess. Adding an entry to `BADGES` changes nothing anywhere; add
+// it to db/seeds/badges.ts.
+//
+// Worth naming because the shape is common: a hardcoded constant that reads
+// like a source of truth while feeding nothing costs more than no constant at
+// all, because the next reader finds two plausible catalogues and has no way
+// to tell which one the site runs on.
 
 export interface Badge {
   id: string
