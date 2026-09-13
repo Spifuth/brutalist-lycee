@@ -1,5 +1,29 @@
 "use client"
 
+// The top bar, on every ordinary page: the same links as a row on desktop and
+// as a grid drawer on phones.
+//
+// The entries are not written here. They come from NAV_ITEMS in lib/nav.ts,
+// and that matters more than it looks, because this file alone renders them
+// twice -- the desktop row and the mobile drawer -- and app/page.tsx builds
+// its index from the same list while site-footer.tsx next door reads the
+// sitemap from the same module. Hard-code a <Link> into any one of them and
+// the day a page is renamed you will fix the copies you can see, and the
+// mobile drawer will 404 for weeks, because nobody working on a laptop ever
+// opens it.
+//
+// "Which entry is the current one" is derived from `usePathname()`, and the
+// matching rule is the interesting bit: prefix, not equality, so an article
+// at /docs/reseaux/... still lights up "Docs". Prefix matching has a known
+// price -- it also lights up a sibling that merely starts the same way, and
+// /quiz-live lights up the /quiz entry today. Exact match is the escape
+// hatch, used here for /accueil.
+//
+// Worth knowing for whoever edits this next: the three other <nav> elements
+// on a docs page (breadcrumbs, sidebar, table of contents) each carry an
+// aria-label and this one does not, so a screen reader reads the most
+// important nav on the site as plain "navigation".
+
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"

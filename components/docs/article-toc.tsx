@@ -1,5 +1,27 @@
 "use client"
 
+// The "on this page" rail beside a docs article, with the heading you are
+// reading lit up.
+//
+// This is a *scroll-spy*, and the whole trick is the `rootMargin`. An
+// IntersectionObserver fires on "touching the viewport at all", which on a
+// long article means six headings are intersecting at once and the answer is
+// useless. Shrinking the observation box to a band near the top (-80px off
+// the top edge, -70% off the bottom) turns "is it visible" into "is it the
+// heading under your eyes", which is the question a table of contents is
+// really asking. Tune those two numbers and you have tuned the feel of the
+// whole thing.
+//
+// It is also cheaper than the obvious scroll listener: the browser does the
+// geometry itself and calls back only when a boundary is crossed, instead of
+// running your code on every scroll event.
+//
+// Contract for callers: `entries` must keep a stable identity across renders,
+// because the effect re-subscribes whenever it changes. That holds here
+// because a server component builds the array once
+// (app/docs/[subject]/[article]/page.tsx); a client parent rebuilding it
+// inline would tear down and rebuild the observer on every render.
+
 import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 

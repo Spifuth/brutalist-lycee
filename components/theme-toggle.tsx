@@ -1,5 +1,27 @@
 "use client"
 
+// The sun/moon button in the top bar.
+//
+// `mounted` is why this file is longer than a button should be, and it is the
+// standard answer to a *hydration mismatch*. The server renders the page
+// without knowing which theme this browser has stored, so if the real icon
+// were rendered on the server, React's first client render would produce a
+// different one -- and React either warns or keeps the server's wrong answer.
+// Rendering a placeholder until `useEffect` has run (which only ever happens
+// in the browser) makes the server and the first client render agree, and
+// lets the truth arrive one frame later. The same guard fits anything whose
+// value only exists client-side: localStorage, the current time, a random id.
+//
+// The placeholder is a box of exactly the button's size rather than `null`,
+// because the alternative is the whole nav row shifting sideways the instant
+// the button appears. Reserve the space, then fill it.
+//
+// One coupling to know: this compares `theme`, not `resolvedTheme`. That is
+// only correct because app/layout.tsx passes `enableSystem={false}`. Turn
+// system themes back on and `theme` becomes the literal string "system",
+// `isDark` is false, and the button shows the wrong icon to everyone whose
+// machine is in dark mode.
+
 import { useTheme } from "next-themes"
 import { Sun, Moon } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"

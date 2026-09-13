@@ -1,5 +1,26 @@
 "use client"
 
+// The password lab: type a password and watch an attacker eat through the
+// search space in real time.
+//
+// The property that makes a demo like this defensible: the password never
+// leaves the browser. There is no form submit and no fetch -- `analyse()`
+// from lib/password-strength.ts is a pure function called during render, so
+// the value exists only in React state and in the DOM of the tab you are
+// looking at. Any teaching tool that asks for a real secret has to be built
+// that way, and the `name` given to the input says so out loud to anyone who
+// opens the network tab.
+//
+// The counter is a *requestAnimationFrame loop* rather than a `setInterval`.
+// rAF hands the callback a timestamp, so the figure is derived from elapsed
+// time instead of from how many ticks happened to fire; on a slow phone, or
+// in a tab the browser has throttled, elapsed time still tells the truth
+// while a tick count quietly under-reports.
+//
+// The numbers, and the reason "on paper" and "in reality" diverge so far,
+// belong to lib/password-strength.ts. tests/password-strength.test.ts pins
+// them, so this file can stay a view.
+
 import { useEffect, useRef, useState } from "react"
 import { Eye, EyeOff } from "lucide-react"
 import {
