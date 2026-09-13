@@ -1,6 +1,7 @@
 'use client'
 // Vendored shadcn/ui hook -- overwritten on the next shadcn update.
-// See STYLE.md §5 before changing anything here.
+// See STYLE.md §4 (colour tokens) and §1-2 (radius, borders) before changing
+// anything here.
 
 // Inspired by react-hot-toast library
 import * as React from 'react'

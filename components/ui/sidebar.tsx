@@ -1,6 +1,7 @@
 'use client'
 // Vendored shadcn/ui primitive -- overwritten on the next shadcn update.
-// Do not restyle here; colour and shape live in globals.css, see STYLE.md §5.
+// Do not restyle here; colour and shape live in globals.css -- see STYLE.md
+// §4 for the colour tokens, §1-2 for radius and borders.
 
 import * as React from 'react'
 import { Slot } from '@radix-ui/react-slot'
