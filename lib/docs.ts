@@ -25,6 +25,23 @@ export type DocBlock =
   | { type: "list"; ordered?: boolean; items: string[] }
   | { type: "table"; caption?: string; headers: string[]; rows: string[][] }
 
+/**
+ * The block types the renderer draws, as data.
+ *
+ * The union above is erased at build time, so nothing outside TypeScript can
+ * ask it what a valid block looks like. This list is the same knowledge at
+ * runtime, for the admin console's help text and for the tests that keep the
+ * union, the renderer's switch and the console's starter template spelling
+ * these words identically -- see tests/doc-block-types.test.ts, which fails
+ * if any of the three drifts.
+ *
+ * Typed `readonly string[]` rather than left as a literal tuple on purpose:
+ * callers ask it whether an arbitrary string is a known type, and a tuple of
+ * literals rejects that question at compile time. The test, not the type, is
+ * what keeps the contents honest.
+ */
+export const DOC_BLOCK_TYPES: readonly string[] = ["para", "section", "code", "callout", "keylist", "list", "table"]
+
 export interface DocArticle {
   slug: string
   title: string

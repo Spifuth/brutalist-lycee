@@ -22,9 +22,12 @@
 // `type` reaches DocBlocks, meets `default: return null`, and disappears from
 // the published page without a word.
 //
-// That is not hypothetical here: the starter template this form inserts says
-// `{ "type": "paragraph" }`, and the case in doc-blocks.tsx is `"para"`.
-// Write `para`, then go and look at what you published. The rule to carry
+// Which makes the starter template below and the hint beside the textarea
+// load-bearing: they are what every new article is copied from, and both used
+// to name a type -- `"paragraph"` -- that doc-blocks.tsx has no case for, so
+// an article written by following the screen published blank. They are pinned
+// now: tests/doc-block-types.test.ts reads this file, the renderer's switch
+// and DOC_BLOCK_TYPES, and fails if the three stop agreeing. The rule to carry
 // away is the general one -- a `default:` that returns null turns every typo
 // into missing content instead of an error, and missing content is the
 // failure nobody reports.
@@ -174,7 +177,7 @@ function ArticlesEditor({ subject, onBack }: { subject: AdminDocSubject; onBack:
     slug: "",
     title: "",
     summary: "",
-    blocksText: '[\n  { "type": "paragraph", "text": "Ton contenu ici." }\n]',
+    blocksText: '[\n  { "type": "para", "text": "Ton contenu ici." }\n]',
     position: 0,
     published: true,
   }
@@ -258,7 +261,7 @@ function ArticlesEditor({ subject, onBack }: { subject: AdminDocSubject; onBack:
             <div className="sm:col-span-2">
               <Field
                 label="Contenu (blocs JSON)"
-                hint='tableau de blocs : { "type": "section" | "paragraph" | "code" | "list" | "callout", ... }'
+                hint='tableau de blocs : { "type": "para" | "section" | "code" | "callout" | "keylist" | "list" | "table", ... }'
               >
                 <TextArea
                   rows={12}
