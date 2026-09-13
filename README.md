@@ -61,8 +61,13 @@ qui refuse les coins arrondis, les ombres et les couleurs en dur.
 
 ## Branches
 
-`dev` est la branche de travail et la cible de toutes les pull requests.
-`main` ne reçoit que les versions déployées. Les deux sont protégées.
+`dev` est la branche de travail, la cible de toutes les pull requests, **et la
+branche qui est servie en production** : le site public
+[lycee-next.nebulahost.tech](https://lycee-next.nebulahost.tech) fait tourner le
+code de `dev`.
+
+`main` n'a pas bougé depuis l'import initial du projet : il est très en retard et
+ne sert rien. Les deux branches sont protégées.
 
 ## Licence
 

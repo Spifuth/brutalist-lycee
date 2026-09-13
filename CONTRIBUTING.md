@@ -390,11 +390,27 @@ scripts/           les contrôles lancés par la CI
 ## 9. Ajouter du contenu
 
 C'est la contribution la plus utile et la plus facile. Tout le contenu du site
-vit dans la base de données, mais les fichiers de `db/seeds/` en sont la
-**source** : ils sont réappliqués à chaque démarrage. Ce qui n'y est pas peut
-disparaître — donc ajoute-le ici, pas seulement dans la console d'admin.
+vit dans la base de données, mais les fichiers de `db/seeds/` (et `lib/docs-*.ts`
+pour les cours) en sont la **source** : ils sont réappliqués à chaque démarrage.
 
 Après chaque modification d'un seed : `pnpm db:setup` pour la voir apparaître.
+
+> [!NOTE]
+> **Ce qui est créé depuis la console `/admin` ne risque rien.** Le seed ne
+> supprime que les lignes **qu'il a lui-même plantées** — elles portent une
+> marque en base (`managed`, voir `db/schema.sql`) et les autres sont ignorées.
+> Un cours ou un badge écrit dans la console survit à tous les démarrages. La
+> console est un outil normal ; sers-t'en sans crainte.
+>
+> Ce qui disparaît, c'est l'inverse : **un article de cours que le seed avait
+> planté et que tu retires ensuite de `lib/docs.ts`** est effacé au démarrage
+> suivant. C'est voulu — sinon un article retiré du code continuerait de
+> s'afficher pour toujours.
+>
+> Attention au cas qui n'en a pas l'air : **renommer un `slug` n'est pas un
+> renommage.** L'ancien n'est plus déclaré, donc il est supprimé ; le nouveau
+> est créé à neuf, avec un nouvel identifiant et une date de création remise à
+> zéro. Change le titre autant que tu veux, pas le `slug`.
 
 ### Un quiz — `db/seeds/quizzes.ts`
 
@@ -492,6 +508,29 @@ Deux pièges :
   elle, les tests ne trouvent pas le fichier.
 - **Les `slug` d'articles et les `id` de sections doivent être uniques.** Un
   doublon écrase l'autre sans prévenir. `tests/docs-content.test.ts` le détecte.
+
+### Après la fusion : comment ton contenu arrive sur le site
+
+Ta PR fusionnée part dans `dev`, et **`dev` est la branche qui tourne sur le
+site public** ([lycee-next.nebulahost.tech](https://lycee-next.nebulahost.tech)).
+Il reste une étape, et c'est le prof qui la lance :
+
+1. il récupère `dev` sur le serveur ;
+2. il recrée les conteneurs ;
+3. au démarrage, le service `init` applique les migrations puis rejoue le seed
+   — c'est lui qui relit `db/seeds/` et `lib/docs.ts` ;
+4. ton quiz est en ligne.
+
+**Ce n'est pas automatique.** Ça arrive quand le prof déploie, pas trente
+secondes après le clic sur *Merge*. Si ton contenu n'est pas encore là le
+lendemain, le site n'est pas cassé : il n'a pas encore été déployé. Demande,
+plutôt que d'ouvrir une issue « bug ».
+
+**Et tu as déjà vu ce mécanisme en entier.** `pnpm db:setup` lance exactement
+les deux mêmes commandes que le serveur — `db/migrate.mjs` puis `db/seed.ts`.
+Ton test en local, c'est le déploiement en miniature. Si ton quiz est apparu
+chez toi après un `pnpm db:setup`, il apparaîtra en ligne au prochain
+déploiement.
 
 ---
 
@@ -662,7 +701,9 @@ demande de l'aide dans la PR, c'est une manipulation qu'on fait à deux la
 première fois.
 
 **5. Fusion.** Une fois approuvée, ta PR est intégrée à `dev` et ta branche est
-supprimée automatiquement. Ton travail sera en ligne au prochain déploiement.
+supprimée automatiquement. Ton travail sera en ligne au prochain déploiement —
+ce que ça veut dire, et pourquoi ce n'est pas immédiat : **§9**, « Après la
+fusion ».
 
 ---
 
