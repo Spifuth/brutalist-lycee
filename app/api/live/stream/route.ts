@@ -9,7 +9,19 @@
 // full-duplex connection with its own protocol upgrade, which you need when
 // the *client* also has to push. Here the browser only ever listens, so SSE
 // is the smaller correct answer: plain HTTP with a `text/event-stream` body,
-// and the browser's `EventSource` reconnects on its own when it drops.
+// read on the other side by the browser's `EventSource`.
+//
+// What `EventSource` does not give you is a subscription that survives, and
+// that is the part worth carrying to another project. Its built-in retry is
+// abandoned for good on a non-200 response -- the `502` a reverse proxy
+// returns while this container restarts is exactly that -- and a stream can
+// also stop arriving while the browser still reports it open. So nothing in
+// this app opens either stream route directly: lib/sse-client.ts supervises
+// the connection, reopens what the browser gave up on, and treats silence as
+// death, and tests/sse-client.test.ts drives both failures without a browser
+// (its last test greps `app`, `components` and `lib` and fails if any file
+// constructs an `EventSource` directly). Read lib/sse-client.ts before
+// writing a client against this route.
 //
 // The shape below is the part worth stealing, and it is not specific to
 // quizzes. One poller for the whole room rather than one per viewer

@@ -1,9 +1,11 @@
 // The PixelWar stream: the same SSE fan-out as the live quiz, one canvas.
 //
 // Read app/api/live/stream/route.ts first for what SSE is and why it beats
-// polling and a WebSocket here. What this file adds is the problem every
-// event stream eventually meets: a subscriber arrives at one instant, the
-// full state it needs is read at another, and the two are not atomic.
+// polling and a WebSocket here, then lib/sse-client.ts for why the client end
+// of both routes is never a bare `EventSource`. What this file adds is the
+// problem every event stream eventually meets: a subscriber arrives at one
+// instant, the full state it needs is read at another, and the two are not
+// atomic.
 //
 // The fix here is not a lock or a sequence number but a deliberately
 // *overlapping* catch-up window (`CATCH_UP_MS` below), and the reasoning
