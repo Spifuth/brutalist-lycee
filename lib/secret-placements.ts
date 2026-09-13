@@ -6,10 +6,15 @@
 // player held ten of them, because the only way to reach them was the answer
 // sheet published alongside the repository, never the game itself.
 //
-// This module plants them. The rule that shapes it: ==a code is never written
-// into the repository==. A page asks for "the secret planted at such and such
-// a spot" by placement name, and the database answers. Putting the code in the
-// repository would republish exactly what the private pipeline takes out.
+// This module plants them. The rule that shapes it, scoped the way
+// lib/secrets-yaml.ts scopes it: ==no *new* code is written into the
+// repository==. The 153 codes already in db/seeds/secrets.ts stay there — you
+// do not unpublish what is already out, and comments in this repository name
+// several of them — but every secret added after them goes through the
+// gitignored `db/secrets.yml`, and nothing here hardcodes a code at all. A page
+// asks for "the secret planted at such and such a spot" by placement name, and
+// the database answers. Hardcoding one would republish exactly what the private
+// pipeline takes out.
 import { query } from "./db.ts"
 
 /** The placements the site knows how to plant. One secret per placement. */
