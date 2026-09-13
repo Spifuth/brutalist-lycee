@@ -1,5 +1,27 @@
 "use client"
 
+// The console's own small design system: card, field, text input, textarea,
+// button, stat grid, confirm button, flash. Eight components, no dependency
+// but `cn`, and every admin tab is built out of them.
+//
+// The shape worth stealing is the wrapper. TextInput, TextArea and Btn spread
+// `{...props}` onto a real <input>/<textarea>/<button>, so they stay ordinary
+// DOM elements: `type`, `disabled`, `aria-label`, `onChange` and everything
+// else keep working without ever being declared here, and this file does not
+// grow a prop each time a caller needs one. Note the order -- the spread comes
+// first and `className` is assigned after it, so a caller cannot accidentally
+// drop the styling, while `cn()` (clsx + tailwind-merge) folds
+// `props.className` back in. tailwind-merge is the part that makes a caller's
+// `bg-muted` actually beat the base `bg-background`, instead of both landing
+// in the class list and the stylesheet order deciding who wins.
+//
+// ConfirmBtn is the second idea: "are you sure?" as one boolean of local state
+// rather than a modal or window.confirm(). The button replaces itself with
+// Oui/Non and the caller passes a single `onConfirm`, knowing nothing about
+// the two steps. A confirmation that lives inside the button composes -- it
+// fits anywhere a button fits, in a table row or a toolbar -- where a modal
+// has to be hoisted to a parent and told which row it is about.
+
 import { useState, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
 

@@ -1,5 +1,29 @@
 "use client"
 
+// The moderation queue for the student question wall: approve, reject, put
+// back on hold, delete.
+//
+// Moderation here is a *status column*, not a delete. Questions are inserted
+// `pending` (app/actions/engage.ts) and the public wall only ever selects
+// `status = 'approved'`, so the default is invisible: a question nobody has
+// read yet cannot reach the room. Every move is reversible in both directions
+// -- the eye button sends an approved or rejected question back to pending --
+// which is what makes rejecting cheap, and why deleting is the only button
+// wrapped in a ConfirmBtn. Default-deny plus reversible transitions is the
+// shape of nearly every moderation system worth copying; confirm the one
+// action you cannot undo, and no others, or the confirmation stops being read.
+//
+// The three counters are derived, not stored: `rows.filter(...)` at render
+// time. A count kept in its own useState is a second copy of the truth, and a
+// second copy eventually disagrees with the list it counts.
+//
+// Each button awaits the action and then calls refresh() -- a refetch, not a
+// local patch. That is the opposite choice from avatars-tab.tsx's optimistic
+// removal, and the question that settles which one you want is what the user
+// does next: here the row stays on screen and only its badge changes, so the
+// round trip costs nobody anything; there, the row has to be gone before the
+// next photo can be judged.
+
 import { useEffect, useState } from "react"
 import { Check, X, Eye, Trash2 } from "lucide-react"
 import {

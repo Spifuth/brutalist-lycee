@@ -1,5 +1,26 @@
 "use client"
 
+// Moderation for uploaded profile photos: newest first, look, remove. Why
+// removal is the only control -- and why it does not ask twice -- is on the
+// component below.
+//
+// The removal is *optimistic UI*: the row leaves local state before the
+// server has answered, and `catch` calls refresh() to put reality back if the
+// action failed. That second half is the one people forget. An optimistic
+// update with no rollback is a screen that disagrees with the database and
+// never finds out; refetching is the cheapest rollback there is, because the
+// server already holds the truth.
+//
+// The <img> src carries `?v=<uploadedAt>`. The avatar route answers on one
+// stable URL per user (/api/avatar/<id>), so nothing in that URL changes when
+// the photo behind it does, and any cache along the way would go on serving
+// the old bytes. Appending a token that changes with the content -- an upload
+// timestamp here, a content hash in a build pipeline -- makes the URL new
+// without making the route new. That is cache busting, the standard answer to
+// "the file changed but the browser did not notice". Here it doubles up with
+// the `Cache-Control: private, no-store` the route already sends; the
+// versioned URL is the half that still works if that header is ever relaxed.
+
 import { useEffect, useState } from "react"
 import { Trash2 } from "lucide-react"
 import { listAvatars, removeAvatar, type AdminAvatar } from "@/app/actions/admin"

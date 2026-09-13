@@ -1,5 +1,29 @@
 "use client"
 
+// The admin console shell: a row of tabs, one panel mounted at a time.
+//
+// Every tab is a sibling component under ./tabs and the current one is plain
+// React state -- not a route. That is a deliberate trade and worth knowing
+// which way it cuts: the console never touches the URL, so a tab cannot be
+// linked, bookmarked or reloaded into, and the browser Back button leaves the
+// console entirely. In exchange there is no routing to write and no loading
+// state between tabs. For a tool one person uses with the page already open,
+// that is the right side of the trade; for anything a user might share a link
+// to, it is the wrong one.
+//
+// The `!user.isAdmin` screen below hides the console; it does not protect it.
+// app/admin/page.tsx renders for anybody, and a check written in a client
+// component ships to the visitor's browser, where it is theirs to edit. What
+// protects the data is one line at the top of every action in
+// app/actions/admin.ts and app/actions/live.ts: `await requireAdmin()`. Write
+// both anyway -- the client one so a student gets an explanation instead of
+// an error, the server one so the explanation is also true.
+//
+// The third branch, `!ready`, is there because "we have not asked yet" is a
+// different answer from "not signed in". AuthProvider only learns who you are
+// once whoami() has replied, and collapsing the two states into one would
+// flash the "Accès restreint" panel at a real admin on every reload.
+
 import { useState } from "react"
 import Link from "next/link"
 import {

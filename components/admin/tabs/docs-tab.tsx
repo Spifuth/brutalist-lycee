@@ -1,5 +1,34 @@
 "use client"
 
+// CRUD for the course content: subjects on the first screen, their articles
+// behind "Articles". Same two-screens-in-one-file shape as quizzes-tab.tsx,
+// including the refetch when the detail view hands control back, for the same
+// reason (the subject list shows an article count the server computed).
+//
+// What is specific here is the body of an article. This is not a rich-text
+// editor: a <textarea> holds a JSON array of typed blocks, which
+// components/docs/doc-blocks.tsx renders through one `switch (block.type)`
+// with a case per kind. Storing content as typed blocks rather than as HTML
+// buys a great deal -- the same article can render as a page, as a table of
+// contents, as anything else someone writes a renderer for, and nothing in
+// the database is markup -- at one price: the text in that box is structured
+// data with nothing checking its structure.
+//
+// And nothing does check it. upsertDocArticle() in app/actions/admin.ts runs
+// one JSON.parse and refuses the save only if the text is not JSON at all;
+// the shape is never looked at. tests/docs-content.test.ts *does* assert that
+// every block has a type the renderer knows -- but it reads the seed files
+// under lib/, not this database. Between those two, a block with an unknown
+// `type` reaches DocBlocks, meets `default: return null`, and disappears from
+// the published page without a word.
+//
+// That is not hypothetical here: the starter template this form inserts says
+// `{ "type": "paragraph" }`, and the case in doc-blocks.tsx is `"para"`.
+// Write `para`, then go and look at what you published. The rule to carry
+// away is the general one -- a `default:` that returns null turns every typo
+// into missing content instead of an error, and missing content is the
+// failure nobody reports.
+
 import { useEffect, useState } from "react"
 import { Plus, Pencil, Trash2, BookText, ChevronLeft } from "lucide-react"
 import {

@@ -1,5 +1,30 @@
 "use client"
 
+// The teacher's remote control for a live quiz -- open, start, reveal, next,
+// finish -- plus the room's feature switches. It holds almost no truth of its
+// own: the session lives on the server, and this is a view of it with buttons.
+//
+// Where its numbers come from is the thing to read. This tab *polls*: one
+// getLiveStateOnce() every two seconds. The students' side of the very same
+// session does not -- live-quiz.tsx, vote-board.tsx and live-questions.tsx,
+// all under components/, subscribe to /api/live/stream over *server-sent
+// events* instead. Both are right, and what decides between them is who is
+// waiting on whom. A push exists so that thirty phones learn about a reveal
+// at the same instant without thirty timers hammering the server; this
+// console is a single client, usually the one that caused the change itself,
+// and a two-second poll is one long-lived connection less to reason about.
+// Poll when a single consumer can live with the interval; push when a crowd
+// cannot.
+//
+// Three more ideas are documented where they happen, below. canDo() asks the
+// state machine in lib/live-session.ts what is legal instead of re-listing it,
+// so a disabled button cannot drift away from what the server will accept.
+// The settings block is deliberately left out of the poll, because it is an
+// unsaved draft and a poll landing mid-edit would eat a toggle. And the
+// stale-action handling on clearVotes() is explained in lib/stale-action.ts --
+// read it before shipping anything a classroom keeps open for an hour, since
+// it is about what a redeploy does to tabs that were already open.
+
 import { useEffect, useState } from "react"
 import { Radio } from "lucide-react"
 import { listQuizzes, type AdminQuiz } from "@/app/actions/admin"

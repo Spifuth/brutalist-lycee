@@ -1,5 +1,35 @@
 "use client"
 
+// Two screens in one file: the list of quizzes, and -- once `editing` is set
+// -- the question editor for one of them.
+//
+// The master/detail move is `if (editing) return <QuizQuestionsEditor .../>`:
+// a detail view as a conditional render rather than a route, the same trade
+// admin-console.tsx makes one level up. The line that teaches something is
+// the way back, `onBack={() => { setEditing(null); refresh() }}`. The child
+// writes questions; the parent's list shows a per-quiz question count that
+// the server computed when listQuizzes() ran. That number went stale the
+// moment the child saved, and nothing in React knows it -- there is no cache
+// layer here to invalidate, so the refetch has to be written by hand at the
+// one place where control comes back. Wherever a child mutates what a parent
+// already read, that hand-off is where the stale screen comes from.
+//
+// Every read and every write here is a *server action*: listQuizzes,
+// upsertQuiz, deleteQuizQuestion are imported from app/actions/admin.ts and
+// awaited like ordinary async functions. There is no fetch() and no /api
+// route in this file because Next generates the POST behind that import.
+// What it does not generate is judgement about the payload -- the server
+// re-checks who is calling (`requireAdmin()`), not whether what they sent
+// makes sense.
+//
+// Which is the trap in the question form below. save() drops blank options
+// with `options.filter((o) => o.trim())` but sends `correctIndex` exactly as
+// the radio buttons left it -- and that index counted the four boxes on
+// screen, empty ones included. Leave the first box blank, tick the second,
+// and the question is stored with its answer pointing one slot past the right
+// one. Nothing errors, at save or at play, because an index is valid for any
+// array. Fill the options from the top.
+
 import { useEffect, useState } from "react"
 import { Plus, Pencil, Trash2, ListChecks, ChevronLeft } from "lucide-react"
 import {
