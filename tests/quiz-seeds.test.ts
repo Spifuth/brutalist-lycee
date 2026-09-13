@@ -1,10 +1,12 @@
 // A narrow guard, and worth being plain about it: this checks one quiz seed
-// out of the fourteen in db/seeds/quizzes.ts.
+// out of all of them in db/seeds/quizzes.ts -- deliberately not counted here,
+// because a number in a comment beside an array that grows is a claim with
+// an expiry date, and this file has already shipped one that expired.
 //
 // Both tests read like general rules -- every question has an explanation,
 // every `correct` index lands inside its own `options` -- but both are scoped
-// to `linux-bases`, the last quiz in the array. The other thirteen are not
-// checked here by anything.
+// to `linux-bases`, the last quiz in the array. The rest are not checked
+// here by anything.
 //
 // Deleted, nothing breaks. Seeding would still succeed with a quiz whose
 // correct index points past the end of its options, which reaches a student as

@@ -1,10 +1,10 @@
 // Where the site's secrets are actually planted.
 //
 // Eleven secrets in the hunt had a full hint, points, a difficulty… and
-// nothing to find: their `location` still read "À IMPLÉMENTER". Measured on
-// 2026-09-08, they were worth 285 points — a fifth of the total — and one
-// player held ten of them, because the only way to reach them was the answer
-// sheet published alongside the repository, never the game itself.
+// nothing to find: their `location` still read "À IMPLÉMENTER". They are
+// worth 350 of the hunt's 3247 points, and one player held ten of them,
+// because the only way to reach them was the answer sheet published
+// alongside the repository, never the game itself.
 //
 // This module plants them. The rule that shapes it, scoped the way
 // lib/secrets-yaml.ts scopes it: ==no *new* code is written into the

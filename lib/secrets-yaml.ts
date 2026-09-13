@@ -120,7 +120,7 @@ export interface ParseOptions {
    * refusing.
    *
    * Exists for exactly one case: re-importing an export taken from the
-   * database from before the rule. 38 of the first 160 secrets have the answer
+   * database from before the rule. 37 of the first 160 secrets have the answer
    * written into their name, and `pnpm secrets:export` hands them back as they
    * are — without this door, an export -> import round trip would be
    * impossible until every one of them is rewritten. Never to be used for new
@@ -200,10 +200,10 @@ export function parseSecretsYaml(text: string, options: ParseOptions = {}): Secr
       )
     }
 
-    // The rule the 2026-09-08 audit drew out of the first 160 secrets: 38 of
-    // them had the answer written into their own name, so there was nothing
-    // left to look for. The hint is deliberately not checked — it is allowed
-    // to be close, that is its job.
+    // The rule the 2026-09-08 audit (bb9d250) drew out of the first 160
+    // secrets: 37 of them had the answer written into their own name, so
+    // there was nothing left to look for. The hint is deliberately not
+    // checked — it is allowed to be close, that is its job.
     if (containsSequence(words(item.fields.name), words(code))) {
       const message = `le nom contient la réponse (« ${code} ») — il n'y aurait rien à chercher. Décris le secret sans le nommer.`
       if (!options.lenientNames) throw new YamlError(at("name"), message)
