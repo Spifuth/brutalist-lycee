@@ -210,14 +210,14 @@ async function seedAdmin() {
 }
 
 /**
- * Recale le palier final sur le nombre réel de secrets ordinaires.
+ * Recalibrates the final milestone against the real count of ordinary secrets.
  *
- * Le fichier de seed déclare un seuil, et `tests/secret-seeds.test.ts` vérifie
- * qu'il colle — mais seulement au fichier. La prod a tourné avec 149 pour 156
- * secrets ordinaires, parce que sept avaient été créés depuis la console admin
- * et que le test ne voit jamais la base. Le seuil est donc recalculé ici et à
- * l'import : les deux chemins d'écriture le corrigent, aucun ne le laisse
- * dériver.
+ * The seed file declares a threshold, and `tests/secret-seeds.test.ts` checks
+ * that it matches — but only against the file. Production once ran with 149
+ * for 156 ordinary secrets, because seven had been created from the admin
+ * console and the test never sees the database. The threshold is therefore
+ * recalculated here and on import: both write paths correct it, neither lets
+ * it drift.
  */
 async function syncFinalMilestone() {
   const { rows } = await db.query<{ unlock_at: number }>(
