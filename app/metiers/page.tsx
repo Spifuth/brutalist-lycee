@@ -1,3 +1,6 @@
+// The careers page: roles in cyber and digital, and the qualities they ask
+// for. Content only, assembled from components/primitives.
+
 import type { Metadata } from "next"
 import { PageShell, PageHeader } from "@/components/site/page-shell"
 import { Section, Callout, KeyList, List, P } from "@/components/primitives"

@@ -1,3 +1,28 @@
+// The hub: four counters read from Postgres, then one door per section.
+//
+// `export const dynamic = "force-dynamic"` is the line to understand here.
+// Without it the App Router would prerender this page at build time, as it
+// does for "/", and the four counters would be frozen on whatever the database
+// said the day the site was built -- forever, and with no error to tell you.
+// Opting out is what makes them true at the moment of the request; `pnpm
+// build` prints /accueil with an f rather than a circle to confirm it. The
+// general question, worth answering deliberately for any page that reads
+// anything: is this content a function of the request, or of the build?
+//
+// Still a Server Component -- no useState, no onClick. <AnimatedCounter>
+// carries the directive and does the counting animation.
+//
+// Caveat worth knowing before you copy this: that component starts at
+// `useState(0)`, so the server HTML contains four zeros and the real figures
+// only appear once JavaScript runs and the strip scrolls into view. The query
+// happens on the server, the number travels as a prop, and the first paint
+// still says 0. Nothing is broken, but "rendered on the server" and "visible
+// without JavaScript" are not the same claim, and an animated counter is the
+// standard way to lose the second one.
+//
+// getHomeStats() gets all four counts in a single round trip; lib/stats.ts
+// says why that matters when a whole class loads the page at once.
+
 import type { Metadata } from "next"
 import Link from "next/link"
 import {

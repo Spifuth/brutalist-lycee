@@ -1,3 +1,6 @@
+// The question wall: a server shell around <QuestionsWall>, plus a link to the
+// live feed. Same shape as app/live/page.tsx.
+
 import type { Metadata } from "next"
 import Link from "next/link"
 import { Radio } from "lucide-react"

@@ -1,3 +1,7 @@
+// The networking course page: what happens between pressing Enter and the page
+// appearing, plus the vocabulary that goes with it. Content only, assembled
+// from components/primitives.
+
 import type { Metadata } from "next"
 import Link from "next/link"
 import { PageShell, PageHeader } from "@/components/site/page-shell"

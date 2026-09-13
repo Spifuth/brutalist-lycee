@@ -1,3 +1,13 @@
+// The password-cracking demo: type a password, watch how long it survives.
+//
+// The page promises in a callout that nothing leaves the browser, and the only
+// thing making that promise keepable is where the code lives. <PasswordLab> is
+// a Client Component that calls no server action and no API route, so there is
+// genuinely no request to make while you type. A privacy claim on a page is
+// worth exactly as much as the boundary underneath it -- and this one a
+// student can check without trusting anyone, which is what the callout tells
+// them to do.
+
 import type { Metadata } from "next"
 import { PageShell, PageHeader } from "@/components/site/page-shell"
 import { Callout, P } from "@/components/primitives"

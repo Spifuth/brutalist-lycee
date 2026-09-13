@@ -1,3 +1,6 @@
+// The live question feed: a server shell around <LiveQuestions>, which opens
+// the stream. Same shape as app/live/page.tsx.
+
 import type { Metadata } from "next"
 import { PageShell, PageHeader } from "@/components/site/page-shell"
 import { LiveQuestions } from "@/components/questions/live-questions"

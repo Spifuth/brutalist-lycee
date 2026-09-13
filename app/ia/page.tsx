@@ -1,3 +1,7 @@
+// The AI course page: what a language model actually does, where it fails, and
+// using it honestly for schoolwork. Content only, assembled from
+// components/primitives.
+
 import type { Metadata } from "next"
 import { PageShell, PageHeader } from "@/components/site/page-shell"
 import { Section, CodeBlock, Callout, KeyList, List, P } from "@/components/primitives"

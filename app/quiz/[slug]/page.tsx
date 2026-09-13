@@ -1,3 +1,19 @@
+// One quiz, played: the server fetches it, <QuizRunner> plays it.
+//
+// The whole quiz is handed to a Client Component as a prop, and that prop
+// includes `correct`, the index of the right answer for every question. So the
+// answer key reaches the browser before the student answers question one, and
+// anyone who opens the devtools can read it. This is not an oversight left
+// lying around: grading happens in components/quiz/quiz-runner.tsx, in the
+// browser, which is what makes the quiz instant and indifferent to a bad
+// connection, and a classroom quiz is not an exam.
+//
+// The rule to carry away is the general one. Every prop passed to a
+// "use client" component is serialised and sent, so choose what crosses that
+// boundary on purpose. When a value must not be known, keep the check on the
+// server and send back only the verdict -- app/actions/engage.ts does exactly
+// that for the hunt codes, which is why those never travel.
+
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import Link from "next/link"

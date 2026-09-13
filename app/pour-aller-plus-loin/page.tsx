@@ -1,3 +1,19 @@
+// Curated resources to keep going: sites, video channels, podcasts.
+//
+// Bug, found while documenting this file and deliberately not fixed here: none
+// of these resources is a link. Every card renders an ExternalLink icon from
+// lucide-react beside the name -- the universal sign for "this opens in a new
+// tab" -- and there is no href, no <a> and no next/link anywhere in the file,
+// so clicking "Root-Me" does nothing at all. The page has not been touched
+// since commit 827d40e, "chore: import v0 brutalist bundle unmodified", which
+// is where the icon came from. The half that generalises: an icon is a promise
+// made to the reader, and nothing in a type system or a test suite checks that
+// a promise made in pixels is kept in markup.
+//
+// ResourceGrid below is a local Server Component. A component defined and used
+// in the same file needs no directive and no export, and doing that is
+// ordinary rather than a shortcut.
+
 import type { Metadata } from "next"
 import { ExternalLink } from "lucide-react"
 import { PageShell, PageHeader } from "@/components/site/page-shell"

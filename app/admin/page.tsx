@@ -1,3 +1,14 @@
+// The admin route: a Server Component whose only job is to hand over to
+// <AdminConsole>.
+//
+// The route is not access control. It renders for anybody; the "Accès
+// restreint" screen lives inside the client console and, as that file says in
+// its own header, hides the console without protecting it. What protects it is
+// requireAdmin() inside each server action in app/actions/admin.ts -- those
+// are the things a browser can actually call. Hiding a control is
+// presentation; checking on the server is authorisation, and only the second
+// one survives someone who reads your JavaScript.
+
 import type { Metadata } from "next"
 import { PageShell, PageHeader } from "@/components/site/page-shell"
 import { AdminConsole } from "@/components/admin/admin-console"
@@ -9,10 +20,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-// SIN-ADMIN : « certains chemins d'URL sont tellement prévisibles qu'on les
-// essaie en premier ». Le code est dans la page, donc dans le code source de
-// quiconque a pensé à essayer /admin — la console elle-même reste protégée,
-// c'est l'adresse qui était l'énigme.
+// SIN-ADMIN: "some URL paths are so predictable that they get tried first".
+// The code is in the page, and therefore in the page source of anyone who
+// thought to try /admin -- the console itself stays protected, it was the
+// address that was the riddle.
 export const dynamic = "force-dynamic"
 
 export default async function AdminPage() {
