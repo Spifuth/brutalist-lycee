@@ -292,42 +292,52 @@ update
 
 ---
 
-## 6. Les cinq vérifications automatiques
+## 6. Les sept vérifications automatiques
 
 Chaque pull request déclenche des tests automatiques (la *CI*).
 
-En bas de ta PR, tu ne verras pas cinq lignes mais **deux** : `build`, qui
-enchaîne les quatre contrôles ci-dessous, et `style-gate`, qui est le
-cinquième (§7). **Les deux doivent être vertes** ou la PR ne peut pas être
+En bas de ta PR, tu ne verras pas sept lignes mais **deux** : `build`, qui
+enchaîne les six contrôles ci-dessous, et `style-gate`, qui est le
+septième (§7). **Les deux doivent être vertes** ou la PR ne peut pas être
 fusionnée — clique sur *Details* pour voir lequel des contrôles a lâché.
 
-Tu peux lancer les quatre premiers chez toi avant de pousser, ça évite les
-allers-retours (dans cet ordre : `check:origins` relit ce que `build` vient de
-produire) :
+Tu peux lancer les six premiers chez toi avant de pousser, ça évite les
+allers-retours (dans cet ordre, celui de la CI : `check:origins` relit ce que
+`build` vient de produire) :
 
 ```bash
-pnpm build          # 1. le site compile
-pnpm check:origins  # 2. aucune ressource chargée depuis Internet
-pnpm typecheck      # 3. TypeScript est content
-pnpm test           # 4. les tests passent
+pnpm lint           # 1. le code respecte les règles ESLint
+pnpm build          # 2. le site compile
+pnpm check:origins  # 3. aucune ressource chargée depuis Internet
+pnpm typecheck      # 4. TypeScript est content
+pnpm check:headers  # 5. tout fichier long commence par un commentaire
+pnpm test           # 6. les tests passent
 ```
 
-La cinquième, `style-gate`, tourne uniquement sur GitHub : c'est la §7.
+La septième, `style-gate`, tourne uniquement sur GitHub : c'est la §7.
 
-**1. `pnpm build`** — Next.js compile le site. Si ça casse ici, c'est en général
+**1. `pnpm lint`** — ESLint relit le code et signale ce qui est incorrect ou
+douteux (une variable jamais utilisée, un hook React appelé au mauvais
+endroit). La configuration vit dans `eslint.config.mjs`.
+
+**2. `pnpm build`** — Next.js compile le site. Si ça casse ici, c'est en général
 une virgule oubliée ou un import vers un fichier qui n'existe pas.
 
-**2. `pnpm check:origins`** — le site est **auto-hébergé et ne parle à
+**3. `pnpm check:origins`** — le site est **auto-hébergé et ne parle à
 personne** : aucun CDN, aucune police Google, aucun script de statistiques. Ce
 contrôle relit le site compilé et échoue s'il trouve une adresse extérieure. Si
 tu as besoin d'une bibliothèque, installe-la avec `pnpm add` : elle sera
 embarquée dans le site, pas chargée depuis Internet.
 
-**3. `pnpm typecheck`** — TypeScript vérifie que les types collent. N'écris pas
+**4. `pnpm typecheck`** — TypeScript vérifie que les types collent. N'écris pas
 `any` pour faire taire une erreur : si le type te résiste, demande de l'aide
 dans ta PR, c'est fait pour.
 
-**4. `pnpm test`** — les tests du dossier `tests/`. Voir §10.
+**5. `pnpm check:headers`** — tout fichier de 80 lignes ou plus doit commencer
+par un commentaire. Le contrôle vérifie qu'il **existe**, jamais qu'il est bon —
+ça, c'est la revue. Écrire ce commentaire, c'est la §11.
+
+**6. `pnpm test`** — les tests du dossier `tests/`. Voir §10.
 
 ---
 
@@ -636,7 +646,7 @@ se met à jour toute seule.
 c'est comme ça que le code s'améliore. Ce qui est regardé, dans l'ordre :
 
 1. Est-ce que ça résout bien le problème annoncé ? Pas plus, pas moins.
-2. Est-ce que les cinq vérifications sont vertes ?
+2. Est-ce que les sept vérifications sont vertes ?
 3. Est-ce que ça respecte STYLE.md ?
 4. Est-ce que le message de commit explique le **pourquoi** ?
 5. Est-ce qu'un cas limite mériterait un test ?
