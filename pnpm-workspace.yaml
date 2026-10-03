@@ -17,3 +17,16 @@ allowBuilds:
 overrides:
   '@types/react': 19.2.7
   '@types/react-dom': 19.2.3
+
+# Security floors for transitive deps, not pins: each one only raises the
+# minimum inside the major its parents already ask for. Dependabot flagged
+# them on 2026-10-03, and `pnpm update --depth Infinity` did not move them.
+# All of them run at build or lint time (Next's Babel chain, Tailwind,
+# eslint), none in the request path. Drop a line once `pnpm why <pkg>` shows
+# every copy above the floor without it.
+# `braces` is absent on purpose: the advisory's fix (>= 3.0.4) is not
+# published, 3.0.3 is still the latest release.
+  'picomatch@^4': ^4.0.4
+  browserslist: ^4.28.7
+  baseline-browser-mapping: ^2.11.0
+  'brace-expansion@^5': ^5.0.12
