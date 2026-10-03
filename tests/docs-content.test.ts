@@ -181,6 +181,33 @@ test("every reseaux article opens with prose, not a bare heading", () => {
   }
 })
 
+test("the psychologie subject is written, not placeholder", () => {
+  const psychologie = getSubject("psychologie")
+  assert.ok(psychologie, 'no "psychologie" subject — the Psychologie humaine course is missing')
+  assert.ok(psychologie.articles.length >= 1, "the psychologie course should include at least one real article")
+
+  for (const a of psychologie.articles) {
+    const text = JSON.stringify(a.blocks)
+    assert.ok(
+      !text.includes("contenu d'exemple"),
+      `psychologie/${a.slug} still contains placeholder lorem`,
+    )
+    assert.ok(
+      !text.includes("à remplacer"),
+      `psychologie/${a.slug} still contains a "à remplacer" placeholder`,
+    )
+    assert.ok(a.summary.length > 0, `psychologie/${a.slug} has no summary — it is shown on the subject index`)
+  }
+})
+
+test("every psychologie article opens with prose, not a bare heading", () => {
+  const psychologie = getSubject("psychologie")!
+  for (const a of psychologie.articles) {
+    const first = (a.blocks as DocBlock[])[0]
+    assert.equal(first.type, "para", `psychologie/${a.slug} starts with a "${first.type}" block — articles open with a paragraph`)
+  }
+})
+
 test("the comptes subject is written, not placeholder", () => {
   const comptes = getSubject("comptes")
   assert.ok(comptes, 'no "comptes" subject — the accounts & identity course is missing')

@@ -14,6 +14,7 @@ import { CE_SITE_SUBJECT } from "./docs-ce-site.ts"
 import { COMPTES_SUBJECT } from "./docs-comptes.ts"
 import { GIT_SUBJECT } from "./docs-git.ts"
 import { PASSWORD_MANAGERS_ARTICLE } from "./docs-gestionnaires-mdp.ts"
+import { PSYCHOLOGIE_SUBJECT } from "./docs-psychologie.ts"
 import { RESEAUX_SUBJECT } from "./docs-reseaux.ts"
 
 export type DocBlock =
@@ -214,6 +215,9 @@ export const DOC_SUBJECTS: DocSubject[] = [
       makeArticle("reseaux-sociaux", "Réseaux sociaux", "Partager sans se mettre en danger.", ["Paramètres", "Réputation", "Recul"]),
     ],
   },
+  // Last: not a technology but the reader looking at one -- how a fact gets
+  // mistaken for understanding, across everything the subjects above teach.
+  PSYCHOLOGIE_SUBJECT,
 ]
 
 // --- Lookups ----------------------------------------------------------------
