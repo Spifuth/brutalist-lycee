@@ -8,7 +8,7 @@
 // an index into a list is only meaningful next to the exact list it indexes.
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { compactOptions } from "../lib/quiz-draft.ts"
+import { compactOptions, isValidCorrectIndex } from "../lib/quiz-draft.ts"
 
 test("a blank option above the answer moves the answer's index down", () => {
   const r = compactOptions(["", "Paris", "Lyon"], 1)
@@ -62,4 +62,26 @@ test("an empty option list has no answer to remap", () => {
   const r = compactOptions([], 0)
   assert.deepEqual(r.options, [])
   assert.equal(r.correctIndex, -1)
+})
+
+// The server action cannot trust the form's remapping: it is a public POST
+// endpoint, so it re-checks the index against the list it is about to save.
+test("isValidCorrectIndex accepts every index inside the list", () => {
+  assert.equal(isValidCorrectIndex(["Paris", "Lyon"], 0), true)
+  assert.equal(isValidCorrectIndex(["Paris", "Lyon"], 1), true)
+})
+
+test("isValidCorrectIndex rejects an index at or past the end", () => {
+  assert.equal(isValidCorrectIndex(["Paris", "Lyon"], 2), false)
+  assert.equal(isValidCorrectIndex([], 0), false)
+})
+
+test("isValidCorrectIndex rejects negative and non-integer indexes", () => {
+  assert.equal(isValidCorrectIndex(["Paris", "Lyon"], -1), false)
+  assert.equal(isValidCorrectIndex(["Paris", "Lyon"], 0.5), false)
+  assert.equal(isValidCorrectIndex(["Paris", "Lyon"], Number.NaN), false)
+})
+
+test("isValidCorrectIndex rejects a non-array options value", () => {
+  assert.equal(isValidCorrectIndex("Paris" as unknown as string[], 0), false)
 })

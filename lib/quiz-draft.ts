@@ -40,3 +40,18 @@ export function compactOptions(
   }
   return { options: kept, correctIndex: remapped }
 }
+
+/**
+ * The server-side half of the same rule: `correctIndex` must point at an
+ * option that exists in the list being saved. The form already remaps it, but
+ * a Server Action is a public POST endpoint, so the action checks again rather
+ * than trusting the browser.
+ */
+export function isValidCorrectIndex(options: string[], correctIndex: number): boolean {
+  return (
+    Array.isArray(options) &&
+    Number.isInteger(correctIndex) &&
+    correctIndex >= 0 &&
+    correctIndex < options.length
+  )
+}
