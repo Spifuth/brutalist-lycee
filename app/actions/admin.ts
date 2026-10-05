@@ -22,6 +22,7 @@ import { requireAdmin } from "@/lib/auth"
 import { hashPassphrase, generatePassphrase } from "@/lib/crypto"
 import { deleteAvatarFile } from "@/lib/avatar-storage"
 import { FINAL_MILESTONE_CODE, SYNC_FINAL_MILESTONE_SQL } from "@/lib/milestones"
+import { isValidCorrectIndex } from "@/lib/quiz-draft"
 
 // ---------------- Overview ----------------
 
@@ -401,6 +402,9 @@ export async function upsertQuizQuestion(
   input: Omit<AdminQuizQuestion, "id"> & { id?: string },
 ) {
   await requireAdmin()
+  if (!isValidCorrectIndex(input.options, input.correctIndex)) {
+    throw new Error("La bonne réponse doit être l'une des options de la question.")
+  }
   if (input.id) {
     await query(
       "UPDATE quiz_questions SET prompt=$2, options=$3, correct_index=$4, explanation=$5, position=$6 WHERE id=$1",

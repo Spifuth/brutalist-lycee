@@ -230,7 +230,13 @@ function QuizQuestionsEditor({ quiz, onBack }: { quiz: AdminQuiz; onBack: () => 
       setFlash({ ok: false, msg: "La bonne réponse cochée est vide : remplis cette option ou coche-en une autre." })
       return
     }
-    await upsertQuizQuestion(quiz.id, { ...draft, options, correctIndex })
+    try {
+      await upsertQuizQuestion(quiz.id, { ...draft, options, correctIndex })
+    } catch (e) {
+      // Keep the form open with the draft intact, and say why.
+      setFlash({ ok: false, msg: e instanceof Error ? e.message : "Erreur" })
+      return
+    }
     editDraft(null)
     refresh()
   }
