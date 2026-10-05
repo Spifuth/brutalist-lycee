@@ -21,6 +21,7 @@ import { query, queryOne } from "@/lib/db"
 import { requireAdmin } from "@/lib/auth"
 import { hashPassphrase, generatePassphrase } from "@/lib/crypto"
 import { deleteAvatarFile } from "@/lib/avatar-storage"
+import { FINAL_MILESTONE_CODE, SYNC_FINAL_MILESTONE_SQL } from "@/lib/milestones"
 
 // ---------------- Overview ----------------
 
@@ -302,6 +303,11 @@ export async function upsertSecret(input: Omit<SecretRow, "id" | "redemptions"> 
        category, difficulty, unlockAt, input.badgeSlug || null, input.active],
     )
   }
+  // Creating, (de)activating or turning a secret into a milestone all move the
+  // count of ordinary secrets, and the final milestone means "all of them".
+  // The seed and the import recompute it too; this is the path a teacher uses
+  // in the middle of a lesson, when the next deploy is days away.
+  await query(SYNC_FINAL_MILESTONE_SQL, [FINAL_MILESTONE_CODE])
   revalidatePath("/admin")
   revalidatePath("/chasse")
 }
@@ -310,6 +316,7 @@ export async function upsertSecret(input: Omit<SecretRow, "id" | "redemptions"> 
 export async function deleteSecret(id: string) {
   await requireAdmin()
   await query("DELETE FROM secrets WHERE id = $1", [id])
+  await query(SYNC_FINAL_MILESTONE_SQL, [FINAL_MILESTONE_CODE])
   revalidatePath("/admin")
   revalidatePath("/chasse")
 }

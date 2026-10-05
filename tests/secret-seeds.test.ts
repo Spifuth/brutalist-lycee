@@ -3,9 +3,10 @@
 // One assertion earns the file on its own. The final milestone's `unlockAt` is
 // an *absolute count*, so adding one ordinary secret without bumping it makes
 // the "you found everything" reward fire while a secret is still missing --
-// silently, and only for the first student to get that far. Its neighbour pins
-// the hint text, because the hint spells that number out in prose and prose
-// does not fail a build.
+// silently, and only for the first student to get that far. Its neighbour
+// keeps that number out of the hint: the database recomputes the threshold
+// over secrets this file never sees, so a count written in prose is wrong the
+// moment one exists, and prose does not fail a build.
 //
 // The rest is a catalogue of ways a data file breaks without breaking
 // anything: a lower-case code that can never be redeemed (redeemSecret
@@ -119,18 +120,22 @@ test("the final milestone unlocks at exactly the number of ordinary secrets", ()
     boss.unlockAt,
     ordinary.length,
     `SIN-FINAL-BOSS-ULTIMATE unlocks at ${boss.unlockAt} but there are ${ordinary.length} ordinary secrets — ` +
-      "bump unlockAt (and the hint, which names the number) whenever you add or remove one",
+      "bump unlockAt whenever you add or remove one",
   )
 })
 
-test("the final milestone's hint names the right number", () => {
-  // The hint says "les 149 autres". If the count moves and the hint does not,
-  // the page tells students a number the game does not use.
+test("the final milestone's text names no count", () => {
+  // The count it unlocks at is recomputed from the database (db/seed.ts,
+  // db/import-secrets.ts, the admin console), which also holds the secrets
+  // imported from the private file -- a number this file cannot see. Written into the hint, it is
+  // wrong as soon as one of those exists. The live threshold is already on
+  // screen: components/hunt/hunt-board.tsx prints `unlock_at` next to the
+  // hint. So the only number the text may carry is its own points value.
   const boss = SECRET_SEEDS.find((s) => s.code === "SIN-FINAL-BOSS-ULTIMATE")!
-  assert.ok(
-    boss.hint.includes(String(ordinary.length)),
-    `the final milestone's hint does not mention ${ordinary.length}: "${boss.hint}"`,
-  )
+  for (const [field, text] of [["hint", boss.hint], ["location", boss.location]] as const) {
+    const counts = (text.match(/\d+/g) ?? []).filter((n) => Number(n) !== boss.points)
+    assert.deepEqual(counts, [], `the final milestone's ${field} names a count: "${text}"`)
+  }
 })
 
 test("no milestone gate is out of reach", () => {
