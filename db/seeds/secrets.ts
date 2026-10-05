@@ -1420,8 +1420,8 @@ export const SECRET_SEEDS: SecretSeed[] = [
   {
     code: "SIN-FINAL-BOSS-ULTIMATE",
     name: "Le grand final",
-    hint: "Trouve les 149 autres. Ce dernier vaut 150 points et s'accorde tout seul. Légende absolue.",
-    location: "Palier automatique — 149 secrets trouvés",
+    hint: "Trouve tous les autres. Ce dernier vaut 150 points et s'accorde tout seul. Légende absolue.",
+    location: "Palier automatique — tous les secrets ordinaires trouvés",
     points: 150,
     category: "META",
     difficulty: "insane",

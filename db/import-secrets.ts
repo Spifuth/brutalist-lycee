@@ -14,7 +14,7 @@
 import pg from "pg"
 import { readFileSync } from "node:fs"
 import { parseSecretsYaml, type SecretEntry } from "../lib/secrets-yaml.ts"
-import { FINAL_MILESTONE_CODE } from "../lib/milestones.ts"
+import { FINAL_MILESTONE_CODE, SYNC_FINAL_MILESTONE_SQL } from "../lib/milestones.ts"
 
 const args = process.argv.slice(2)
 const dryRun = args.includes("--dry-run")
@@ -92,13 +92,7 @@ async function main() {
   // The final milestone means "all the ordinary secrets", and that count just
   // changed. Leaving it at its hardcoded value is exactly what made the final
   // reward fire seven secrets too early in production.
-  const { rows: milestone } = await db.query<{ unlock_at: number }>(
-    `UPDATE secrets
-        SET unlock_at = (SELECT COUNT(*) FROM secrets WHERE active AND unlock_at IS NULL)
-      WHERE code = $1
-      RETURNING unlock_at`,
-    [FINAL_MILESTONE_CODE],
-  )
+  const { rows: milestone } = await db.query<{ unlock_at: number }>(SYNC_FINAL_MILESTONE_SQL, [FINAL_MILESTONE_CODE])
 
   console.log(`[import] ${created} créés, ${updated} mis à jour, ${aliasCount} alias.`)
   if (milestone[0]) {

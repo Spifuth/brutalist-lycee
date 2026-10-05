@@ -13,6 +13,7 @@
 // code, and the connection string it reads, into the browser bundle.
 import "server-only"
 import { query, queryOne } from "@/lib/db"
+import { subjectCommand } from "@/lib/doc-command"
 import type { Quiz } from "@/lib/quizzes"
 
 // ---------------- Quizzes ----------------
@@ -104,14 +105,18 @@ export interface DocSubject extends DocSubjectMeta {
   articles: DocArticle[]
 }
 
-function withCommand(s: Omit<DocSubjectMeta, "command">): DocSubjectMeta {
-  return { ...s, command: `man ${s.slug}` }
+// doc_subjects.command is NULL for a subject created from /admin;
+// subjectCommand() turns that into a label.
+type DocSubjectRow = Omit<DocSubjectMeta, "command"> & { command: string | null }
+
+function withCommand(s: DocSubjectRow): DocSubjectMeta {
+  return { ...s, command: subjectCommand(s) }
 }
 
 /** Every subject with its published articles attached. Two queries total, not one per subject. */
 export async function getDocSubjects(): Promise<DocSubject[]> {
-  const subjects = await query<Omit<DocSubjectMeta, "command">>(
-    "SELECT id, slug, title, description, icon FROM doc_subjects ORDER BY position ASC",
+  const subjects = await query<DocSubjectRow>(
+    "SELECT id, slug, title, description, icon, command FROM doc_subjects ORDER BY position ASC",
   )
   const articles = await query<DocArticle & { subject_id: string }>(
     "SELECT id, subject_id, slug, title, summary, blocks FROM doc_articles WHERE published ORDER BY position ASC",

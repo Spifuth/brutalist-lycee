@@ -115,6 +115,13 @@ ALTER TABLE doc_subjects ALTER COLUMN managed SET DEFAULT FALSE;
 ALTER TABLE doc_articles ADD COLUMN IF NOT EXISTS managed BOOLEAN NOT NULL DEFAULT TRUE;
 ALTER TABLE doc_articles ALTER COLUMN managed SET DEFAULT FALSE;
 
+-- The `$ man …` label on each /docs card, as lib/docs.ts declares it. Written
+-- by the seed only; a subject created from the admin console leaves it NULL
+-- and lib/doc-command.ts falls back to `man <slug>`. Nullable with no default
+-- on purpose: a NULL is how the reader tells "nobody chose one" apart from a
+-- real value, so the fallback lives in one place and not in the schema.
+ALTER TABLE doc_subjects ADD COLUMN IF NOT EXISTS command TEXT;
+
 -- ---------------------------------------------------------------------
 -- QUIZZES  (quiz -> questions; attempts per user)
 -- ---------------------------------------------------------------------

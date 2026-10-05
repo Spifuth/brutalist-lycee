@@ -14,10 +14,16 @@
 // refuses anything a milestone -- loud, immediate, and every student at once.
 // Any value crossing a database boundary has two spellings of absent.
 //
+// The last test is a different kind: it reads source rather than calling
+// code. The final gate's threshold is recomputed in SQL by whoever writes to
+// `secrets`, so the rule worth guarding is "every writer runs the recompute",
+// and only the source of each writer can answer that.
+//
 // Deleted, nothing throws at seed or build time; the gates simply start firing
 // at the wrong counts.
 import { test } from "node:test"
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 import { milestonesReached, isMilestone } from "../lib/milestones.ts"
 
 // Shape mirrors the rows redeemSecret reads out of `secrets`.
@@ -66,4 +72,25 @@ test("a milestone row is recognised whatever the shape of its unlock_at", () => 
   // 0 would mean "granted to everyone immediately", which is not a milestone
   // anyone should be able to configure by leaving the admin field blank.
   assert.equal(isMilestone({ unlockAt: 0 }), false)
+})
+
+test("every path that changes the set of ordinary secrets recalibrates the final gate", () => {
+  // The seed and the import recompute the final threshold; a writer that does
+  // not leaves it one secret short per secret it adds. Each entry is a file
+  // plus the function in it that writes to `secrets`.
+  const WRITERS: [string, string][] = [
+    ["db/seed.ts", "main"],
+    ["db/import-secrets.ts", "main"],
+    ["app/actions/admin.ts", "upsertSecret"],
+    ["app/actions/admin.ts", "deleteSecret"],
+  ]
+  for (const [file, fn] of WRITERS) {
+    const src = readFileSync(new URL(`../${file}`, import.meta.url), "utf8")
+    // From the function's declaration to the first line that closes a
+    // top-level block: the body, as long as the file keeps its formatting.
+    const body = src.match(new RegExp(`function ${fn}\\b[\\s\\S]*?\\n}\\n`))
+    assert.ok(body, `${file}: no function ${fn}() found`)
+    const runsSync = /SYNC_FINAL_MILESTONE_SQL\b/.test(body[0]) || /\bsyncFinalMilestone\(/.test(body[0])
+    assert.ok(runsSync, `${file} ${fn}() changes the secrets but never recalibrates the final milestone`)
+  }
 })

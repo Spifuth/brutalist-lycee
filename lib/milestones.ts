@@ -11,7 +11,8 @@
 
 /**
  * The "you found everything" milestone. Its threshold is not a constant: it is
- * the number of active ordinary secrets, recomputed after every import.
+ * the number of active ordinary secrets, recomputed by every writer to the
+ * `secrets` table (SYNC_FINAL_MILESTONE_SQL below).
  *
  * It has drifted, and it showed: production ran with `unlock_at = 149` while
  * holding 156 ordinary secrets — seven of them added from the admin console,
@@ -20,6 +21,21 @@
  * number that is recomputed cannot.
  */
 export const FINAL_MILESTONE_CODE = "SIN-FINAL-BOSS-ULTIMATE"
+
+/**
+ * Recalibrates the final milestone on the live count of active ordinary
+ * secrets. Bind `$1` to FINAL_MILESTONE_CODE; it returns the new `unlock_at`,
+ * or no row when there is no final milestone in the database.
+ *
+ * One statement shared by every writer, because the count is only right if
+ * *every* path that changes it recomputes it -- a recompute that most writers
+ * run is a drift with extra steps. Plain text rather than a function taking a
+ * client, so that this file stays free of any database dependency.
+ */
+export const SYNC_FINAL_MILESTONE_SQL = `UPDATE secrets
+    SET unlock_at = (SELECT COUNT(*) FROM secrets WHERE active AND unlock_at IS NULL)
+  WHERE code = $1
+  RETURNING unlock_at`
 
 export interface MilestoneGate {
   code: string

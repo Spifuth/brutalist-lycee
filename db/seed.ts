@@ -28,7 +28,7 @@ import { SECRET_SEEDS } from "./seeds/secrets"
 import { DOC_SUBJECTS } from "../lib/docs"
 import { buildPruneKeys } from "../lib/docs-prune-keys"
 import { hashPassphrase, generatePassphrase } from "../lib/crypto"
-import { FINAL_MILESTONE_CODE } from "../lib/milestones"
+import { FINAL_MILESTONE_CODE, SYNC_FINAL_MILESTONE_SQL } from "../lib/milestones"
 
 const connectionString =
   process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.DATABASE_URL_UNPOOLED
@@ -90,13 +90,13 @@ async function seedDocs() {
   for (let i = 0; i < DOC_SUBJECTS.length; i++) {
     const s = DOC_SUBJECTS[i]
     const { rows } = await db.query<{ id: string }>(
-      `INSERT INTO doc_subjects (slug, title, description, icon, position, managed)
-       VALUES ($1,$2,$3,$4,$5,TRUE)
+      `INSERT INTO doc_subjects (slug, title, description, icon, command, position, managed)
+       VALUES ($1,$2,$3,$4,$5,$6,TRUE)
        ON CONFLICT (slug) DO UPDATE SET
-         title=EXCLUDED.title, description=EXCLUDED.description, position=EXCLUDED.position,
-         managed=TRUE
+         title=EXCLUDED.title, description=EXCLUDED.description, command=EXCLUDED.command,
+         position=EXCLUDED.position, managed=TRUE
        RETURNING id`,
-      [s.slug, s.title, s.description, "book", i],
+      [s.slug, s.title, s.description, "book", s.command, i],
     )
     const subjectId = rows[0].id
     for (let j = 0; j < s.articles.length; j++) {
@@ -216,17 +216,11 @@ async function seedAdmin() {
  * that it matches — but only against the file. Production once ran with 149
  * for 156 ordinary secrets, because seven had been created from the admin
  * console and the test never sees the database. The threshold is therefore
- * recalculated here and on import: both write paths correct it, neither lets
- * it drift.
+ * recalculated by every writer -- here, on import, and on each admin edit
+ * (SYNC_FINAL_MILESTONE_SQL in lib/milestones.ts) -- so none lets it drift.
  */
 async function syncFinalMilestone() {
-  const { rows } = await db.query<{ unlock_at: number }>(
-    `UPDATE secrets
-        SET unlock_at = (SELECT COUNT(*) FROM secrets WHERE active AND unlock_at IS NULL)
-      WHERE code = $1
-      RETURNING unlock_at`,
-    [FINAL_MILESTONE_CODE],
-  )
+  const { rows } = await db.query<{ unlock_at: number }>(SYNC_FINAL_MILESTONE_SQL, [FINAL_MILESTONE_CODE])
   if (rows[0]) console.log(`[seed] palier final : ${rows[0].unlock_at} secrets ordinaires.`)
 }
 
