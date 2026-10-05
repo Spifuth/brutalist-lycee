@@ -12,3 +12,10 @@ docs
 .vercel
 user_read_only_context
 v0_memories
+# The secrets-hunt answer sheet. Gitignored, and must stay out of the image
+# too: the image is pullable/inspectable, and nothing in it reads this file
+# (brutalist-init runs migrate + seed, which use db/seeds/; secrets are
+# imported over stdin, see db/import-secrets.ts). Mirrors .gitignore.
+db/secrets.yml
+db/secrets.*.yml
+!db/secrets.example.yml

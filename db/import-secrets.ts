@@ -5,8 +5,9 @@
 //   docker exec -i brutalist-web tsx db/import-secrets.ts --stdin < db/secrets.yml
 //
 // The last form is the production one: the database is reachable only from
-// the Docker network, and the file — gitignored — is not in the image. So it
-// is pushed through standard input, without ever copying it in.
+// the Docker network, and the file — gitignored, and excluded from the build
+// context by .dockerignore — is not in the image. So it is pushed through
+// standard input, without ever copying it in.
 //
 // Idempotent: every secret is an upsert on its code, every alias is
 // rewritten identically. Nothing is ever deleted, except the aliases of a
