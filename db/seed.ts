@@ -90,13 +90,13 @@ async function seedDocs() {
   for (let i = 0; i < DOC_SUBJECTS.length; i++) {
     const s = DOC_SUBJECTS[i]
     const { rows } = await db.query<{ id: string }>(
-      `INSERT INTO doc_subjects (slug, title, description, icon, position, managed)
-       VALUES ($1,$2,$3,$4,$5,TRUE)
+      `INSERT INTO doc_subjects (slug, title, description, icon, command, position, managed)
+       VALUES ($1,$2,$3,$4,$5,$6,TRUE)
        ON CONFLICT (slug) DO UPDATE SET
-         title=EXCLUDED.title, description=EXCLUDED.description, position=EXCLUDED.position,
-         managed=TRUE
+         title=EXCLUDED.title, description=EXCLUDED.description, command=EXCLUDED.command,
+         position=EXCLUDED.position, managed=TRUE
        RETURNING id`,
-      [s.slug, s.title, s.description, "book", i],
+      [s.slug, s.title, s.description, "book", s.command, i],
     )
     const subjectId = rows[0].id
     for (let j = 0; j < s.articles.length; j++) {
